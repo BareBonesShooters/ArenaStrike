@@ -11,10 +11,13 @@ The scripts are classic scripts sharing one global scope, so keep the load order
 Reward codes and developer access
 - Open Redeem codes from the lobby. `DEV` grants the exclusive Dev gun skin and Dev outfit. Equip them in Loadout; neither item drops from cases or is sold in the Shop.
 - Reward codes ignore letter case and surrounding spaces. Each code can be claimed once per browser save; inventory and redemption history persist with the existing local save.
-- Add future codes to `REDEEM_CODES` in `js/01-core.js`, with `items` containing registered item IDs and optional nonnegative integer `coins`. Code-only items use `codeOnly: 1`.
+- Manage deployed reward codes in the `GAME_CODES` GitHub Actions repository secret. The Deploy game workflow validates it and publishes SHA-256 hashes with reward data; it never writes plaintext secret codes to the repository or site. See [SETUP-CODES.md](SETUP-CODES.md) for the one-time setup and examples.
+- Codes use 1–64 letters, numbers, hyphens or underscores, starting with a letter or number. The browser hashes the entered code and stores only the hash for new claims. Existing claims from the previous version still prevent duplicate rewards.
+- Local previews use the checked-in `js/reward-codes.js` with the default Dev reward. Deployments replace that file in `_site` with the secret's full code list, so include the Dev reward in `GAME_CODES` if you want to keep it. Reward checks require HTTPS or localhost.
 - Custom mode requires the separate, case-sensitive developer code on the Redeem codes page. Unlock it, return to Monster Rush and switch Custom mode On. Access lasts until page reload or Lock access; old saved Grind settings no longer enable it automatically. Online co-op cannot use Custom mode.
 - The shipped password is a SHA-256 digest in `DevAccess`. To change it, hash a new game-only password with SHA-256 and replace `passwordHash`. Password checks require HTTPS or localhost. This is a client-side convenience lock, not secure authorization; a server would be needed to enforce developer privileges against modified clients.
-- Run regression checks with `node --test tests/rewards.test.cjs`. Set `ARENA_TEST_DEV_PASSWORD` to the configured game-only password to also run the successful-unlock checks without publishing that password in the test file.
+- Run regression checks with `node --test tests/rewards.test.cjs tests/build-pages.test.cjs` (Node 24). Set `ARENA_TEST_DEV_PASSWORD` to the configured game-only password to also run the successful-unlock checks without publishing that password in the test file.
+- Hashes hide plaintext codes, but short codes can be guessed and client-side saves can be changed. This does not provide secure account-based rewards; that would require a server. The already-public Dev code remains public in earlier history and documentation.
 
 New in Beta 1.6 (and Beta 1.5)
 - Battle Pass: 150 tiers in six chapters (hero header, next-exclusive card, chapter tabs, Claim all, Skip tier); tiers 1-30 unchanged
