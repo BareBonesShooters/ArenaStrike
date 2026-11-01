@@ -5,9 +5,9 @@
 // Codes ignore letter case and surrounding spaces. Keep a comma after each entry.
 // This list is public game code. Each reward can be claimed once per browser save.
 const REDEEM_CODES = {
-  "DEV": { items: ["s_dev", "p_dev"] },
-  "IMMORTAL": { items: ["bp_p9"] },
-  // "GIFT": { items: ["s_dev", "p_dev"], coins: 1000 },
+"DEV": { items: ["s_dev", "p_dev"] },
+"IMMORTAL": { items: ["bp_p9"] },
+  // "GIFT": { items: ["s_dev", "p_dev"], coins: 1000 }, 
 };
 // ================== END OF EDITABLE CODE LIST ===================
 
@@ -550,7 +550,7 @@ function longAdd(k,v,mx){const out=[];
 for(const [key,tag] of [["wq","Weekly"],["sq","Season"]]){const L=S[key]&&S[key].list;if(!L)continue;
 for(const q of L){if(q.k!==k||q.p>=q.need)continue;q.p=Math.min(q.need,mx?Math.max(q.p,v):q.p+v);if(q.p>=q.need){S.coins+=q.c|0;out.push([tag,q])}}}
 return out}
-const qAdd=(k,v,mx)=>{if(typeof CustomBattle!=="undefined"&&CustomBattle.active)return;if(!Array.isArray(S.qb))return;const done=[];
+const qAdd=(k,v,mx)=>{if(!Array.isArray(S.qb))return;const done=[];
 for(const q of S.qb){if(q.k!==k||q.p>=q.need)continue;q.p=Math.min(q.need,mx?Math.max(q.p,v):q.p+v);if(q.p>=q.need)done.push(q)}
 let ld=[];try{longFill();ld=longAdd(k,v,mx)}catch(e){}
 if(ld.length){const xp=ld.reduce((a,o)=>a+o[1].xp,0),c=ld.reduce((a,o)=>a+(o[1].c|0),0),one=ld.length===1?ld[0]:null;addBP(xp);try{snd("quest")}catch(e){}
