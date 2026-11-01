@@ -322,6 +322,45 @@ else if(it.id.startsWith("bp_b")){it.free=0;BG.push(it)}
 else if(it.id.startsWith("bp_f")){it.free=0;FN.push(it);IDM[it.id]=it;return}
 else if(it.id.startsWith("bp_u"))MU.push(it);
 IDM[it.id]=it;ALL.push(it)});
+// Code-only cosmetics use stable IDs so adding items never changes saved loadouts.
+const CODE_ITEMS=[
+{id:"s_dev",n:"Dev",c:0xff8a3d,r:5,kind:"dev",codeOnly:1},
+{id:"p_dev",n:"Dev",c:0x121827,t:0xff8a3d,r:5,sty:"dev",codeOnly:1}
+];
+CODE_ITEMS.forEach(it=>{(PRE(it.id)==="s"?SK:PS).push(it);IDM[it.id]=it;ALL.push(it)});
+// Add reward codes here. Each code can grant items, coins, or both once per save.
+const REDEEM_CODES={DEV:{items:["s_dev","p_dev"],coins:0}};
+
+// This is a browser-only convenience gate, not server-side authorization.
+// Only a hash is shipped; developer access is never restored from a saved flag.
+const DevAccess=(()=>{
+const passwordHash="aa158f59d8050ea52f231cf6a9e63a18fa907847a01ff76aeb2ff1c92208a8ed";
+let unlocked=false,attempt=0;
+return{
+get unlocked(){return unlocked},
+async unlock(password){
+const current=++attempt;
+if(!globalThis.crypto||!crypto.subtle)throw new Error("Open the game using HTTPS or localhost to unlock developer access.");
+const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(password)));
+const hash=Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,"0")).join("");
+if(current!==attempt)return false;
+if(hash!==passwordHash)return false;
+unlocked=true;return true
+},
+lock(){attempt++;unlocked=false;if(S.opt)S.opt.grind=false;sv()},
+canGrind(gameMode,online){return unlocked&&gameMode==="waves"&&!online&&!!(S.opt&&S.opt.grind)}
+}})();
+
+function redeemCode(raw){
+const code=String(raw||"").trim().toUpperCase();
+if(!code)return{ok:false,message:"Enter a reward code first."};
+if(!Object.prototype.hasOwnProperty.call(REDEEM_CODES,code))return{ok:false,message:"That code is not valid. Check it and try again."};
+if(S.redeemed.includes(code))return{ok:false,message:"You already redeemed this code on this save."};
+const reward=REDEEM_CODES[code],items=(reward.items||[]).map(I),coins=reward.coins||0;
+if(items.some(it=>!it)||!Number.isSafeInteger(coins)||coins<0)return{ok:false,message:"This reward is unavailable. Please try again later."};
+items.forEach(it=>{S.own[it.id]=1});S.coins+=coins;S.redeemed.push(code);sv();
+return{ok:true,items:items.map(it=>it.id),coins,message:"Redeemed! "+items.map(it=>it.n+" "+(PRE(it.id)==="s"?"skin":PRE(it.id)==="p"?"outfit":"item")).concat(coins?[coins+" coins"]:[]).join(" + ")+" added to your collection."}
+}
 // guns are listed from lowest to highest rarity everywhere (loadout, index, shooting range). ids never change, so saves stay valid
 G.sort((a,b)=>a.r-b.r);
 // every collection is listed Common -> Uncommon -> Rare -> Epic -> Legendary -> Secret (stable sort, so same-rarity items keep their order). ids never change, so saves stay valid
@@ -433,6 +472,7 @@ const START_OWN=()=>({f0:1,g0:1,n0:1,s0:1,m0:1,p0:1,b0:1,a0:1,u0:1});
 let S={coins:200,own:START_OWN(),ld:[DEF(),DEF(),DEF(),DEF(),DEF()],cur:0,name:"Player",board:{},q:{},tut:0,streak:0,sens:1,ssens:1,vol:.7,mvol:.35,bg:"b0",av:"a0",mh:"u0",mm:"u0",mp:{mode:"ffa",bots:5,diff:"medium"}};
 try{const d=JSON.parse(localStorage.getItem("arena3dv2")||"{}");if(d&&typeof d==="object"&&!Array.isArray(d))Object.assign(S,d)}catch(e){}
 function migrate(){
+S.redeemed=Array.isArray(S.redeemed)?[...new Set(S.redeemed.filter(c=>typeof c==="string"))]:[];
 const own=Object.assign(START_OWN(),S.own&&typeof S.own==="object"?S.own:{});
 for(const k of Object.keys(own))if(!IDM[k]||!own[k])delete own[k];
 Object.assign(own,START_OWN());S.own=own;

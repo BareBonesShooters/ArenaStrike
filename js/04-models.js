@@ -5,6 +5,13 @@ const tint=(c,f)=>{const [r,g,b]=rgbOf(c),m=f>0?255:0,a=Math.abs(f);return`rgb($
 
 // ---------- gun skin textures ----------
 const SKP={ // painters: (ctx, w, h, hexColor, rng)
+dev(g,w,h,c,r){
+g.fillStyle="#101827";g.fillRect(0,0,w,h);g.strokeStyle="#26364b";g.lineWidth=1;
+for(let x=0;x<w;x+=16){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}
+for(let y=0;y<h;y+=16){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
+g.fillStyle=tint(c,0);g.fillRect(0,8,w,5);g.fillRect(0,h-13,w,5);
+g.fillStyle="#ffb16b";g.font="bold 36px monospace";g.textAlign="center";g.textBaseline="middle";g.fillText("<DEV/>",w/2,h/2);
+g.fillStyle="#e2f7ff";g.fillRect(15,h/2-3,12,6);g.fillRect(w-27,h/2-3,12,6)},
 metal(g,w,h,c,r){const q=g.createLinearGradient(0,0,0,h);q.addColorStop(0,tint(c,.45));q.addColorStop(.45,tint(c,0));q.addColorStop(1,tint(c,-.45));g.fillStyle=q;g.fillRect(0,0,w,h);
 for(let i=0;i<260;i++){g.fillStyle=r()<.5?"rgba(255,255,255,.07)":"rgba(0,0,0,.08)";g.fillRect(0,r()*h,w,1)}g.fillStyle="rgba(255,255,255,.1)";g.fillRect(0,h*.08,w,2)},
 camo(g,w,h,c,r){g.fillStyle=tint(c,-.35);g.fillRect(0,0,w,h);const cols=[tint(c,.15),tint(c,-.6),"#4a3b24",tint(c,.4)];
@@ -45,8 +52,8 @@ aurora(g,w,h,c,r){g.fillStyle="#050b16";g.fillRect(0,0,w,h);const cols=["rgba(52
 for(let k=0;k<9;k++){const base=h*(.1+k*.1),col=cols[k%3];for(let x=0;x<w;x+=2){const y=base+Math.sin(x/w*6.283*2+k)*9+Math.sin(x/w*6.283*5+k*2)*3,q=g.createLinearGradient(0,y-16,0,y+16);q.addColorStop(0,col+"0)");q.addColorStop(.5,col+".5)");q.addColorStop(1,col+"0)");g.fillStyle=q;g.fillRect(x,y-16,2,32)}}
 for(let i=0;i<70;i++){g.fillStyle=`rgba(255,255,255,${.2+r()*.6})`;g.fillRect(r()*w,r()*h,1.3,1.3)}}};
 const SKS={metal:[0xcccccc,90,0,.24],camo:[0x333333,25,0,.08],fade:[0x888888,60,0,.2],carbon:[0x777777,70,0,.3],wave:[0x999999,80,0,.22],gold:[0xfff0b0,160,0,.38],stripe:[0xaaaaaa,90,0,.24],circuit:[0x66ffee,60,.9,.18],galaxy:[0xaa88ff,90,.85,.22],prism:[0xffffff,130,.35,.3],
-honey:[0xffe0a0,100,0,.26],scales:[0xbbffbb,110,0,.28],ice:[0xffffff,150,.12,.4],magma:[0xff9966,40,.9,.14],aurora:[0xaaffee,90,.8,.22]};
-const SKM={},ANIMM=[],ANIMK={prism:1,magma:1,aurora:1,circuit:1,galaxy:1};
+honey:[0xffe0a0,100,0,.26],scales:[0xbbffbb,110,0,.28],ice:[0xffffff,150,.12,.4],magma:[0xff9966,40,.9,.14],aurora:[0xaaffee,90,.8,.22],dev:[0xffcc99,100,.5,.2]};
+const SKM={},ANIMM=[],ANIMK={prism:1,magma:1,aurora:1,circuit:1,galaxy:1,dev:1};
 function skinMat(sk){
 if(SKM[sk.id])return SKM[sk.id];
 const c=document.createElement("canvas");c.width=256;c.height=128;SKP[sk.kind](c.getContext("2d"),256,128,sk.c,mkRng(sk.c*7+13));
@@ -58,6 +65,7 @@ if(k==="prism"){m.map.offset.x=(t*.12)%1;m.emissive.setHSL((t*.15)%1,.9,.35);m.e
 else if(k==="aurora"){m.map.offset.x=(t*.05)%1;m.emissiveIntensity=.65+.2*Math.sin(t*1.3)}
 else if(k==="magma")m.emissiveIntensity=.7+.3*Math.sin(t*2.1)+.1*Math.sin(t*5.3)
 else if(k==="circuit")m.emissiveIntensity=.75+.25*Math.sin(t*3.2)
+else if(k==="dev")m.emissiveIntensity=.45+.15*Math.sin(t*2)
 else if(k==="galaxy"){m.map.offset.x=(t*.02)%1}}}
 
 // ---------- reflection environment: a small studio cube so metal and gloss pick up soft boxes and a horizon ----------
@@ -168,7 +176,15 @@ else if(sty==="crown"){const gold=B(0xffd24a);add(head,bx(.33,.07,.33),gold,0,.2
 else if(sty==="halo"){add(head,new T.TorusGeometry(.2,.022,8,24),B(trim),0,.5,0,Math.PI/2,0,0);mats.forEach(m=>{m.transparent=true;m.opacity=.8})}
 else if(sty==="band"){add(head,bx(.34,.06,.34),B(0xef4444),0,.08,0);add(head,bx(.06,.05,.2),B(0xef4444),.05,.08,-.26,0,.2,0);add(torso,bx(.52,.1,.32),L(trim),0,.36,0)}
 else if(sty==="nvg"){add(head,bx(.3,.07,.08),L(0x111827),0,.07,.18);[-.07,.07].forEach(x=>add(head,new T.CylinderGeometry(.04,.04,.1,8),B(0x4ade80),x,.07,.24,Math.PI/2,0,0));add(head,bx(.33,.07,.33),L(0x111827),0,.19,0)}
-else if(sty==="champ"){const gold=B(0xffd24a);add(head,bx(.33,.07,.33),gold,0,.2,0);[[-.13,0],[.13,0],[0,-.13],[0,.13]].forEach(([x,z])=>add(head,bx(.05,.1,.05),gold,x,.27,z));cape(0xb45309)}}
+else if(sty==="champ"){const gold=B(0xffd24a);add(head,bx(.33,.07,.33),gold,0,.2,0);[[-.13,0],[.13,0],[0,-.13],[0,.13]].forEach(([x,z])=>add(head,bx(.05,.1,.05),gold,x,.27,z));cape(0xb45309)}
+else if(sty==="dev"){
+const accent=B(trim),dark=L(body);add(head,bx(.36,.1,.36),dark,0,.2,0);add(head,bx(.34,.065,.035),accent,0,.07,.17);
+[-1,1].forEach(x=>{add(head,bx(.075,.19,.15),dark,x*.2,0,0);add(head,bx(.035,.1,.1),accent,x*.245,0,0)});
+add(head,bx(.025,.025,.19),accent,.23,-.1,.15);add(torso,bx(.39,.055,.025),accent,0,.12,.17);
+arms.forEach(a=>add(a,bx(.22,.07,.22),accent,0,.07,0));
+const badge=document.createElement("canvas");badge.width=128;badge.height=64;const ctx=badge.getContext("2d");ctx.fillStyle="#121827";ctx.fillRect(0,0,128,64);ctx.fillStyle="#ffb16b";ctx.font="bold 30px monospace";ctx.textAlign="center";ctx.fillText("<DEV>",64,43);
+const map=new T.CanvasTexture(badge);add(torso,new T.PlaneGeometry(.38,.19),new T.MeshBasicMaterial({map}),0,-.08,.18)
+}}
 // no shadow map on Low and Potato, so every character carries a soft dark disc on the floor instead (hidden whenever real shadows are on; Q.set toggles it)
 let BLOBT=null,BLOBM=null;const BLOBG=new T.PlaneGeometry(1,1);BLOBG.rotateX(-Math.PI/2);
 function blobShadow(r){
@@ -389,7 +405,7 @@ tcam=new T.PerspectiveCamera(30,1.6,.05,50);return true}
 function make(kind,item,w,h){
 if(!init())return"";r.setSize(w,h,false);tcam.aspect=w/h;tcam.updateProjectionMatrix();
 let obj,ry=-.5,rx=.12,fit=1;
-if(kind==="gun"){const b=buildGun(item,IDM["s"+(item.skin|0)]||SK[0]);obj=b.grp;obj.rotation.set(0,Math.PI/2+.5,0);ry=0;fit=1.15}
+if(kind==="gun"){const b=buildGun(item,IDM[typeof item.skin==="string"?item.skin:"s"+(item.skin|0)]||SK[0]);obj=b.grp;obj.rotation.set(0,Math.PI/2+.5,0);ry=0;fit=1.15}
 else if(kind==="skin"){const b=buildGun(GB("g2"),item);obj=b.grp;obj.rotation.set(0,Math.PI/2+.45,0);fit=1.1}
 else if(kind==="knife"){const b=buildKnife(item);obj=b.grp;obj.rotation.set(0,-Math.PI/2-.35,.25);obj.rotation.x=0}
 else{obj=mkHuman({body:item.c,trim:item.t,style:item.sty,gun:GB("g2")});obj.scale.setScalar(1);obj.rotation.y=.55;obj.traverse(m=>{if(m.isMesh)m.castShadow=false})}

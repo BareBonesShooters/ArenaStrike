@@ -48,7 +48,7 @@ return`<div class="th" style="${st};background:${I(S.bg).css}" aria-hidden="true
 function fillThumbs(root){
 root.querySelectorAll("[data-th]").forEach(e=>{
 const it=I(e.dataset.th);if(!it)return;const kind=KIND[PRE(it.id)];let item=it;
-if(kind==="gun"&&e.dataset.sk)item=Object.assign({},it,{skin:+e.dataset.sk.slice(1)||0});
+if(kind==="gun"&&e.dataset.sk)item=Object.assign({},it,{skin:e.dataset.sk});
 Thumb.req(kind,item,+e.dataset.w||240,+e.dataset.h||150,u=>{
 if(!e.isConnected||e.firstChild)return;
 if(!u){e.textContent=it.n[0];return}
@@ -76,7 +76,9 @@ $("sg-df").innerHTML=seg("df",[["easy","Easy"],["medium","Medium"],["hard","Hard
 $("sg-rg").innerHTML=seg("rg",[[3,"3"],[5,"5"],[10,"10"]],rgv);
 hide("o-df",!(sel==="duel"||sel==="gg"||sel==="parkour"||sel==="waves"));$("o-dft").textContent=sel==="parkour"?"Course difficulty":sel==="waves"?"Monster difficulty":"Bot difficulty";hide("o-rd",sel!=="duel");hide("o-party",!PMS(sel));
 const hasGhost=Object.keys(S.pkt||{}).some(k=>k.indexOf((S.opt.df||"easy")+"_")===0&&S.pkg&&S.pkg[k]&&S.pkg[k].length>2);
-hide("o-gr",sel!=="waves");{const gr=!!S.opt.grind;$("sg-gr").innerHTML=seg("gr",[["0","Off"],["1","On"]],gr?1:0);$("grinfo").textContent=gr?"Extremely easy, for grinding: monsters and bosses have a fraction of their health, hit very softly and move slower. Great for farming kills, waves and Battle Pass XP.":"Normal monster strength for the difficulty you picked."}
+hide("o-gr",sel!=="waves");{const access=DevAccess.unlocked,gr=access&&!!S.opt.grind;
+$("sg-gr").innerHTML=access?seg("gr",[["0","Off"],["1","On"]],gr?1:0):'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
+$("grinfo").textContent=!access?"Input code for a dev-only game mode.":gr?"Custom mode enabled for this session.":"Custom mode unlocked for this session. Switch it on to play."}
 hide("o-gl",sel!=="waves");{const gl=!!S.opt.ghostLvl;$("sg-gl").innerHTML=seg("gl",[["0","Classic"],["1","Ghost level"]],gl?1:0);$("glinfo").textContent=gl?"Every monster is a ghost: they hover, keep their distance and shoot when they see you. Every 5th wave brings the Ghost boss.":"Classic Monster Rush. A ghost wave still haunts the arena every 7th wave."}
 hide("o-ghost",sel!=="parkour");hide("o-pkk",sel!=="parkour");$("sg-pk").innerHTML=seg("pkknife",[["0","Off"],["1","On"]],pkKnifeOn()?1:0);
 if(sel==="parkour"){
@@ -148,7 +150,7 @@ paintCoins();fillThumbs(b);Cine.scan(b);paintRanges();Glide.sync()}
 
 // shop
 function roll(c){
-const L=c.L.filter(x=>!x.free&&!x.bp),sec=L.filter(x=>x.r===5);
+const L=c.L.filter(x=>!x.free&&!x.bp&&!x.codeOnly),sec=L.filter(x=>x.r===5);
 if(sec.length&&rnd()<.001)return pk(sec);
 const tiers=[0,1,2,3,4].filter(r=>L.some(x=>x.r===r));let tot=0;tiers.forEach(r=>tot+=W[r]);let x=rnd()*tot;
 for(const r of tiers){x-=W[r];if(x<=0)return pk(L.filter(y=>y.r===r))}
@@ -175,7 +177,7 @@ const CM={"Gun Case":["gun","Guns","#ff8a3d"],"Skin Case":["paint","Skins","#c08
 "Chill Disc Case":["headp","Music","#7dd3fc"],"Hype Disc Case":["rush","Music","#fb7185"]};
 const oddsHTML=()=>`<div class="odb" role="img" aria-label="Drop odds by rarity">${W.map((w,j)=>`<s style="flex:${w};background:${RC[j]}"></s>`).join("")}<s style="flex:.5;background:${RC[5]}"></s></div><div class="odl">${W.map((w,j)=>`<span style="--rc:${RC[j]}">${R[j]} ${w}%</span>`).join("")}<span style="--rc:${RC[5]}">Secret 0.1%</span></div>`;
 function caseCard(c,i,wide){
-const m=CM[c.n]||["gift",c.n,"#ff8a3d"],items=c.L.filter(x=>!x.free&&!x.bp),got=items.filter(owns).length,pc=items.length?Math.round(got/items.length*100):0,cost=c.p*CQ,can=S.coins>=cost&&!CB,
+const m=CM[c.n]||["gift",c.n,"#ff8a3d"],items=c.L.filter(x=>!x.free&&!x.bp&&!x.codeOnly),got=items.filter(owns).length,pc=items.length?Math.round(got/items.length*100):0,cost=c.p*CQ,can=S.coins>=cost&&!CB,
 chase=items.filter(x=>x.r>=4&&x.r<5).slice(0,2).map(x=>esc(x.n)).join(", ");
 return`<article class="cs2${wide?" wide":""}" style="--cc:${m[2]};--i:${Math.min(i,10)}"><div class="cs2a">${gly(m[0])}<i></i><i></i><i></i></div>
 <div class="cs2b"><div class="cs2h"><h3>${c.n}</h3><small>${items.length} items</small></div>
@@ -183,8 +185,8 @@ return`<article class="cs2${wide?" wide":""}" style="--cc:${m[2]};--i:${Math.min
 ${oddsHTML()}
 <button class="b p buy" data-a="case" data-v="${CS.indexOf(c)}"${can?"":" disabled"}>${ico("coin")}${cost.toLocaleString()}${S.coins<cost?`<em>need ${(cost-S.coins).toLocaleString()} more</em>`:""}</button></div></article>`}
 // single items cost more than the case they drop from: Common 0.6x the case, Uncommon the same, then 2.5x, 6x and 14x. Secret items are case only
-const IPM=[.6,1,2.5,6,14],caseOf=it=>CS.find(c=>c.L.includes(it)),itemPrice=it=>{const c=caseOf(it),m=IPM[it.r];return c&&m&&!it.free&&!it.bp?Math.round(c.p*m/50)*50:0};
-const ITC=[["g","Guns",G.filter(x=>!x.bp),"gun"],["s","Skins",SK.filter(x=>!x.bp),"paint"],["n","Knives",KN.filter(x=>!x.bp),"blade"],["m","Emotes",EM.filter(x=>!x.bp),"shuf"],["p","Outfits",PS.filter(x=>!x.bp),"shirt"],["b","Backgrounds",BG.filter(x=>!x.bp),"prism"],["a","Avatars",AV.filter(x=>!x.bp),"cool"],["u","Music",MU.filter(x=>!x.bp),"disc"]],KLB={g:"Gun",s:"Gun skin",n:"Knife",m:"Emote",p:"Outfit",b:"Background",a:"Avatar",u:"Music disc"};
+const IPM=[.6,1,2.5,6,14],caseOf=it=>CS.find(c=>c.L.includes(it)),itemPrice=it=>{const c=caseOf(it),m=IPM[it.r];return c&&m&&!it.free&&!it.bp&&!it.codeOnly?Math.round(c.p*m/50)*50:0};
+const ITC=[["g","Guns",G.filter(x=>!x.bp&&!x.codeOnly),"gun"],["s","Skins",SK.filter(x=>!x.bp&&!x.codeOnly),"paint"],["n","Knives",KN.filter(x=>!x.bp&&!x.codeOnly),"blade"],["m","Emotes",EM.filter(x=>!x.bp&&!x.codeOnly),"shuf"],["p","Outfits",PS.filter(x=>!x.bp&&!x.codeOnly),"shirt"],["b","Backgrounds",BG.filter(x=>!x.bp&&!x.codeOnly),"prism"],["a","Avatars",AV.filter(x=>!x.bp&&!x.codeOnly),"cool"],["u","Music",MU.filter(x=>!x.bp&&!x.codeOnly),"disc"]],KLB={g:"Gun",s:"Gun skin",n:"Knife",m:"Emote",p:"Outfit",b:"Background",a:"Avatar",u:"Music disc"};
 const itemTotal=()=>ITC.reduce((a,c)=>a+c[2].length,0),itemOwned=()=>ITC.reduce((a,c)=>a+c[2].filter(owns).length,0);
 function itemCard(it,i){
 const ow=owns(it),pr=itemPrice(it),k=PRE(it.id);
@@ -243,7 +245,7 @@ const LK={cat:"g",sel:null,own:0};
 const LKC=[["g","Guns",G,"gun","g"],["s","Skins",SK,"paint","s"],["k","Knives",KN,"blade","k"],["p","Outfits",PS,"shirt","p"],["m","Emotes",EM,"shuf","e"],["bg","Backgrounds",BG,"prism","bg"],["av","Avatars",AV,"cool","av"],["u","Music discs",MU,"disc","mh"],["f","Finishers",FN,"burst","fin"]];
 const lkEq=(c,e)=>c==="f"?finId():c==="bg"||c==="av"?S[c]:c==="u"?S[LK.ms||"mh"]:c==="m"?e.e[LD.slot]:e[c];
 function pLoad(){
-const e=eq(),C=LKC.find(x=>x[0]===LK.cat)||LKC[0],L=C[2].filter(x=>!LK.own||owns(x)),sk="s"+(+e.s.slice(1)||0);
+const e=eq(),C=LKC.find(x=>x[0]===LK.cat)||LKC[0],L=C[2].filter(x=>!LK.own||owns(x)),sk=e.s;
 const cur=lkEq(C[0],e),isEq=it=>C[0]==="m"?e.e.includes(it.id):C[0]==="u"?(it.id===S.mh||it.id===S.mm):cur===it.id;
 let pv=LK.sel&&C[2].some(x=>x.id===LK.sel)?I(LK.sel):(cur&&I(cur))||C[2].find(owns)||C[2][0];
 const own=x=>C[2].filter(owns).length;
@@ -342,6 +344,7 @@ return`<div class="dsk" style="--rc:${rcol(d)}"><p class="sm">${esc(d.desc||"")}
 const CATS=[["gun","Guns",G],["skin","Gun skins",SK],["knife","Knives",KN],["emote","Emotes",EM],["out","Outfits",PS],["bg","Backgrounds",BG],["av","Avatars",AV],["disc","Music discs",MU],["more","Other",null]];
 const EQF={g:"g",s:"s",n:"k",p:"p"};
 function foundIn(it){
+if(it.codeOnly)return"Exclusive reward. Redeem a reward code from the lobby's Redeem codes page.";
 if(it.free)return"Starter item, owned from the beginning";
 const cs=CS.filter(c=>c.L.includes(it));if(!cs.length)return"Not available";
 return cs.map(c=>`${c.n} (${R[it.r]}${it.r===5?", 0.1% chance":", "+W[it.r]+"% tier"})`).join(", ")+(itemPrice(it)?` or buy it for ${itemPrice(it).toLocaleString()} coins in Shop, ${PRE(it.id)==="f"?"Finishers":"Items"}`:"")}
@@ -432,7 +435,7 @@ const U=[
 "Monster Rush arenas are now multi-level: a two-tier fortress, a crossing of raised walkways, a pillared colosseum or a lane maze with sniper decks, all with staircases up, and each new stage rolls a different layout",
 "Monster Rush now changes arena after every boss: fade out, a new map and sky, a stage title card, then the next wave (Ruined Hall, Toxic Dusk, Neon Night, Frostbite, Dunes, Sunset, Autumn, Meadow)",
 "Every parkour map now has its own course: Magma Run keeps wide slabs with tall pillars, Neon Circuit zigzags on long rails, Frost Spire winds up an ice tower, Toxic Depths follows a winding river of stepping stones and Dune Temple climbs a stepped ziggurat (old best times and ghosts are cleared because the courses changed)",
-"Monster Rush gets a Grind mode (lobby, under Monster difficulty): monsters die in a hit or two, hit very softly and move slower, and bosses are a fraction of their usual health",
+"Custom mode: input code for a dev-only game mode",
 "Third person (Parkour, V) fixed: the camera now follows behind your aim instead of swinging up and losing your character when you look up or down",
 "Aiming fixes: the Mythic Pulse and other optic guns no longer show a dark block over the reticle, and 3D iron sights now hide while you look through them",
 "Reload animation is now a full sequence: tip the gun, off hand drops the mag, a fresh one comes up, seat it, rack it",
@@ -606,7 +609,40 @@ else h+=`<div class="sec"><h3>Next game</h3>${card}<p class="sm">Waiting for the
 if(Net.err)h+=`<div class="err" role="alert">${esc(Net.err)}</div>`;
 return h}
 
-const PG={shop:{t:"Shop",f:pShop},load:{t:"Loadout",f:pLoad},bp:{t:"Battle Pass",f:pBP},index:{t:"Index",f:pIndex},quests:{t:"Quests",f:pQuests},board:{t:"Leaderboard",f:pBoard},updates:{t:"Update Log",f:pUpdates},help:{t:"How to play",f:pHelp},servers:{t:"Servers",f:pServers}};
+function pCodes(){
+const unlocked=DevAccess.unlocked;
+return`<div class="codes-layout">
+<section class="code-panel"><span class="eyebrow">Special rewards</span><h3>Got a code?</h3><p>Redeem it for exclusive skins, outfits and other rewards. Each code can be claimed once per save.</p>
+<form id="redeem-form" class="code-form"><label for="reward-code">Reward code</label><div class="code-entry"><input id="reward-code" name="code" type="text" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Enter your code" aria-describedby="redeem-status"><button class="b p" type="submit">Redeem</button></div></form>
+<p id="redeem-status" class="code-status" role="status" aria-live="polite"></p>
+<div id="code-rewards" class="code-rewards"></div>
+<button class="b" data-a="page" data-v="load">${ico("pack",16)}Open Loadout</button><small class="code-note">Rewards save on this browser, just like your other items.</small></section>
+<section class="code-panel developer-panel"><span class="eyebrow">Developer exclusive</span><h3>Custom mode</h3><p>Input code for a dev-only game mode.</p>
+${unlocked?`<div class="code-access">${ico("check",18)}Custom mode unlocked</div><p>Access lasts until you reload or lock it. Enable Custom mode in the Monster Rush lobby.</p><div class="code-actions"><button class="b p" data-a="devwaves">Open Monster Rush</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
+<p id="developer-status" class="code-status" role="status" aria-live="polite"></p></section></div>`
+}
+function codeStatus(id,message,ok){const el=$(id);if(el){el.textContent=message;el.classList.toggle("success",!!ok);el.classList.toggle("error",!ok)}}
+function submitReward(){
+const input=$("reward-code"),result=redeemCode(input.value);codeStatus("redeem-status",result.message,result.ok);
+input.setAttribute("aria-invalid",String(!result.ok));snd(result.ok?"chest":"err",.7);
+if(!result.ok)return;
+input.value="";$("code-rewards").innerHTML=result.items.map(id=>{const it=I(id);return`<article class="code-reward" style="--rc:${rcol(it)}">${thumb(it,{w:240,h:150})}<b>${esc(it.n)}</b><small>${PRE(id)==="s"?"Gun skin":PRE(id)==="p"?"Outfit":"Item"} · Unlocked</small></article>`}).join("");fillThumbs($("code-rewards"))
+}
+async function submitDeveloper(form){
+const input=form.querySelector("input"),button=form.querySelector("button");if(button.disabled)return;
+if(!input.value){codeStatus("developer-status","Enter the developer code first.",false);input.setAttribute("aria-invalid","true");return}
+button.disabled=true;button.textContent="Checking…";const password=input.value;input.value="";
+try{const ok=await DevAccess.unlock(password);if(!form.isConnected)return;
+if(ok){snd("equip",.7);renderPage(true);codeStatus("developer-status","Unlocked. Open Monster Rush to enable Custom mode.",true);$("pgb").querySelector('[data-a="devwaves"]').focus()}
+else{codeStatus("developer-status","Incorrect code. Custom mode is still locked.",false);input.setAttribute("aria-invalid","true");input.focus();snd("err",.7)}
+}catch(error){if(form.isConnected)codeStatus("developer-status",error.message,false)}
+finally{if(button.isConnected){button.disabled=false;button.textContent="Unlock"}}
+}
+document.addEventListener("submit",event=>{
+if(event.target.id==="redeem-form"){event.preventDefault();submitReward()}
+else if(event.target.id==="developer-form"){event.preventDefault();submitDeveloper(event.target)}
+});
+const PG={shop:{t:"Shop",f:pShop},load:{t:"Loadout",f:pLoad},codes:{t:"Redeem codes",f:pCodes},bp:{t:"Battle Pass",f:pBP},index:{t:"Index",f:pIndex},quests:{t:"Quests",f:pQuests},board:{t:"Leaderboard",f:pBoard},updates:{t:"Update Log",f:pUpdates},help:{t:"How to play",f:pHelp},servers:{t:"Servers",f:pServers}};
 
 // ---------- cinematics: prize reveals, banners and looping tutorial clips. Everything is drawn in code, so there are no video files and it stays one page ----------
 const Cine=(()=>{
@@ -753,7 +789,10 @@ mode(e){sel=e.dataset.v;lobbyUI()},
 df(e){S.opt.df=e.dataset.v;sv();lobbyUI()},
 pkknife(e){S.opt.pkKnife=e.dataset.v==="1";sv();lobbyUI()},
 gl(e){S.opt.ghostLvl=e.dataset.v==="1";sv();lobbyUI()},
-gr(e){S.opt.grind=e.dataset.v==="1";sv();lobbyUI()},
+gr(e){if(!DevAccess.unlocked){S.opt.grind=false;sv();ACT.devaccess();return}S.opt.grind=e.dataset.v==="1";sv();lobbyUI()},
+devaccess(){openPage("codes");const input=$("developer-password");if(input)input.focus()},
+devwaves(){sel="waves";goLobby()},
+devlock(){DevAccess.lock();renderPage(true);codeStatus("developer-status","Custom mode locked and switched off.",true);$("developer-password").focus()},
 ghost(e){S.opt.ghostRace=clamp(+e.dataset.v||0,0,2);sv();lobbyUI()},
 rg(e){S.opt.rg=+e.dataset.v;sv();lobbyUI()},
 pmode(e){if(PM_MODES[e.dataset.v]){S.mp.mode=e.dataset.v;sv();lobbyUI()}},
@@ -858,6 +897,7 @@ if(view==="lobby")$("ml").textContent=Net.err||roomLine()};
 
 (function initOpt(){
 if(!S.opt||typeof S.opt!=="object")S.opt={};
+S.opt.grind=false;
 if(!DF[S.opt.df])S.opt.df="easy";if(S.pkLay!==3){S.pkt={};S.pkg={};S.pkb={};S.pkLay=3}if(![3,5,10].includes(S.opt.rg))S.opt.rg=5;S.opt.ghostRace=clamp(+S.opt.ghostRace||0,0,2);if(S.opt.scopeToggle==null)S.opt.scopeToggle=true})();
 
 // shop cards tilt toward the pointer and slide a highlight across the picture

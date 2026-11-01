@@ -147,7 +147,7 @@ stageBusy=false;stageDone=0;if(stageEl)stageEl.classList.remove("on");
 ghostW=false;try{Death.stop()}catch(e){}
 try{Mus.set("battle")}catch(e){}
 if(m==="parkour"){if(!pkPicked){pkMapScreen();return}pkPicked=false}
-const nm=cleanName($("nm").value)||"Player";S.name=nm;try{Party.leave();corrReset()}catch(e){}mode=m;grind=m==="waves"&&!!(S.opt&&S.opt.grind)&&!PT.on;diff=m==="tut"?"easy":(DF[$("df").value]?$("df").value:"easy");
+const nm=cleanName($("nm").value)||"Player";S.name=nm;try{Party.leave();corrReset()}catch(e){}mode=m;grind=DevAccess.canGrind(m,PT.on);diff=m==="tut"?"easy":(DF[$("df").value]?$("df").value:"easy");
 GOAL=m==="gg"?GOAL_GG:m==="tut"?3:[3,5,10].includes(+$("rg").value)?+$("rg").value:5;
 myS=opS=kills=ggL=wave=wq=wn=bt=0;tutF={};slot=0;lastCount=0;sv();
 PU=PUbase();PU.on=m==="waves";P.max=100;P.hp=100;xp=0;xpNeed=40;xpLevel=0;knifeCharge=0;knifeCharging=false;grenAim=false;clearGrenPrev();{const o=document.getElementById("puov");if(o)o.remove()}if(bossEl)bossEl.style.display="none";
@@ -187,7 +187,7 @@ else if(mode==="tut"){if(win){b=S.tut?0:50;S.tut=1}sub=win?"Tutorial complete":"
 else if(mode==="parkour"){const c=WORLD.course,f=PK.st.falls,bs=S.pkb&&typeof S.pkb==="object"?S.pkb:(S.pkb={});
 b=Math.round((c.base*(f===0?1.5:f<=3?1.2:1)+PK.st.gems*8)*.25);if(bs[pkK()]==null||f<bs[pkK()])bs[pkK()]=f;qAdd("pk",1);if(diff==="hard"||diff==="impossible")qAdd("pkh",1);if(diff==="impossible")qAdd("pkn",1);
 sub=f===0?"Flawless run, no falls":"You reached the golden beacon";st.push(["Falls",f],["Gems",PK.st.gems+" / "+c.gems.length],["Checkpoints",c.cps.length-1],["Best falls",bs[pkK()]],["Height",Math.round(PK.st.maxY)+" m"])}
-else if(mode==="waves"){sub="You reached wave "+wave+(grind?" (Grind mode)":"");st.push(["Wave",wave],["Kills",kills]);b=0}
+else if(mode==="waves"){sub="You reached wave "+wave+(grind?" (Custom mode)":"");st.push(["Wave",wave],["Kills",kills]);b=0}
 else{const used=RANGE_SHOTS-Math.max(0,rs),acc=used?rHit/used:0,fin=Math.round(myS*(.75+acc*.5));b=Math.min(8,Math.floor(fin/16));qAdd("range",myS,1);sub=used>=RANGE_SHOTS?"Out of ammo. Final score "+fin:"Run ended early. Final score "+fin;st.push(["Final score",fin],["Target points",myS],["Accuracy",Math.round(acc*100)+"%"],["Shots hit",rHit+" / "+used],["Best streak",rBest],["Reward",b+" coins"])}
 S.coins+=b;if(b>0)qAdd("coin",b);const bx=bpDaily(((win?130:70)+(mode==="waves"?wave*10:0)+Math.min(150,kills*4))*(mode==="tut"?.3:1));st.push(["Battle Pass XP","+"+bx.xp+(bx.boost?" (daily boost)":"")]);addBP(bx.xp);sv();
 endCard({title:mode==="waves"||mode==="range"?"Run complete":mode==="parkour"?"Course complete":win?"Victory":"Defeat",sub,stats:st,coins:b,win:mode==="waves"||mode==="range"?null:win,again:PT.on&&PT.online?"":mode});
