@@ -5,7 +5,7 @@
 // Codes ignore letter case and surrounding spaces. Keep a comma after each entry.
 // This list is public game code. Each reward can be claimed once per browser save.
 const REDEEM_CODES = {
-  "DEV": { items: ["s_dev", "p_dev"] },
+"DEV": { items: ["s_dev", "p_dev"] },
 "IMMORTAL": { items: ["bp_p9"] },
   // "GIFT": { items: ["s_dev", "p_dev"], coins: 1000 }, 
 };
