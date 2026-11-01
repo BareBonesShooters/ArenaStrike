@@ -1,4 +1,20 @@
-Arena Strike 3D - Beta 1.6.1
+Arena Strike 3D - Beta 1.6
+
+Open index.html in a browser (a local server such as `python3 -m http.server` is the safest way; double-clicking also works in most browsers).
+
+index.html        page shell, icon sprite, CDN libraries (Three.js r128, Howler.js 2.2.4, PeerJS 1.5.4)
+css/style.css     all styling
+js/01..11-*.js    game code in load order (core, render+audio, world, models, player/input, modes, actions/HUD, parkour/radar, party/online, UI pages + cinematics, main loop)
+
+The scripts are classic scripts sharing one global scope, so keep the load order in index.html.
+
+Reward codes and developer access
+- Open Redeem codes from the lobby. `DEV` grants the exclusive Dev gun skin and Dev outfit. Equip them in Loadout; neither item drops from cases or is sold in the Shop.
+- Reward codes ignore letter case and surrounding spaces. Each code can be claimed once per browser save; inventory and redemption history persist with the existing local save.
+- Add future codes to `REDEEM_CODES` in `js/01-core.js`, with `items` containing registered item IDs and optional nonnegative integer `coins`. Code-only items use `codeOnly: 1`.
+- Custom mode requires the separate, case-sensitive developer code on the Redeem codes page. Unlock it, return to Monster Rush and switch Custom mode On. Access lasts until page reload or Lock access; old saved Grind settings no longer enable it automatically. Online co-op cannot use Custom mode.
+- The shipped password is a SHA-256 digest in `DevAccess`. To change it, hash a new game-only password with SHA-256 and replace `passwordHash`. Password checks require HTTPS or localhost. This is a client-side convenience lock, not secure authorization; a server would be needed to enforce developer privileges against modified clients.
+- Run regression checks with `node --test tests/rewards.test.cjs`. Set `ARENA_TEST_DEV_PASSWORD` to the configured game-only password to also run the successful-unlock checks without publishing that password in the test file.
 
 New in Beta 1.6 (and Beta 1.5)
 - Battle Pass: 150 tiers in six chapters (hero header, next-exclusive card, chapter tabs, Claim all, Skip tier); tiers 1-30 unchanged
@@ -26,7 +42,7 @@ New in Beta 1.6 (and Beta 1.5)
 - Reload plays as a staged sequence (mag out, fresh mag in, seat, rack); optics are open sights
 - Aether Rifle ADS: gun drops 0.05 while aiming (js/05-player-input.js, VM.frame) and sight fov is 54; SV.aether (js/05b-scopes.js) keeps the centre clear and puts the ornament (gradient ring, ticks, diamond nodes) at the rim
 - Third person (Parkour, V): chase camera orbits behind your aim; optic guns hide 3D sights while aiming so nothing sits over the reticle (js/04-models.js buildGun)
-- Grind mode (Monster Rush lobby toggle, S.opt.grind -> global grind): monster hp x.2, speed x.7, all damage to you x.12, boss table BDG in js/06-game-modes.js
+- Developer Custom mode (Monster Rush lobby toggle, S.opt.grind -> global grind): monster hp x.2, speed x.7, all damage to you x.12, boss table BDG in js/06-game-modes.js
 - Parkour maps (js/08-parkour-radar.js build): per-map style MSS (ledge/circuit/spire/stones/stairs); path styles walk platforms along a curve (circle, square, zig, wave); S.pkLay clears old times/ghosts when layouts change
 - Monster Rush stages: stageChange() in js/06-game-modes.js runs from nextWave() after each boss wave (wave%5===0): veil #stagefx, corrReset, clearEnts, buildWorld(STAGES[n]), new spawn point; skipped in online co-op
 - Ghost level for Monster Rush with hovering ghosts, a Ghost boss that vanishes and reappears in sight, and a Corrupted boss blink (js/06c-ghost.js)
