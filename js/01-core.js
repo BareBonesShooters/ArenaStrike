@@ -1,4 +1,16 @@
 "use strict";
+// ==================== EDIT REWARD CODES HERE ====================
+// Add one entry per code. Remove the // from an example to enable it.
+// s_dev = Dev weapon skin; p_dev = Dev outfit. Other existing item IDs work too.
+// Codes ignore letter case and surrounding spaces. Keep a comma after each entry.
+// This list is public game code. Each reward can be claimed once per browser save.
+const REDEEM_CODES = {
+  "DEV": { items: ["s_dev", "p_dev"] },
+  // "BONUS": { coins: 5000 },
+  // "GIFT": { items: ["s_dev", "p_dev"], coins: 1000 },
+};
+// ================== END OF EDITABLE CODE LIST ===================
+
 // ---------- helpers ----------
 const $=id=>document.getElementById(id),T=THREE,rnd=Math.random;
 const pk=a=>a[Math.floor(rnd()*a.length)],clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
@@ -328,7 +340,7 @@ const CODE_ITEMS=[
 {id:"p_dev",n:"Dev",c:0x121827,t:0xff8a3d,r:5,sty:"dev",codeOnly:1}
 ];
 CODE_ITEMS.forEach(it=>{(PRE(it.id)==="s"?SK:PS).push(it);IDM[it.id]=it;ALL.push(it)});
-// Deployment supplies hashes and rewards only; code text stays in GitHub Secrets.
+// Hashes identify saved claims, including claims from the previous code system.
 async function rewardCodeHash(code){
 if(!globalThis.crypto||!crypto.subtle)throw new Error("Open the game using HTTPS or localhost to redeem codes.");
 const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(code));
@@ -359,16 +371,19 @@ async function redeemCode(raw){
 const code=String(raw||"").trim().toUpperCase();
 if(!code)return{ok:false,message:"Enter a reward code first."};
 if(!/^[A-Z0-9][A-Z0-9_-]{0,63}$/.test(code))return{ok:false,message:"That code is not valid. Check it and try again."};
-const manifest=globalThis.ARENA_REWARD_CODES;
-if(!manifest||manifest.version!==1||!manifest.rewards||typeof manifest.rewards!=="object")return{ok:false,message:"Rewards could not load. Refresh the game and try again."};
+const matches=Object.entries(REDEEM_CODES).filter(([key])=>key.trim().toUpperCase()===code);
+if(!matches.length)return{ok:false,message:"That code is not valid. Check it and try again."};
+const unavailable={ok:false,message:"This code's rewards are not set up correctly. Please tell the game developer."};
+if(matches.length!==1)return unavailable;
+const reward=matches[0][1];
+if(!reward||typeof reward!=="object"||Array.isArray(reward)||Object.keys(reward).some(key=>!["items","coins"].includes(key)))return unavailable;
+const ids=reward.items===undefined?[]:reward.items,coins=reward.coins===undefined?0:reward.coins;
+if(!Array.isArray(ids)||ids.some(id=>typeof id!=="string"||!Object.prototype.hasOwnProperty.call(IDM,id))||!Number.isSafeInteger(coins)||coins<0||(!ids.length&&!coins)||!Number.isSafeInteger(S.coins+coins))return unavailable;
+const items=[...new Set(ids)].map(I);
 const hash=await rewardCodeHash(code),claim="sha256:"+hash;
-if(!Object.prototype.hasOwnProperty.call(manifest.rewards,hash))return{ok:false,message:"That code is not valid. Check it and try again."};
 // Recognize claims made before hashed codes were introduced, too.
 if(S.redeemed.includes(claim)||S.redeemed.includes(code))return{ok:false,message:"You already redeemed this code on this save."};
-const reward=manifest.rewards[hash];
-if(!reward||!Array.isArray(reward.items))return{ok:false,message:"This reward is unavailable. Please try again later."};
-const items=reward.items.map(I),coins=reward.coins;
-if(items.some(it=>!it)||!Number.isSafeInteger(coins)||coins<0||(!items.length&&!coins)||!Number.isSafeInteger(S.coins+coins))return{ok:false,message:"This reward is unavailable. Please try again later."};
+if(!Number.isSafeInteger(S.coins+coins))return unavailable;
 items.forEach(it=>{S.own[it.id]=1});S.coins+=coins;S.redeemed.push(claim);sv();
 return{ok:true,items:items.map(it=>it.id),coins,message:"Redeemed! "+items.map(it=>it.n+" "+(PRE(it.id)==="s"?"skin":PRE(it.id)==="p"?"outfit":"item")).concat(coins?[coins+" coins"]:[]).join(" + ")+" added to your collection."}
 }
