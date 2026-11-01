@@ -8,10 +8,9 @@ return cam.localToWorld(new T.Vector3((.17+mz.x)*k,(-.17+mz.y)*k,-.4+mz.z))}
 function curSpread(g){return((g.sp||0)*(scoped?.35:1)+P.sp*.0013+(P.gr?0:.012)+Math.hypot(P.vx,P.vz)*.0007)*(1-.3*P.crouch)}
 const hitList=[];
 function gatherTargets(){
-hitList.length=0;for(const e of E)if(e.hp>0&&!(e.em>0)&&!e.phz&&(!e.custom||e.team!==CustomBattle.playerTeam))hitList.push(...e.g.userData.hit);
+hitList.length=0;for(const e of E)if(e.hp>0&&!(e.em>0)&&!e.phz)hitList.push(...e.g.userData.hit);
 if(PT.on)Party.targets(hitList);for(const m of rT)hitList.push(m);return hitList}
 function fire(){
-if(CustomBattle.active&&!CustomBattle.canShoot)return;
 if(!isGame()||P.fz>0||P.dead>0||rL>0||P.em||mode==="parkour")return;if(slot===1)return stab();if(A.rl>0)return;
 const g=cg(),now=performance.now()/1000;if(now<nextShot)return;if(A.mag<=0){gunSnd(g,"dry");nextShot=now+.25;reload();return}if(mode==="range"&&rs<=0)return;
 nextShot=now+g.t/PU.rate;A.mag--;if(mode==="range"){rs--;rNow=0;if(rs<=0)setTimeout(()=>{if(state==="play"&&mode==="range")endGame(true)},1300)}tf("shoot");cam.updateMatrixWorld();
@@ -35,14 +34,12 @@ VM.kick(clamp(.4+g.d*.008,.4,1.2));VM.flash();gunSnd(g,"fire");Gfx.flare(mzp,gc.
 P.rk+=clamp(.006+g.d*.0004,.006,.032);P.pitch+=clamp(.002+g.d*.0001,.002,.008);P.yaw+=(rnd()-.5)*.004;P.sp=Math.min(12,P.sp+(g.pel?4:3.5));
 if(A.mag<=0)reload()}
 function stab(){
-if(CustomBattle.active&&!CustomBattle.canShoot)return;
 const now=performance.now()/1000;if(now<nextShot||knifeCD>0)return;nextShot=now+.42;const kn=curKn();VM.stab(knR(),kn);slashFx(VM.cmv(),knR(),kn);knSnd(kn,"swing");let kh=0;
 const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);
 for(const e of E.slice()){const dx=e.g.position.x-P.x,dz=e.g.position.z-P.z,dd=Math.hypot(dx,dz)||1;if(dd<2.8*(1+.04*kn.r)&&(dx*fx+dz*fz)/dd>.4){kh=1;hurtE(e,KNIFE_D*PU.kn*KNM[kn.r],false,{x:e.g.position.x,y:e.g.position.y+1.2,z:e.g.position.z})}}
 if(kh)setTimeout(()=>knSnd(kn,"hit"),70);
 if(PT.on)Party.stab()}
 function throwKnife(charge){
-if(CustomBattle.active)return;
 const now=performance.now()/1000;if(now<nextShot||knifeCD>0)return;nextShot=now+.55;knifeCD=.5;
 const pwr=clamp(charge/1.1,0,1),kR=knR();VM.throwAnim(kR);slashFx(VM.cmv(),kR,curKn());knSnd(curKn(),"throw");
 // fly exactly where the crosshair points, like a bullet: aim ray -> target point -> straight line from the hand
@@ -132,7 +129,6 @@ const h=tg.length?rc.intersectObjects(tg,false)[0]:null;Aim.setHot(!!h&&h.distan
 
 // ---------- per-frame game update ----------
 function update(dt){
-if(CustomBattle.active){CustomBattle.update(dt);return}
 if(mzT>0){mzT-=dt;mzL.intensity=Math.max(0,mzT/.07)*2.6;cam.getWorldDirection(fwd);mzL.position.copy(cam.position).addScaledVector(fwd,1.6)}else if(mzL.intensity)mzL.intensity=0;
 Aim.frame(dt,scoped);
 const g=cg(),lock=P.fz>0||P.dead>0||rL>0||(mode==="parkour"&&PK.st.celeb>0),K_=K;

@@ -217,17 +217,17 @@ const fxOn=LOD.cloud>0;if(fxOn)fogFx(gmat,LOD.tex>=1024&&!ruin&&key!=="neon"?"gd
 // the roads are in the ground texture: sample them so houses, lamps and cars can line up with them instead of landing at random
 RDP=[];GROADS.forEach((r,ri)=>{const f=v=>v*2*H-H;for(let i=0;i<=60;i++){const t=i/60,u=1-t,X=f(u*u*r[0]+2*u*t*r[2]+t*t*r[4]),Z=f(u*u*r[1]+2*u*t*r[3]+t*t*r[5]),dx=2*u*(r[2]-r[0])+2*t*(r[4]-r[2]),dz=2*u*(r[3]-r[1])+2*t*(r[5]-r[3]),dl=Math.hypot(dx,dz)||1;
 if(Math.hypot(X,Z)>12&&Math.abs(X)<H-3&&Math.abs(Z)<H-3)RDP.push({x:X,z:Z,tx:dx/dl,tz:dz/dl,ri})}});
-const gm=new T.Mesh(new T.PlaneGeometry(opt.custom?240:H*2,opt.custom?240:H*2),gmat);gm.rotation.x=-PI/2;gm.receiveShadow=true;grp.add(gm);
+const gm=new T.Mesh(new T.PlaneGeometry(H*2,H*2),gmat);gm.rotation.x=-PI/2;gm.receiveShadow=true;grp.add(gm);
 const far=new T.Mesh(new T.CircleGeometry(420,32),new T.MeshLambertMaterial({color:new T.Color(th.gr.base).multiplyScalar(.8)}));far.rotation.x=-PI/2;far.position.y=-.05;grp.add(far);
 // perimeter (skipped entirely for parkour so platforms aren't blocked by arena walls)
-if(!opt.parkour&&!opt.custom){
+if(!opt.parkour){
 const wh=ruin?7:3.6,wc=th.wall;
 [[0,-H-1,2*H+4,2],[0,H+1,2*H+4,2],[-H-1,0,2,2*H+4],[H+1,0,2,2*H+4]].forEach(([x,z,w,d])=>{reg(x,z,w,d,wh);P("box",x,wh/2,z,w,wh,d,wc,0,.75);P("box",x,wh+.12,z,w+.3,.26,d+.3,th.trim,0,1)});
 for(let i=-4;i<=4;i++){[[i*10,-H-.2],[i*10,H+.2],[-H-.2,i*10],[H+.2,i*10]].forEach(([x,z])=>{P("box",x,wh/2+.3,z,1.1,wh+.6,1.1,th.trim,0,.8)})}
 if(key==="neon"){for(const [x,z,w,d] of[[0,-H+.1,2*H,.15],[0,H-.1,2*H,.15],[-H+.1,0,.15,2*H],[H-.1,0,.15,2*H]])P("box",x,1.2,z,w,.12,d,0x00f0ff,0,1,glow)}
 }
 // distant mountains
-if(!ruin&&!opt.custom)for(let i=0,nm=Math.max(10,Math.round(26*LOD.props));i<nm;i++){const a=i/nm*PI*2+crng()*.2,d=100+crng()*40,r=cr(14,28),h=cr(18,44),x=Math.cos(a)*d,z=Math.sin(a)*d,mc=cpick(th.mount);
+if(!ruin)for(let i=0,nm=Math.max(10,Math.round(26*LOD.props));i<nm;i++){const a=i/nm*PI*2+crng()*.2,d=100+crng()*40,r=cr(14,28),h=cr(18,44),x=Math.cos(a)*d,z=Math.sin(a)*d,mc=cpick(th.mount);
 P("cone",x,h/2-2,z,r*2,h,r*2,mc,crng()*3,.55);if(th.snow&&crng()<th.snow)P("cone",x,h-h*.14-2,z,r*.75,h*.3,r*.75,0xf4f8ff,0,.95)}
 // interior shell for the ruin
 if(ruin){WORLD.ceil=7;P("box",0,7.25,0,2*H+6,.5,2*H+6,0x1b1d24,0,.9);
