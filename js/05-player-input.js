@@ -25,7 +25,7 @@ clearTimeout(tm);tm=setTimeout(()=>{if(state==="play"&&!lock&&!menuOpen)fall()},
 function release(){try{if(document.pointerLockElement)document.exitPointerLock()}catch(e){}}
 function setEdge(v){if(v!==edge){edge=v;B().classList.toggle("edge",v)}}
 document.addEventListener("pointerlockchange",()=>{lock=document.pointerLockElement===rd.domElement;
-if(lock){free=false;setEdge(false);B().classList.remove("freeaim")}else if(state==="play"&&!menuOpen&&!free)pauseGame()});
+if(lock){free=false;setEdge(false);B().classList.remove("freeaim")}else if(state==="play"&&!menuOpen&&!free&&!(typeof CustomBattle!=="undefined"&&CustomBattle.active&&!CustomBattle.joined))pauseGame()});
 document.addEventListener("pointerlockerror",fall);
 addEventListener("mousemove",e=>{
 // a button released outside the page never sends mouseup, so trust the live button state to stop stuck fire
@@ -83,7 +83,7 @@ const dist=Math.hypot(P.vx,P.vz)*dt,n=Math.max(1,Math.ceil(dist/.22)),sdt=dt/n;l
 for(let i=0;i<n;i++){
 let nx=P.x+P.vx*sdt,nz=P.z+P.vz*sdt;
 if(blocked(nx,P.z,P.y,.4)&&!blocked(P.x,P.z,P.y,.4)){P.vx=0;nx=P.x;wallHit=true}
-const cb=(mode==="parkour"&&WORLD.course&&WORLD.course.bnd)?WORLD.course.bnd:{x0:-H,x1:H,z0:-H,z1:H};
+const cb=(typeof CustomBattle!=="undefined"&&CustomBattle.active)?{x0:-118,x1:118,z0:-118,z1:118}:(mode==="parkour"&&WORLD.course&&WORLD.course.bnd)?WORLD.course.bnd:{x0:-H,x1:H,z0:-H,z1:H};
 P.x=clamp(nx,cb.x0+.5,cb.x1-.5);
 if(blocked(P.x,nz,P.y,.4)&&!blocked(P.x,P.z,P.y,.4)){P.vz=0;nz=P.z;wallHit=true}
 P.z=clamp(nz,cb.z0+.5,cb.z1-.5)}
@@ -296,11 +296,12 @@ function leaveMatch(){const b=$("pleave");if(!b.classList.contains("arm")){b.cla
 function pauseMeta(){let i=["Arena"];try{i=BigMap.info()}catch(e){}
 $("pmeta").innerHTML=i.map(t=>`<span class="pill">${esc(t)}</span>`).join("");$("prestart").classList.toggle("hid",mode!=="parkour")}
 function pauseGame(){
-if(state!=="play"||menuOpen)return;clearKeys();Aim.release();syncSliders();BigMap.close();try{pauseQuests()}catch(e){}
+if(state!=="play"||menuOpen)return;if(CustomBattle.active){const panel=$("custom-battle-ui");if(panel)panel.hidden=true}clearKeys();Aim.release();syncSliders();BigMap.close();try{pauseQuests()}catch(e){}
 state="pause";menuOpen=false;disarmLeave();pauseMeta();
 document.body.classList.remove("playing");show("ps");
 const q=$("pq");q.classList.add("fresh");setTimeout(()=>q.classList.remove("fresh"),900)}
 function resume(){
+if(CustomBattle.active)return CustomBattle.resume();
 if(state!=="pause"&&state!=="play")return;
 BigMap.close();state="play";menuOpen=false;show("");document.body.classList.add("playing");Aim.reset();Aim.request();
 // 3s freeze after unpause — player and AI locked

@@ -89,8 +89,8 @@ worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
 rd.shadowMap.needsUpdate=!(fr&1)||S.gfx>1;
 rd.render(sc,cam);
-if(playing)Scope.lens(cg());
-if(playing||paused||(state==="title"&&Title.fp)){rd.autoClear=false;rd.clearDepth();rd.render(VM.scene,VM.cam);rd.autoClear=true}
+if(playing&&!(CustomBattle.active&&!CustomBattle.joined))Scope.lens(cg());
+if((playing||paused||(state==="title"&&Title.fp))&&!(CustomBattle.active&&!CustomBattle.joined)){rd.autoClear=false;rd.clearDepth();rd.render(VM.scene,VM.cam);rd.autoClear=true}
 if(!(fr&1))Bloom.draw();Flare.draw();
 }catch(e){
 rd.autoClear=true;
