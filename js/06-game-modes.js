@@ -135,6 +135,7 @@ function placePlayer(s,yaw,fz){
 Object.assign(P,{x:s.x,y:0,z:s.z,vx:0,vz:0,vy:0,pitch:0,hp:P.max,dead:0,fz:fz||0,spd:0,rush:0,sinceHit:99,mantle:null,stepOff:0,landDip:0,prot:0,gr:true,jumping:false,air:0,jHeld:false,jpress:false,coy:0,jb:0,rk:0,sp:0,roll:0,crouch:0,slide:0,slideCD:0,grenCD:0,eye:1.7});
 P.yaw=yaw;endEmote();A.mag=cg().m;A.rl=0;scoped=false;rmb=false;cam.fov=75;cam.updateProjectionMatrix();lastYaw=yaw;lastPitch=0}
 function clearEnts(){
+if(typeof CustomBattle!=="undefined")CustomBattle.stop();
 try{inspClose(true)}catch(e){}try{pkBodyDrop()}catch(e){}
 E.forEach(e=>dropModel(e.g,e.tag));E=[];dying.forEach(d=>dropModel(d.g));dying=[];
 pu.forEach(p=>dropModel(p.g));pu=[];rT.forEach(m=>dropModel(m));rT=[];projs.forEach(o=>sc.remove(o.m));projs.length=0}
@@ -143,6 +144,7 @@ state="play";menuOpen=false;show("");$("hud").classList.remove("hid");document.b
 clearKeys();Aim.reset();Aim.request()}
 async function startGame(m){S.name=cleanName($("nm").value)||S.name||"Player";sv();startGame0(m)}
 function startGame0(m){
+if(CustomBattle.isMode(m)){CustomBattle.start(m);return}
 stageBusy=false;stageDone=0;if(stageEl)stageEl.classList.remove("on");
 ghostW=false;try{Death.stop()}catch(e){}
 try{Mus.set("battle")}catch(e){}
@@ -195,6 +197,7 @@ snd(win||mode==="waves"||mode==="range"?"win":"lose")}
 
 // ---------- damage ----------
 function hit(d,src){
+if(CustomBattle.active)return CustomBattle.playerHurt(d,src);
 if(state!=="play"||menuOpen||P.dead>0||rL>0||P.fz>0||P.prot>0)return;
 if(grind)d*=.12;snd("hurt");P.hp-=d*PU.arm;P.sinceHit=0;dmgFlash();P.rk+=.02;hurtDir(src);lastSrc=src||null;
 if(P.hp<=0){P.hp=0;die()}}
@@ -217,6 +220,7 @@ function critFx(pt){
 snd("head",1.2);snd("kill",.5);flash("CRIT!",500);flashScreen("#fbbf24");
 if(pt)Fx.burst(pt,0xfbbf24,16,7,.09,2.5,20);hitMark(true)}
 function hurtE(e,d,head,pt){
+if(e.custom)return CustomBattle.playerDamage(e,d,head,pt);
 if(e.hp<=0||e.em>0||e.phz)return;
 // boss is invulnerable while any of its minion wave is still alive
 if(e.boss){const minions=E.filter(x=>x!==e&&x.t==="mon"&&x.minion&&x.hp>0);if(minions.length){flash("Clear the minions first!",700);snd("ui",.4);return}}
