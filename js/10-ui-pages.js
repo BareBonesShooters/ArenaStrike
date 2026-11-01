@@ -8,6 +8,7 @@ const ico=(n,s)=>`<svg class="ic"${s?` style="width:${s}px;height:${s}px"`:""} a
 const seg=(a,items,cur)=>items.map(([v,l])=>`<button class="b${String(cur)===String(v)?" on":""}" data-a="${a}" data-v="${v}">${l}</button>`).join("");
 
 function show(v){
+if(v!=="pg")LoadoutPreview.stop();
 try{if(v==="lobby"&&!bkReady)backdrop()}catch(e){}
 if(v==="")bkReady=false;
 try{if(view==="pg"&&v!=="pg"&&typeof Thumb!=="undefined")Thumb.flush()}catch(e){}
@@ -18,6 +19,7 @@ if(HUDV.includes(v)){const h=$("hud");if(h)h.classList.add("hid")}
 try{if(rd&&rd.domElement)rd.domElement.style.pointerEvents=(v===""||v==="hud")?"auto":"none"}catch(e){}
 view=v}
 function goLobby(){
+LoadoutPreview.stop();
 try{Death.stop()}catch(e){}
 try{Party.leave()}catch(e){}
 try{Aim.release()}catch(e){}
@@ -139,14 +141,17 @@ addEventListener("resize",go);document.fonts&&document.fonts.ready.then(go);
 return{sync:go}})();
 // ---------- pages ----------
 function openPage(v){if(v==="bp")BPV.ch=-1;
-if(!PG[v])return;PAGE=v;Thumb.flush();$("pgt").textContent=PG[v].t;$("pgb").classList.remove("still");$("pgb").scrollTop=0;
+if(!PG[v])return;
+if(PAGE==="load"&&v!=="load"&&Mus.prev){Mus.prev=null;Mus.go()}
+PAGE=v;Thumb.flush();$("pgt").textContent=PG[v].t;$("pgb").classList.remove("still");$("pgb").scrollTop=0;
 renderPage(false);show("pg");const b=document.querySelector("#pg .sh-h .b");if(b)b.focus({preventScroll:true});
 }
 function renderPage(still){
+LoadoutPreview.stop();
 const b=$("pgb"),st=b.scrollTop,sl=[...b.querySelectorAll(".strip")].map(s=>s.scrollLeft);
 if(still!==false)b.classList.add("still");
 b.innerHTML=PG[PAGE].f();b.querySelectorAll(".strip").forEach((s,i)=>{s.scrollLeft=sl[i]||0});b.scrollTop=st;
-paintCoins();fillThumbs(b);Cine.scan(b);paintRanges();Glide.sync()}
+paintCoins();fillThumbs(b);Cine.scan(b);paintRanges();Glide.sync();LoadoutPreview.mount(b)}
 
 // shop
 function roll(c){
@@ -244,6 +249,143 @@ o=o||{};return`<div class="sec"><h3>${title}</h3><div class="strip">`+L.filter(o
 const LK={cat:"g",sel:null,own:0};
 const LKC=[["g","Guns",G,"gun","g"],["s","Skins",SK,"paint","s"],["k","Knives",KN,"blade","k"],["p","Outfits",PS,"shirt","p"],["m","Emotes",EM,"shuf","e"],["bg","Backgrounds",BG,"prism","bg"],["av","Avatars",AV,"cool","av"],["u","Music discs",MU,"disc","mh"],["f","Finishers",FN,"burst","fin"]];
 const lkEq=(c,e)=>c==="f"?finId():c==="bg"||c==="av"?S[c]:c==="u"?S[LK.ms||"mh"]:c==="m"?e.e[LD.slot]:e[c];
+// One reusable renderer; models, effects and scheduled bursts belong to this panel.
+const LoadoutPreview=(()=>{
+let renderer=null,scene=null,camera=null,model=null,host=null,observer=null,raf=0,last=0;
+let item=null,cat="",time=0,paused=false,cycle=-1,queue=[],particles=[],mesh=null,flash=0;
+let pivot=null,radius=1,targetY=0,baseY=0,cursor=0;
+const matrix=new T.Matrix4(),rotation=new T.Quaternion(),pos=new T.Vector3(),scale=new T.Vector3(),color=new T.Color();
+const zero=new T.Matrix4().makeScale(0,0,0),reduced=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+function markup(it,c){
+if(c==="bg"||c==="av"){
+const bg=c==="bg"?it:I(S.bg),av=c==="av"?it:I(S.av);
+return`<div class="lk-profile" style="background:${bg.css}" role="img" aria-label="${esc(it.n)} profile preview"><span>${gly(av.e)}</span><b>${esc(S.name)}</b><small>Profile preview</small></div>`}
+if(!["g","s","k","p","m","f"].includes(c))return thumb(it,{w:420,h:250});
+return`<div class="lk-live" data-preview="${it.id}" data-category="${c}"><div class="lk-fallback">${thumb(it,{w:420,h:250,sk:c==="g"?eq().s:undefined})}</div><i class="lk-flash" aria-hidden="true"></i></div><div class="lk-controls"><small class="lk-preview-status">Loading preview…</small><button class="b" data-a="lkplay" disabled>Pause preview</button><button class="b" data-a="lkreplay" disabled>Replay</button></div>`}
+function release(){
+if(!scene)return;
+// These materials, textures and blob geometry are also used by the match.
+const shared=new Set([MDK,MMT,MWD,MGL,MBL,MRD,MMG,RAILM,HURT,BLOBM,...Object.values(SKM)]);
+const maps=new Set([ENV,FLASH,BLOBT]);shared.forEach(m=>{if(m)Object.values(m).forEach(v=>{if(v&&v.isTexture)maps.add(v)})});
+const geometries=new Set(),materials=new Set(),textures=new Set();
+scene.traverse(o=>{
+if(o.geometry&&o.geometry!==BLOBG&&!o.isSprite)geometries.add(o.geometry);
+for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])if(!shared.has(m)){
+materials.add(m);Object.values(m).forEach(v=>{if(v&&v.isTexture&&!maps.has(v))textures.add(v)})}
+});
+geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
+if(mesh&&mesh.dispose)mesh.dispose();
+if(renderer)renderer.renderLists.dispose();
+}
+function stop(){
+cancelAnimationFrame(raf);raf=0;if(observer)observer.disconnect();observer=null;
+release();if(renderer)renderer.domElement.remove();
+scene=camera=model=host=item=pivot=mesh=null;queue=[];particles=[];last=0;
+}
+function resize(){
+if(!host||!camera)return;
+const w=host.clientWidth||300,h=host.clientHeight||260;
+renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+const angle=Math.atan(Math.tan(camera.fov*Math.PI/360)*Math.min(1,camera.aspect));
+const distance=radius/Math.sin(angle)*1.1;
+camera.position.set(0,targetY+distance*.07,distance);camera.lookAt(0,targetY,0);
+renderer.render(scene,camera);
+}
+function burst(p,col,n,spd,size,up,grav){
+for(let i=0;i<Math.max(2,n||14);i++){
+const o=particles[cursor=(cursor+1)%particles.length],a=rnd()*6.283,e=rnd()*2-.4,sp=(spd||5)*(.3+rnd()*.7);
+Object.assign(o,{x:p.x,y:p.y,z:p.z,vx:Math.cos(a)*sp*(1-Math.abs(e)*.3),vz:Math.sin(a)*sp*(1-Math.abs(e)*.3),vy:e*sp+(up||0),l:.5+rnd()*.5,s:(size||.1)*(.6+rnd()*.8),g:grav==null?14:grav});
+o.max=o.l;mesh.setColorAt(cursor,color.setHex(col))}
+mesh.instanceColor.needsUpdate=true;
+}
+function stepParticles(dt){
+for(let i=0;i<particles.length;i++){
+const o=particles[i];if(o.l<=0)continue;o.l-=dt;
+if(o.l<=0){mesh.setMatrixAt(i,zero);continue}
+o.vy-=o.g*dt;o.x+=o.vx*dt;o.y+=o.vy*dt;o.z+=o.vz*dt;
+if(o.y<.03){o.y=.03;o.vy*=-.3;o.vx*=.6;o.vz*=.6}
+const k=o.s*Math.min(1,o.l/o.max*2);pos.set(o.x,o.y,o.z);scale.set(k,k,k);mesh.setMatrixAt(i,matrix.compose(pos,rotation,scale))}
+mesh.instanceMatrix.needsUpdate=true;
+}
+function advance(dt){
+time+=dt;
+if(cat==="m")model.position.y=baseY+danceHuman(model,time,item.k,.35);
+else if(cat==="f"){
+const next=Math.floor(time/3.5),phase=time%3.5;
+model.visible=phase<.45;
+if(phase>=.45&&next!==cycle){cycle=next;playFinisher(item,{x:0,y:0,z:0},{burst,
+later(fn,ms){queue.push({at:time+ms/1000,fn})},
+flash(c){flash=.12;host.querySelector(".lk-flash").style.background=c}})}
+const due=queue.filter(q=>q.at<=time);queue=queue.filter(q=>q.at>time);due.forEach(q=>q.fn());stepParticles(dt);
+flash=Math.max(0,flash-dt*.5);host.querySelector(".lk-flash").style.opacity=flash;
+}else pivot.rotation.y=time*.6;
+}
+function controls(){
+if(!host)return;const bar=host.nextElementSibling;
+bar.querySelector('[data-a="lkplay"]').textContent=paused?"Play preview":"Pause preview";
+bar.querySelector("small").textContent=paused?"Paused":cat==="f"?"Effect preview · looping":cat==="m"?"Emote preview · looping":"360° preview";
+bar.querySelectorAll("button").forEach(b=>b.disabled=false);
+}
+function reset(){
+time=0;cycle=-1;queue=[];flash=0;cursor=0;
+if(mesh){particles.forEach((p,i)=>{p.l=0;mesh.setMatrixAt(i,zero)});mesh.instanceMatrix.needsUpdate=true}
+if(host)host.querySelector(".lk-flash").style.opacity=0;
+advance(0);renderer.render(scene,camera);
+}
+function frame(now){
+if(!host||!host.isConnected||view!=="pg"||PAGE!=="load"){stop();return}
+raf=requestAnimationFrame(frame);
+if(document.hidden||paused){last=0;return}
+const box=host.getBoundingClientRect();if(box.bottom<0||box.top>innerHeight){last=0;return}
+if(last&&now-last<1000/30)return;
+const dt=last?Math.min(.06,(now-last)/1000):0;last=now;
+advance(dt);renderer.render(scene,camera);
+}
+function mount(root){
+if(PAGE!=="load")return;
+if(LK.cat!=="u"&&Mus.prev){Mus.prev=null;Mus.go()}
+host=root.querySelector("[data-preview]");if(!host)return;
+const panel=host;
+try{
+item=I(host.dataset.preview);cat=host.dataset.category;
+if(!renderer){renderer=new T.WebGLRenderer({antialias:!SOFT,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x000000,0)}
+scene=new T.Scene();scene.add(new T.HemisphereLight(0xdfe9ff,0x303040,1));
+const key=new T.DirectionalLight(0xffffff,1.15);key.position.set(3,4,5);scene.add(key);
+const rim=new T.DirectionalLight(0x8ab4ff,.8);rim.position.set(-4,3,-3);scene.add(rim);
+camera=new T.PerspectiveCamera(35,1,.05,100);pivot=new T.Group();scene.add(pivot);
+const outfit=cat==="p"?item:I(eq().p);
+if(cat==="g"||cat==="s"){model=buildGun(cat==="g"?item:GB(eq().g),cat==="s"?item:I(eq().s)).grp;model.rotation.y=Math.PI/2+.4}
+else if(cat==="k"){model=buildKnife(item).grp;model.rotation.set(0,-Math.PI/2-.35,.25)}
+else{model=mkHuman({body:outfit.c,trim:outfit.t,style:outfit.sty});model.rotation.y=.35}
+pivot.add(model);
+model.traverse(o=>{if(o.userData.blob)o.visible=false});
+baseY=cat==="m"||cat==="f"?.04:0;
+if(cat==="m"||cat==="f"){
+targetY=cat==="f"?2.8:1.45;radius=cat==="f"?3.65:2.1;
+const floor=new T.Mesh(new T.CircleGeometry(cat==="f"?4:1.7,48),new T.MeshBasicMaterial({color:0x334155,transparent:true,opacity:.35,side:T.DoubleSide}));floor.rotation.x=-Math.PI/2;floor.position.y=-.04;scene.add(floor);
+}else{
+const box=new T.Box3().setFromObject(model),center=box.getCenter(new T.Vector3()),size=box.getSize(new T.Vector3());
+model.position.sub(center);radius=size.length()/2;targetY=0;
+}
+if(cat==="f"){
+mesh=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshBasicMaterial(),320);mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
+particles=Array.from({length:320},(_,i)=>{mesh.setMatrixAt(i,zero);mesh.setColorAt(i,color.setHex(0xffffff));return{l:0}});scene.add(mesh);
+}
+const canvas=renderer.domElement;canvas.setAttribute("role","img");canvas.setAttribute("aria-label",item.n+" preview");host.appendChild(canvas);host.classList.add("ready");
+paused=reduced();resize();reset();
+// Reduced motion starts on a representative still; Play is always available.
+if(paused){for(let i=0;i<48;i++)advance(1/60);renderer.render(scene,camera)}
+controls();observer=new ResizeObserver(resize);observer.observe(host);raf=requestAnimationFrame(frame);
+}catch(error){
+stop();panel.classList.remove("ready");panel.nextElementSibling.querySelector("small").textContent="Live preview unavailable";
+console.warn("Loadout preview unavailable",error);
+}}
+function toggle(){if(!host)return;paused=!paused;last=0;controls()}
+function replay(){if(!host)return;paused=false;last=0;reset();controls()}
+function reveal(){const panel=document.querySelector(".lkp");if(panel&&matchMedia("(max-width: 860px)").matches)panel.scrollIntoView({block:"start",behavior:"instant"})}
+return{markup,mount,stop,toggle,replay,reveal};
+})();
+
 function pLoad(){
 const e=eq(),C=LKC.find(x=>x[0]===LK.cat)||LKC[0],L=C[2].filter(x=>!LK.own||owns(x)),sk=e.s;
 const cur=lkEq(C[0],e),isEq=it=>C[0]==="m"?e.e.includes(it.id):C[0]==="u"?(it.id===S.mh||it.id===S.mm):cur===it.id;
@@ -257,7 +399,7 @@ if(pv&&C[0]==="f")note=(owns(pv)?(isEq(pv)?"Equipped. It plays on every eliminat
 let st="";if(pv&&C[0]==="g")st=statRow("Damage",pv.d*(pv.pel||1),mx(g=>g.d*(g.pel||1)),pv.d+(pv.pel?" x"+pv.pel:""))+statRow("Fire rate",1/pv.t,mx(g=>1/g.t),(1/pv.t).toFixed(1)+"/s")+statRow("Magazine",pv.m,mx(g=>g.m),pv.m)+statRow("Reload",pv.rl,3.2,pv.rl+"s",1);
 else if(pv&&C[0]==="k")st=statRow("Damage",KNIFE_D*KNM[pv.r],100,Math.round(KNIFE_D*KNM[pv.r]))+statRow("Reach",pv.s.len*(1+.04*pv.r),.75,Math.round(pv.s.len*(1+.04*pv.r)*100)+" cm");
 const rows=[["g","Gun",e.g],["s","Skin",e.s],["k","Knife",e.k],["p","Outfit",e.p],["f","Finisher",finId()],["bg","Background",S.bg],["av","Avatar",S.av],["mh","Home music",S.mh],["mm","Match music",S.mm]].map(([c,l,id])=>{const it=I(id),ms=c==="mh"||c==="mm";return`<button class="lkr${ms?(C[0]==="u"&&(LK.ms||"mh")===c?" on":""):C[0]===c?" on":""}" data-a="${ms?"lkms":"lkcat"}" data-v="${c}" style="--rc:${it?rcol(it):"#94a3b8"}"><small>${l}</small><b>${it?esc(it.n):"None"}</b><i></i></button>`}).join("");
-h+=`<div class="lk"><aside class="lkp gl" aria-label="Preview"><div class="lkpv" style="--rc:${pv?rcol(pv):"#94a3b8"}">${pv?thumb(pv,{w:420,h:250,sk:C[0]==="g"?sk:undefined}):""}${pv&&isEq(pv)?`<span class="eqb big">${ico("check",14)}Equipped</span>`:pv&&!owns(pv)?`<span class="eqb lockb">${ico("lock",13)}Locked</span>`:""}</div>
+h+=`<div class="lk"><aside class="lkp gl" aria-label="Preview"><div class="lkpv" style="--rc:${pv?rcol(pv):"#94a3b8"}">${pv?LoadoutPreview.markup(pv,C[0]):""}${pv&&isEq(pv)?`<span class="eqb big">${ico("check",14)}Equipped</span>`:pv&&!owns(pv)?`<span class="eqb lockb">${ico("lock",13)}Locked</span>`:""}</div>
 <div class="lkn" style="--rc:${pv?rcol(pv):"#94a3b8"}"><small class="rar">${pv?R[pv.r]:""} ${C[1].replace(/s$/,"")}</small><h3>${pv?esc(pv.n):"Nothing here"}</h3><p>${esc(note)}</p></div>${st?`<div class="stats lks">${st}</div>`:""}${wshBtn(pv)}${C[0]==="u"?discPanel(pv):""}
 <div class="lkh"><small>This loadout</small></div><div class="lkrs">${rows}</div>
 <div class="lkh"><small>Emote slots, keys 3 to 7</small></div><div class="slots5">`+[0,1,2,3,4].map(i=>{const it=e.e[i]&&I(e.e[i]);return`<button class="slot${LD.slot===i&&C[0]==="m"?" on":""}" data-a="slot" data-v="${i}" aria-label="Emote slot ${i+1}">${it?gly(it.e):ico("close",18)}<small>Key ${i+3}</small></button>`}).join("")+`</div></aside>
@@ -838,6 +980,8 @@ if(f==="bg"||f==="av")S[f]=it.id;else if(["g","k","s","p"].includes(f)&&PRE(it.i
 sv();snd("ui",.7);renderPage(true)},
 slot(e){LD.slot=clamp(+e.dataset.v|0,0,4);if(PAGE==="load")LK.cat="m";renderPage(true)},
 lkcat(e){const c=e.dataset.v;if(LKC.some(x=>x[0]===c)){LK.cat=c;LK.sel=null;snd("ui",.4)}renderPage(true)},
+lkplay(){LoadoutPreview.toggle()},
+lkreplay(){LoadoutPreview.replay()},
 lkown(){LK.own=LK.own?0:1;renderPage(true)},
 lkms(e){LK.cat="u";LK.ms=e.dataset.v==="mm"?"mm":"mh";LK.sel=null;snd("tab",.5);renderPage(true)},
 dskeq(e){const it=I(e.dataset.v),s=e.dataset.s;if(!it||!owns(it)||PRE(it.id)!=="u"||(s!=="mh"&&s!=="mm"))return;S[s]=it.id;sv();Mus.prev=null;Mus.go();snd("disc",.8);toast(it.n+(s==="mh"?" is now your home music":" is now your match music"));renderPage(true)},
@@ -846,8 +990,9 @@ if(!p||p.id!==it.id)Mus.prev={id:it.id,kind:"lobby"};else if(p.kind==="lobby")Mu
 wsh(e){wshOpen(e.dataset.v)},
 wshx(e){wshClose()},
 lkpick(e){const it=I(e.dataset.v),c=LK.cat;if(!it)return;LK.sel=it.id;
-if(owns(it)){if(c==="bg"||c==="av")S[c]=it.id;else if(c==="f")S.fin=it.id;else if(c==="m")eq().e[LD.slot]=it.id;else if(c==="u"){S[LK.ms||"mh"]=it.id;Mus.prev=null;Mus.go()}else if(["g","s","k","p"].includes(c))eq()[c]=it.id;sv();snd(c==="u"?"disc":"equip",.8)}else snd("err",.7);
-renderPage(true)},
+if(owns(it)){if(c==="bg"||c==="av")S[c]=it.id;else if(c==="f")S.fin=it.id;else if(c==="m")eq().e[LD.slot]=it.id;else if(c==="u"){S[LK.ms||"mh"]=it.id;Mus.prev=null;Mus.go()}else if(["g","s","k","p"].includes(c))eq()[c]=it.id;sv();snd(c==="u"?"disc":"equip",.8)}else snd("ui",.4);
+if(c==="u"){Mus.prev={id:it.id,kind:(LK.ms||"mh")==="mm"?"battle":"lobby"};Mus.go()}
+renderPage(true);LoadoutPreview.reveal()},
 em(e){const id=e.dataset.v,it=id?I(id):null;if(id&&(!it||!owns(it)||PRE(id)!=="m"))return;
 eq().e[LD.slot]=id;sv();snd("ui",.7);renderPage(true)},
 icat(e){IDX.cat=e.dataset.v;const C=CATS.find(c=>c[0]===IDX.cat);if(C&&C[2]&&!C[2].includes(I(IDX.sel)))IDX.sel=C[2][0].id;renderPage()},
