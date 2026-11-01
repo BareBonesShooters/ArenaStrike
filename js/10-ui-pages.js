@@ -622,11 +622,16 @@ ${unlocked?`<div class="code-access">${ico("check",18)}Custom mode unlocked</div
 <p id="developer-status" class="code-status" role="status" aria-live="polite"></p></section></div>`
 }
 function codeStatus(id,message,ok){const el=$(id);if(el){el.textContent=message;el.classList.toggle("success",!!ok);el.classList.toggle("error",!ok)}}
-function submitReward(){
-const input=$("reward-code"),result=redeemCode(input.value);codeStatus("redeem-status",result.message,result.ok);
+async function submitReward(form){
+const input=form.querySelector("input"),button=form.querySelector("button");if(button.disabled)return;
+button.disabled=true;button.textContent="Checking…";
+try{const result=await redeemCode(input.value);if(!form.isConnected)return;
+codeStatus("redeem-status",result.message,result.ok);
 input.setAttribute("aria-invalid",String(!result.ok));snd(result.ok?"chest":"err",.7);
 if(!result.ok)return;
 input.value="";$("code-rewards").innerHTML=result.items.map(id=>{const it=I(id);return`<article class="code-reward" style="--rc:${rcol(it)}">${thumb(it,{w:240,h:150})}<b>${esc(it.n)}</b><small>${PRE(id)==="s"?"Gun skin":PRE(id)==="p"?"Outfit":"Item"} · Unlocked</small></article>`}).join("");fillThumbs($("code-rewards"))
+}catch(error){if(form.isConnected)codeStatus("redeem-status",error.message,false)}
+finally{if(button.isConnected){button.disabled=false;button.textContent="Redeem"}}
 }
 async function submitDeveloper(form){
 const input=form.querySelector("input"),button=form.querySelector("button");if(button.disabled)return;
@@ -639,7 +644,7 @@ else{codeStatus("developer-status","Incorrect code. Custom mode is still locked.
 finally{if(button.isConnected){button.disabled=false;button.textContent="Unlock"}}
 }
 document.addEventListener("submit",event=>{
-if(event.target.id==="redeem-form"){event.preventDefault();submitReward()}
+if(event.target.id==="redeem-form"){event.preventDefault();submitReward(event.target)}
 else if(event.target.id==="developer-form"){event.preventDefault();submitDeveloper(event.target)}
 });
 const PG={shop:{t:"Shop",f:pShop},load:{t:"Loadout",f:pLoad},codes:{t:"Redeem codes",f:pCodes},bp:{t:"Battle Pass",f:pBP},index:{t:"Index",f:pIndex},quests:{t:"Quests",f:pQuests},board:{t:"Leaderboard",f:pBoard},updates:{t:"Update Log",f:pUpdates},help:{t:"How to play",f:pHelp},servers:{t:"Servers",f:pServers}};

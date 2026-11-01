@@ -328,8 +328,12 @@ const CODE_ITEMS=[
 {id:"p_dev",n:"Dev",c:0x121827,t:0xff8a3d,r:5,sty:"dev",codeOnly:1}
 ];
 CODE_ITEMS.forEach(it=>{(PRE(it.id)==="s"?SK:PS).push(it);IDM[it.id]=it;ALL.push(it)});
-// Add reward codes here. Each code can grant items, coins, or both once per save.
-const REDEEM_CODES={DEV:{items:["s_dev","p_dev"],coins:0}};
+// Deployment supplies hashes and rewards only; code text stays in GitHub Secrets.
+async function rewardCodeHash(code){
+if(!globalThis.crypto||!crypto.subtle)throw new Error("Open the game using HTTPS or localhost to redeem codes.");
+const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(code));
+return Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,"0")).join("")
+}
 
 // This is a browser-only convenience gate, not server-side authorization.
 // Only a hash is shipped; developer access is never restored from a saved flag.
@@ -351,14 +355,21 @@ lock(){attempt++;unlocked=false;if(S.opt)S.opt.grind=false;sv()},
 canGrind(gameMode,online){return unlocked&&gameMode==="waves"&&!online&&!!(S.opt&&S.opt.grind)}
 }})();
 
-function redeemCode(raw){
+async function redeemCode(raw){
 const code=String(raw||"").trim().toUpperCase();
 if(!code)return{ok:false,message:"Enter a reward code first."};
-if(!Object.prototype.hasOwnProperty.call(REDEEM_CODES,code))return{ok:false,message:"That code is not valid. Check it and try again."};
-if(S.redeemed.includes(code))return{ok:false,message:"You already redeemed this code on this save."};
-const reward=REDEEM_CODES[code],items=(reward.items||[]).map(I),coins=reward.coins||0;
-if(items.some(it=>!it)||!Number.isSafeInteger(coins)||coins<0)return{ok:false,message:"This reward is unavailable. Please try again later."};
-items.forEach(it=>{S.own[it.id]=1});S.coins+=coins;S.redeemed.push(code);sv();
+if(!/^[A-Z0-9][A-Z0-9_-]{0,63}$/.test(code))return{ok:false,message:"That code is not valid. Check it and try again."};
+const manifest=globalThis.ARENA_REWARD_CODES;
+if(!manifest||manifest.version!==1||!manifest.rewards||typeof manifest.rewards!=="object")return{ok:false,message:"Rewards could not load. Refresh the game and try again."};
+const hash=await rewardCodeHash(code),claim="sha256:"+hash;
+if(!Object.prototype.hasOwnProperty.call(manifest.rewards,hash))return{ok:false,message:"That code is not valid. Check it and try again."};
+// Recognize claims made before hashed codes were introduced, too.
+if(S.redeemed.includes(claim)||S.redeemed.includes(code))return{ok:false,message:"You already redeemed this code on this save."};
+const reward=manifest.rewards[hash];
+if(!reward||!Array.isArray(reward.items))return{ok:false,message:"This reward is unavailable. Please try again later."};
+const items=reward.items.map(I),coins=reward.coins;
+if(items.some(it=>!it)||!Number.isSafeInteger(coins)||coins<0||(!items.length&&!coins)||!Number.isSafeInteger(S.coins+coins))return{ok:false,message:"This reward is unavailable. Please try again later."};
+items.forEach(it=>{S.own[it.id]=1});S.coins+=coins;S.redeemed.push(claim);sv();
 return{ok:true,items:items.map(it=>it.id),coins,message:"Redeemed! "+items.map(it=>it.n+" "+(PRE(it.id)==="s"?"skin":PRE(it.id)==="p"?"outfit":"item")).concat(coins?[coins+" coins"]:[]).join(" + ")+" added to your collection."}
 }
 // guns are listed from lowest to highest rarity everywhere (loadout, index, shooting range). ids never change, so saves stay valid
