@@ -1,64 +1,51 @@
-# Manage reward codes with GitHub Secrets
+# Add reward codes
 
-Use your existing repository: [bare-bones-3d/shooter](https://github.com/bare-bones-3d/shooter). No new repository is needed.
+Open `js/01-core.js` in your existing GitHub repository and click the pencil to edit it. The code list is at the very top, under **EDIT REWARD CODES HERE**.
 
-## One-time setup
-
-1. Upload the update files to the **same paths** in your existing repository. Replace existing files and add the new ones. Do not upload the ZIP itself or an extra outer folder.
-2. Open **Settings → Secrets and variables → Actions → Secrets → New repository secret**. Name it **GAME_CODES**. Paste this as the value:
-
-   ```json
-   {
-     "DEV": { "items": ["s_dev", "p_dev"] },
-     "BONUS": { "coins": 5000 }
-   }
-   ```
-
-   This enables `DEV` for the Dev skin and outfit, and `BONUS` for 5,000 coins. Replace `BONUS` with your own code if you want to keep it private. Use **Secrets**, not Variables. Keep the JSON in the secret field; do not commit your real private codes to a file.
-3. Open **Settings → Pages → Build and deployment → Source** and select **GitHub Actions**. You need the repository owner's help if you cannot change this setting. The included workflow handles deployment; you do not need to create another one from a template.
-4. Open **Actions → Deploy game → Run workflow**, choose **main**, then click **Run workflow**. Wait for both build and deploy to turn green. A run triggered before you created the secret or enabled Pages might fail; run it again after completing these steps.
-5. Open the game URL shown by the successful deployment, normally [bare-bones-3d.github.io/shooter](https://bare-bones-3d.github.io/shooter/). Refresh the game, select **Redeem codes** and enter a code.
-
-GitHub's instructions: [create a repository secret](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets) and [use GitHub Actions for Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
-
-## Adding or changing codes later
-
-1. Open the `GAME_CODES` secret and replace its value with your **complete updated list**. Keep the entries you still want active. GitHub does not show the old secret value, so keep your own private copy.
-2. Open **Actions → Deploy game → Run workflow → main → Run workflow**.
-3. Wait for the green deployment, then refresh the game.
-
-Changing a secret alone does not deploy it. A push to `main` also runs this workflow. Removing an entry disables that code after deployment and a page refresh; already earned rewards remain. Codes are once per browser save, so changing a code's reward does not let previous claimants collect it again. Give the new reward a different code to allow another claim. Use `{}` to disable all reward codes. A missing or invalid secret stops deployment and leaves the last successful site live.
-
-Example with coins and both Dev cosmetics:
-
-```json
-{
-  "DEV": { "items": ["s_dev", "p_dev"] },
-  "SUMMER-GIFT": { "coins": 5000 },
-  "SPECIAL-GIFT": { "items": ["s_dev", "p_dev"], "coins": 1000 }
-}
+```js
+const REDEEM_CODES = {
+  "DEV": { items: ["s_dev", "p_dev"] },
+  // "BONUS": { coins: 5000 },
+  // "GIFT": { items: ["s_dev", "p_dev"], coins: 1000 },
+};
 ```
 
-Use double quotes and commas between entries, with no comma after the last entry. Codes ignore case and surrounding spaces, are 1–64 characters long, and use letters, numbers, hyphens and underscores. Start with a letter or number. `items` must contain existing game item IDs; `coins` must be a nonnegative whole number. Include at least one item or a positive coin amount. This feature grants existing items; new skin designs still need game code.
+`DEV` is already enabled. Lines beginning with `//` are disabled examples. To enable `BONUS`, remove the two slashes from its line. You can change its name and coin amount:
 
-The Custom mode developer password is separate and remains unchanged.
+```js
+const REDEEM_CODES = {
+  "DEV": { items: ["s_dev", "p_dev"] },
+  "WELCOME": { coins: 5000 },
+  "SPECIAL": { items: ["s_dev", "p_dev"], coins: 1000 },
+};
+```
 
-## Upload paths if you cannot drag folders
+Click **Commit changes**. After your usual GitHub Pages deployment finishes, refresh the game. Players enter the code on the **Redeem codes** screen.
 
-Upload each file **inside its matching GitHub folder**. For a missing folder, use **Add file → Create new file**, type the full path including `/`, then paste that file's text. GitHub creates the folders for you. In particular, create the workflow as `.github/workflows/deploy-pages.yml`, including the leading dot.
-
-| GitHub folder | Files to upload |
+| Reward | Entry to copy |
 | --- | --- |
-| Repository root | `index.html`, `README.md`, `SETUP-CODES.md`, `.gitignore` |
-| `js` | `01-core.js`, `10-ui-pages.js`, `reward-codes.js` |
-| `scripts` | `build-pages.cjs` |
-| `tests` | `rewards.test.cjs`, `build-pages.test.cjs`, `game-harness.cjs` |
-| `.github/workflows` | `deploy-pages.yml` |
+| Coins | `"MYCODE": { coins: 5000 },` |
+| Dev weapon skin | `"MYCODE": { items: ["s_dev"] },` |
+| Dev outfit | `"MYCODE": { items: ["p_dev"] },` |
+| Both plus coins | `"MYCODE": { items: ["s_dev", "p_dev"], coins: 1000 },` |
 
-The tests are required by this workflow. The ZIP contains only changed/new files; keep the other existing game files. If Windows hides `.github`, turn on hidden items in File Explorer or create the workflow using the full path on GitHub.
+Keep a comma after each entry. Use each code name once; case and surrounding spaces do not matter. Names can use 1–64 letters, numbers, hyphens or underscores, starting with a letter or number. Other existing game item IDs work in `items` too. New skin designs still need to be added to the game first.
 
-## What is public
+To disable a code, delete its line or put `//` at the start of the line. Already earned rewards remain. Each code is once per browser save, including claims from the previous versions. Use a new code name to give previous claimants another reward.
 
-The deployed game contains only code hashes and rewards, never the raw `GAME_CODES` secret. Build logs do not print secret values, including on malformed JSON. The build publishes only game HTML, CSS and JavaScript, excluding tests and build scripts.
+The list is visible in the game's source. Use game-only reward codes. Custom mode still uses its separate developer password.
 
-This is a browser-only game: short codes can be guessed from their hashes, and players can modify their own local saves. Use long random game-only codes if you want them harder to guess. Secure, account-based validation requires a server. The Dev code was already public, so moving it into a secret does not remove it from old commits or documentation.
+## Installing this simpler version
+
+Only two replacements are needed for gameplay and deployment:
+
+1. Replace `js/01-core.js` in the existing `js` folder.
+2. Replace `.github/workflows/deploy-pages.yml` in the existing `.github/workflows` folder.
+
+The updated workflow copies the game directly to Pages. It needs no `GAME_CODES` secret, reward manifest generation, build script or tests to deploy. If GitHub Pages uses GitHub Actions, wait for **Deploy game** to turn green after committing. If you have not changed the Pages source to GitHub Actions, select that setting once before using this workflow.
+
+The old `js/reward-codes.js` file is ignored by the game, so leaving it or its script tag in place is harmless. The old `GAME_CODES` secret is no longer read. There is no need to delete either to start using this version.
+
+The full update bundle also includes refreshed documentation, tests and an optional local preview builder. These files help development; the two replacements above are sufficient for the game and deployment.
+
+For local checks: `node --test tests/rewards.test.cjs tests/build-pages.test.cjs`. Run `node scripts/build-pages.cjs` only if you want a separate `_site` preview folder. Codes work on HTTPS sites such as GitHub Pages and on localhost. Hashed saved claim IDs remain compatible with the previous version.
