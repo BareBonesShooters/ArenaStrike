@@ -6,7 +6,7 @@
 // This list is public game code. Each reward can be claimed once per browser save.
 const REDEEM_CODES = {
   "DEV": { items: ["s_dev", "p_dev"] },
-  "Immortal": { items: ["s_immortal"] },
+  "IMMORTAL": { items: ["s_immortal"] },
   // "BONUS": { coins: 5000 },
   // "GIFT": { items: ["s_dev", "p_dev"], coins: 1000 },
 
