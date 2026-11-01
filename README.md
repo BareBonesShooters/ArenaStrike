@@ -1,12 +1,4 @@
-Arena Strike 3D - Beta 1.6
-
-Open index.html in a browser (a local server such as `python3 -m http.server` is the safest way; double-clicking also works in most browsers).
-
-index.html        page shell, icon sprite, CDN libraries (Three.js r128, Howler.js 2.2.4, PeerJS 1.5.4)
-css/style.css     all styling
-js/01..11-*.js    game code in load order (core, render+audio, world, models, player/input, modes, actions/HUD, parkour/radar, party/online, UI pages + cinematics, main loop)
-
-The scripts are classic scripts sharing one global scope, so keep the load order in index.html.
+Arena Strike 3D - Beta 1.6.1
 
 New in Beta 1.6 (and Beta 1.5)
 - Battle Pass: 150 tiers in six chapters (hero header, next-exclusive card, chapter tabs, Claim all, Skip tier); tiers 1-30 unchanged
