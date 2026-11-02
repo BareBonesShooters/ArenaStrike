@@ -23,18 +23,20 @@ const levels=[
 {n:"The final stand",budget:2200,hint:"A titan leads a mixed army. Build a force that covers several weaknesses.",enemy:[...line("titan",1,13,0),...line("shield",2,15,0,14),...line("rifle",4,24,0,6),...line("runner",4,19,0,7)]}
 ];
 const troop=id=>troops.find(t=>t.id===id),spent=(layout,team=0)=>layout.filter(u=>u.team===team).reduce((sum,u)=>sum+(troop(u.id)?.cost||0),0);
+const freePlacement=level=>typeof level?.id==="string"&&level.id.startsWith("level-");
 function placement(layout,id,team,x,z,campaign,level){
 const t=troop(id),limit=campaign?34:115;
 if(!t||![0,1].includes(team)||!Number.isFinite(x)||!Number.isFinite(z))return"Choose a valid unit and team.";
 if(Math.abs(x)>limit||Math.abs(z)>limit)return"Place inside the marked battlefield.";
 if(layout.length>=60)return"The field supports up to 60 units.";
-if(campaign&&(team!==0||x>-2))return"Place your army on the blue side of the field.";
-if(campaign&&spent(layout)+t.cost>levels[level].budget)return"Not enough budget. Remove a unit to refund its cost.";
+if(campaign&&team!==0)return"Choose a blue troop for your army.";
+if(campaign&&!freePlacement(level)&&x>-2)return"Place your army on the blue side of the field.";
+if(campaign&&spent(layout)+t.cost>(typeof level==="object"?level:levels[level]).budget)return"Not enough budget. Remove a unit to refund its cost.";
 if(layout.some(u=>Math.hypot(u.x-x,u.z-z)<(troop(u.id).scale||1)+(t.scale||1)))return"Leave a little space between units.";
 return"";
 }
 function result(blue,red){return blue===0&&red===0?"draw":red===0?"blue":blue===0?"red":null}
-return{troops,levels,troop,spent,placement,result,isMode:m=>m==="battle_sim"||m==="sandbox"};
+return{troops,levels,troop,spent,placement,result,freePlacement,isMode:m=>m==="battle_sim"||m==="sandbox"||m==="battle_maker"};
 })();
 
 const CustomBattle=(()=>{
@@ -42,6 +44,25 @@ let active=false,joined=false,campaign=false,level=0,team=0,pick=0,running=false
 let resetLayout=null,layout=[],units=[],bodies=[],shots=[],ui=null,stage=null,marker=null,hover=null,erase=false,drag=false,lastX=0,lastY=0,serial=0,notice="",hudTime=0;
 let speed=1,playerTeam=0,restoreCamera=null,pointer={x:0,y:0,seen:false};
 let scenery=null,landscape=0,placementGhost=null,ghostKey="",rangeRing=null,simTime=0,minimap=null,compact=false;
+let maker=false,testing=false,draft=null,baseRevision=null,makerBusy=false,loadSerial=0,editorSession=0,publishNote="",publishCommit="";
+let catalog=[];
+const draftKey="arena_battle_maker_draft_v1";
+const builtins=()=>BattleRules.levels.map((l,i)=>({...l,id:"builtin-"+i,map:BattleVisuals.maps[i%3].id}));
+const currentLevel=()=>maker?draft:catalog[level];
+const freePlacement=()=>campaign&&BattleRules.freePlacement(currentLevel());
+const editing=()=>maker&&!testing;
+const restricted=()=>maker&&!DevAccess.unlocked;
+function freshDraft(){return{id:"level-"+crypto.randomUUID(),n:"Untitled battle",hint:"Choose your troops and defeat the red army.",budget:600,map:"vale",enemy:[],updatedAt:""}}
+function saveDraft(){if(!maker||!draft)return;try{localStorage.setItem(draftKey,JSON.stringify({level:draft,revision:baseRevision}));return true}catch(e){publishNote="Draft could not save on this browser. Keep this page open until you publish.";return false}}
+function rememberArmy(){if(!editing())return;draft.enemy=layout.filter(e=>e.team===1).map(e=>({...e}));saveDraft()}
+function placementError(id,x,z){
+ if(editing()){
+  if(Math.abs(x)>34||Math.abs(z)>34)return"Place enemies anywhere inside the marked battlefield.";
+  if(layout.length>=BattleLevelData.MAX_ENEMIES)return"Use at most 40 enemies, leaving room for the player's army.";
+  return BattleRules.placement(layout,id,1,x,z,false,0);
+ }
+ return BattleRules.placement(layout,id,team,x,z,campaign,currentLevel());
+}
 const reducedMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)");
 const ray=new T.Raycaster();
 const colors=[0x55baff,0xff606d],hex=["#55baff","#ff606d"];
@@ -58,7 +79,7 @@ for(const b of bodies)dispose(b.g);for(const s of shots)dispose(s.mesh);
 units=[];bodies=[];shots=[];E=E.filter(e=>!e.custom);
 }
 function stop(){
-if(!active)return;active=false;joined=false;drag=false;clearUnits();dispose(stage);stage=marker=scenery=placementGhost=rangeRing=null;ghostKey="";minimap=null;ui?.remove();ui=null;layout=[];resetLayout=null;
+if(!active)return;rememberArmy();loadSerial++;editorSession++;if(maker)BattleLevels.disconnect();active=false;maker=false;testing=false;joined=false;drag=false;clearUnits();dispose(stage);stage=marker=scenery=placementGhost=rangeRing=null;ghostKey="";minimap=null;ui?.remove();ui=null;layout=[];resetLayout=null;
 WORLD.group?.children.forEach(o=>{if(o.geometry?.type==="PlaneGeometry"||o.geometry?.type==="CircleGeometry")o.visible=true});
 document.body.classList.remove("custom-battle","custom-joined");clearKeys();
 }
@@ -81,47 +102,86 @@ cam.position.set(P.x,P.y,P.z);cam.rotation.set(P.pitch,P.yaw,0,"YXZ");cam.fov=52
 function groundHeight(x,z){return scenery?scenery.height(x,z):0}
 function battlefield(){
 dispose(stage);placementGhost=rangeRing=null;ghostKey="";
-scenery=BattleVisuals.create(campaign,landscape);stage=scenery.group;sc.add(stage);BattleVisuals.light(landscape);
+scenery=BattleVisuals.create(campaign,landscape,freePlacement());stage=scenery.group;sc.add(stage);BattleVisuals.light(landscape);
 WORLD.group.children.forEach(o=>{if(o.geometry?.type==="PlaneGeometry"||o.geometry?.type==="CircleGeometry")o.visible=false});
 marker=new T.Mesh(new T.RingGeometry(.75,1,32),new T.MeshBasicMaterial({color:colors[0],side:T.DoubleSide,transparent:true,opacity:.9,depthWrite:false}));marker.rotation.x=-Math.PI/2;marker.visible=false;stage.add(marker);
 }
 function loadLevel(n){
-level=Math.max(0,Math.min(BattleRules.levels.length-1,n));resetLayout=null;simTime=0;clearUnits();if(campaign)landscape=level%BattleVisuals.maps.length;battlefield();layout=campaign?BattleRules.levels[level].enemy.map(e=>({...e})):[];
-layout.forEach(makeUnit);running=started=false;finished=null;team=0;erase=false;notice=campaign?"Place troops on the blue side, then start the battle.":"Choose a team and unit, then click the ground to place it.";overview();paint();
+level=Math.max(0,Math.min(catalog.length-1,n));resetLayout=null;simTime=0;clearUnits();if(campaign)landscape=Math.max(0,BattleVisuals.maps.findIndex(m=>m.id===currentLevel().map));battlefield();layout=campaign?currentLevel().enemy.map(e=>({...e})):[];
+layout.forEach(makeUnit);running=started=false;finished=null;team=editing()?1:0;erase=false;notice=editing()?"Place red enemies anywhere inside the battlefield. Set a budget, then test and publish.":freePlacement()?"Place blue troops anywhere inside the battlefield within your budget, then start the battle.":campaign?"Place troops on the blue side, then start the battle.":"Choose a team and unit, then click the ground to place it.";overview();paint();
 }
 function start(m){
-if(!BattleRules.isMode(m)||!DevAccess.unlocked){toast("Enter the developer code to unlock Custom mode.");return false}
+if(!BattleRules.isMode(m))return false;
+if(m==="battle_maker"&&!DevAccess.unlocked){toast("Enter the developer code to unlock Battle Sim Maker.");return false}
 Party.leave();Death.stop();corrReset();clearEnts();Fx.clear();clearKeys();
-mode=m;grind=false;campaign=m==="battle_sim";active=true;joined=false;speed=1;pick=0;level=0;landscape=0;simTime=0;compact=false;pointer.seen=false;P.max=100;PU=PUbase();
+mode=m;grind=false;maker=m==="battle_maker";editorSession++;testing=false;makerBusy=false;publishNote="";publishCommit="";catalog=builtins();campaign=m!=="sandbox";active=true;joined=false;speed=1;pick=0;level=0;landscape=0;simTime=0;compact=false;pointer.seen=false;P.max=100;PU=PUbase();
+if(maker){draft=freshDraft();baseRevision=null;try{const saved=JSON.parse(localStorage.getItem(draftKey));if(saved){draft=BattleLevelData.level(saved.level,{draft:true});baseRevision=typeof saved.revision==="string"?saved.revision:null}}catch(e){publishNote="The old draft could not be loaded. A new draft is ready."}}
 rL=0;P.fz=0;P.dead=0;slot=0;knifeCD=0;nextShot=0;wave=0;wq=wn=0;placePlayer({x:0,z:28},0,0);
 buildWorld("meadow",81261,{empty:true,custom:true});
-ui=document.createElement("section");ui.id="custom-battle-ui";ui.setAttribute("aria-label",campaign?"Battle Simulator controls":"Sandbox controls");document.body.appendChild(ui);
+ui=document.createElement("section");ui.id="custom-battle-ui";ui.setAttribute("aria-label",maker?"Battle Sim Maker controls":campaign?"Battle Simulator controls":"Sandbox controls");document.body.appendChild(ui);
 state="play";menuOpen=false;show("");$("hud").classList.remove("hid");document.body.classList.add("custom-battle");document.body.classList.remove("playing");Aim.release();
-Mus.set("battle");loadLevel(0);return true;
+Mus.set("battle");loadLevel(0);if(campaign&&!maker)refreshLevels();return true;
+}
+async function refreshLevels(){
+ const serial=++loadSerial;
+ try{
+  const rows=await BattleLevels.loadPublic(true);if(!active||serial!==loadSerial)return;
+  // Do not change an army or its budget while a battle is in progress.
+  if(!maker&&started)return;
+  const previous=currentLevel();catalog=[...builtins(),...rows];
+  if(!maker){const index=catalog.findIndex(l=>l.id===previous.id);level=Math.max(0,index);if(index<0||JSON.stringify(previous)!==JSON.stringify(currentLevel())){loadLevel(level);return}}
+  paint();
+ }
+ catch(e){if(active&&serial===loadSerial){notice=e.message;paint()}}
+}
+function testDraft(){
+ if(!editing()||restricted()||makerBusy)return;
+ try{rememberArmy();draft=BattleLevelData.level(draft);testing=true;loadLevel(0)}catch(e){message(e.message)}
+}
+function editDraft(){if(!maker||restricted()||makerBusy)return;testing=false;loadLevel(0)}
+function setDraft(value,revision=null){if(restricted()||makerBusy)return;draft=BattleLevelData.level(value,{draft:true});baseRevision=revision;publishNote="";publishCommit="";testing=false;saveDraft();loadLevel(0)}
+async function makerAction(action){
+ if(!maker||restricted()||makerBusy)return;
+ if(action==="maker-test")return testDraft();if(action==="maker-edit")return editDraft();
+ if(action==="maker-new")return setDraft(freshDraft());
+ if(action==="maker-disconnect"){BattleLevels.disconnect();publishNote="GitHub disconnected.";paint();return}
+ if(!editing())return;
+ const session=editorSession;loadSerial++;let credential="";
+ if(action==="maker-connect"){const input=ui.querySelector("[data-maker-token]");credential=input.value;input.value=""}
+ else if(action!=="maker-publish"&&action!=="maker-refresh")return;
+ rememberArmy();const entry=JSON.parse(JSON.stringify(draft)),revision=baseRevision;
+ makerBusy=true;publishNote=action==="maker-connect"?"Connecting to GitHub…":action==="maker-refresh"?"Loading published levels…":"Publishing level…";paint();
+ try{
+  if(action==="maker-connect"){const rows=await BattleLevels.connect(credential);if(!active||!maker||session!==editorSession)return;catalog=[...builtins(),...rows];publishNote="GitHub connected for this session. You can publish your level."}
+  else if(action==="maker-refresh"){const rows=await BattleLevels.refreshDeveloper();if(!active||!maker||session!==editorSession)return;catalog=[...builtins(),...rows];publishNote="Published levels refreshed. Choose a level above to edit its latest version."}
+  else{const result=await BattleLevels.publish(entry,revision);if(!active||!maker||session!==editorSession)return;draft=result.level;baseRevision=result.revision;saveDraft();publishNote=result.message;publishCommit=result.commit;const i=catalog.findIndex(l=>l.id===draft.id);if(i<0)catalog.push(draft);else catalog[i]=draft}
+ }catch(e){if(active&&maker&&session===editorSession)publishNote=e.message}
+ finally{credential="";if(active&&maker&&session===editorSession){makerBusy=false;paint()}}
 }
 function message(text){notice=text;paint()}
 function add(x,z){
-if(joined||campaign&&started)return;
+if(restricted()||makerBusy||joined||campaign&&started)return;
 if(erase){removeAt(x,z);return}
-const id=BattleRules.troops[pick].id,err=BattleRules.placement(layout,id,team,x,z,campaign,level);
+const id=BattleRules.troops[pick].id,err=placementError(id,x,z);
 if(err){message(err);snd("err",.3);return}
-const entry={id,team,x,z};layout.push(entry);makeUnit(entry);finished=null;notice="Placed "+BattleRules.troop(id).n+" for "+(team?"Red":"Blue")+".";snd("ui",.35);paint();
+const entry={id,team,x,z};layout.push(entry);makeUnit(entry);rememberArmy();finished=null;notice="Placed "+BattleRules.troop(id).n+" for "+(team?"Red":"Blue")+".";snd("ui",.35);paint();
 }
 function removeAt(x,z){
 if(campaign&&started)return;
-const found=units.filter(u=>!campaign||u.team===0).sort((a,b)=>Math.hypot(a.g.position.x-x,a.g.position.z-z)-Math.hypot(b.g.position.x-x,b.g.position.z-z))[0];
+const found=units.filter(u=>!campaign||editing()||u.team===0).sort((a,b)=>Math.hypot(a.g.position.x-x,a.g.position.z-z)-Math.hypot(b.g.position.x-x,b.g.position.z-z))[0];
 if(!found||Math.hypot(found.g.position.x-x,found.g.position.z-z)>3){message("Click near a unit to remove it.");return}
-layout=layout.filter(e=>e!==found.entry);units=units.filter(e=>e!==found);E=E.filter(e=>e!==found);HB.remove(found.bar);dispose(found.g);paint();
+layout=layout.filter(e=>e!==found.entry);units=units.filter(e=>e!==found);E=E.filter(e=>e!==found);HB.remove(found.bar);dispose(found.g);rememberArmy();paint();
 }
 function reset(){
 if(joined)returnToFlight();clearUnits();if(resetLayout)layout=resetLayout.map(e=>({...e}));resetLayout=null;simTime=0;layout.forEach(makeUnit);running=started=false;finished=null;notice="Formation restored. Edit your army, then start the battle.";paint();
 }
 function clear(){
 if(campaign&&started)return;
-const retained=campaign?layout.filter(e=>e.team===1):layout.filter(e=>e.team!==team);
-resetLayout=null;simTime=0;clearUnits();layout=retained;layout.forEach(makeUnit);running=started=false;finished=null;paint();
+const retained=campaign&&!editing()?layout.filter(e=>e.team===1):layout.filter(e=>e.team!==team);
+resetLayout=null;simTime=0;clearUnits();layout=retained;layout.forEach(makeUnit);rememberArmy();running=started=false;finished=null;paint();
 }
 function fight(){
+if(editing())return testDraft();
 if(finished){reset();return}
 if(!alive(0).length||!alive(1).length){message("Place at least one unit on each team first.");return}
 if(!started)resetLayout=layout.map(e=>({...e}));started=true;running=!running;notice=running?"Battle running.":"Battle paused. Press Continue battle to resume.";paint();
@@ -212,11 +272,11 @@ if(struck||s.life<=0||Number.isFinite(groundDistance)){dispose(s.mesh);shots.spl
 function checkResult(){
 if(!started||finished)return;const result=BattleRules.result(alive(0).length+(joined&&playerTeam===0?1:0),alive(1).length+(joined&&playerTeam===1?1:0));
 if(!result)return;finished=result;running=false;
-notice=campaign?(result==="blue"?level===BattleRules.levels.length-1?"Campaign complete! You defeated every army.":"Victory! Try the next challenge.":result==="draw"?"Draw. Change your formation and try again.":"Defeat. Reset and try a different army."):(result==="draw"?"Draw.":(result==="blue"?"Blue":"Red")+" team wins. Reset or add reinforcements.");
+notice=campaign?(result==="blue"?maker?"Playtest won. Return to the editor to publish or adjust this level.":level===catalog.length-1?"All challenges complete!":"Victory! Try the next challenge.":result==="draw"?"Draw. Change your formation and try again.":"Defeat. Reset and try a different army."):(result==="draw"?"Draw.":(result==="blue"?"Blue":"Red")+" team wins. Reset or add reinforcements.");
 if(joined)returnToFlight();snd(result==="blue"?"win":"lose",.6);paint();
 }
 function update(dt){
-if(!active)return;if(!DevAccess.unlocked){quit();return}
+if(!active)return;if(restricted()){quit();return}
 ui.hidden=state!=="play";
 scenery?.frame(dt,!!reducedMotion?.matches);if(scenery)scenery.planning.visible=!running&&!joined;
 if(joined){marker.visible=false;if(placementGhost)placementGhost.visible=false;if(rangeRing)rangeRing.visible=false}
@@ -242,14 +302,14 @@ hudTime-=dt;if(hudTime<=0){hudTime=.15;status()}
 }
 function updateMarker(){
 marker.visible=false;hover=null;if(placementGhost)placementGhost.visible=false;if(rangeRing)rangeRing.visible=false;
-if(!pointer.seen||campaign&&started||drag||joined)return;
+if(!pointer.seen||campaign&&started||makerBusy||drag||joined)return;
 cam.updateMatrixWorld();scenery.surface.updateMatrixWorld();ray.setFromCamera(pointer,cam);const hit=ray.intersectObject(scenery.surface,false)[0];if(!hit)return;
 hover={x:Math.round(hit.point.x*2)/2,z:Math.round(hit.point.z*2)/2};const y=groundHeight(hover.x,hover.z),t=BattleRules.troops[pick];
 marker.position.set(hover.x,y+.07,hover.z);marker.scale.setScalar(t.scale||1);marker.visible=true;
 const ringPoints=marker.geometry.attributes.position,ringScale=t.scale||1;
 for(let i=0;i<ringPoints.count;i++)ringPoints.setZ(i,(groundHeight(hover.x+ringPoints.getX(i)*ringScale,hover.z-ringPoints.getY(i)*ringScale)-y)/ringScale);
 ringPoints.needsUpdate=true;marker.geometry.computeBoundingSphere();
-const invalid=BattleRules.placement(layout,t.id,team,hover.x,hover.z,campaign,level),color=erase?0xffce75:invalid?0xff394f:colors[team];marker.material.color.setHex(color);
+const invalid=placementError(t.id,hover.x,hover.z),color=erase?0xffce75:invalid?0xff394f:colors[team];marker.material.color.setHex(color);
 if(erase)return;
 const key=t.id+":"+team;
 if(key!==ghostKey){
@@ -268,13 +328,13 @@ if(!invalid){const points=rangeRing.geometry.attributes.position;for(let i=0;i<6
 function status(){
 if(!ui)return;const blue=alive(0).length,red=alive(1).length;
 ui.querySelector("[data-cb-blue]").textContent=blue;ui.querySelector("[data-cb-red]").textContent=red;
-const budget=campaign?BattleRules.levels[level].budget:60,remaining=campaign?budget-BattleRules.spent(layout):60-units.length;
-ui.querySelector("[data-cb-budget]").textContent=campaign?remaining.toLocaleString():units.length;
+const budget=editing()?40:campaign?currentLevel().budget:60,remaining=editing()?40-units.length:campaign?budget-BattleRules.spent(layout):60-units.length;
+ui.querySelector("[data-cb-budget]").textContent=campaign&&!editing()?remaining.toLocaleString():units.length;
 ui.querySelector("[data-cb-meter]").style.width=Math.max(0,remaining/budget*100)+"%";
 ui.querySelector("[data-cb-health]").textContent=joined?"HP "+Math.ceil(P.hp)+" · "+(slot?"Knife":A.rl>0?"Reloading":gName()+" · "+A.mag):"CAMERA · FREE FLIGHT";
 ui.querySelector("[data-cb-clock]").textContent=Math.floor(simTime/60).toString().padStart(2,"0")+":"+Math.floor(simTime%60).toString().padStart(2,"0");
-const stateEl=ui.querySelector("[data-cb-state]");stateEl.textContent=finished?"COMPLETE":running?"LIVE BATTLE":started?"PAUSED":"DEPLOYMENT";stateEl.classList.toggle("live",running);
-ui.querySelectorAll('[data-custom="unit"]').forEach(b=>{const unaffordable=campaign&&BattleRules.troops[+b.dataset.v].cost>remaining;b.classList.toggle("cb-unaffordable",unaffordable);b.title=unaffordable?"Not enough budget. Remove a unit for a refund.":BattleRules.troops[+b.dataset.v].tip});
+const stateEl=ui.querySelector("[data-cb-state]");stateEl.textContent=editing()?"LEVEL EDITOR":finished?"COMPLETE":running?"LIVE BATTLE":started?"PAUSED":"DEPLOYMENT";stateEl.classList.toggle("live",running);
+ui.querySelectorAll('[data-custom="unit"]').forEach(b=>{const unaffordable=campaign&&!editing()&&BattleRules.troops[+b.dataset.v].cost>remaining;b.classList.toggle("cb-unaffordable",unaffordable);b.title=unaffordable?"Not enough budget. Remove a unit for a refund.":BattleRules.troops[+b.dataset.v].tip});
 drawMap();
 }
 const gName=()=>cg().n;
@@ -282,37 +342,71 @@ function drawMap(){
 if(!minimap)return;const c=minimap.getContext("2d");if(!c)return;const w=160,bound=campaign?38:120,scale=w/(2*bound),px=x=>80+x*scale,pz=z=>80+z*scale;
 c.clearRect(0,0,w,w);c.fillStyle="#213c41";c.fillRect(0,0,w,w);
 for(let z=0;z<20;z++)for(let x=0;x<20;x++){const h=groundHeight((x/20*2-1)*bound,(z/20*2-1)*bound);c.fillStyle=`rgba(180,202,164,${.09+h*.035})`;c.fillRect(x*8,z*8,8,8)}
-c.strokeStyle="#d8e4cd33";c.strokeRect(4,4,152,152);if(campaign){c.strokeStyle="#e6e5ce44";c.beginPath();c.moveTo(80,4);c.lineTo(80,156);c.stroke()}
+c.strokeStyle="#d8e4cd33";c.strokeRect(4,4,152,152);if(campaign&&!freePlacement()){c.strokeStyle="#e6e5ce44";c.beginPath();c.moveTo(80,4);c.lineTo(80,156);c.stroke()}
 for(const u of units){c.fillStyle=hex[u.team];c.beginPath();c.arc(px(u.g.position.x),pz(u.g.position.z),u.t.id==="titan"?4:2.4,0,Math.PI*2);c.fill()}
 c.save();c.translate(px(P.x),pz(P.z));c.rotate(-P.yaw);c.fillStyle="#fff0bd";c.beginPath();c.moveTo(0,-5);c.lineTo(-3,4);c.lineTo(3,4);c.closePath();c.fill();c.restore();
 }
+function makerPanel(){
+if(!maker)return"";
+if(testing)return'<div class="cb-maker"><b>Playtest</b><p>Spend the player budget and try to defeat your enemy army.</p><button class="b" data-custom="maker-edit">← Return to editor</button></div>';
+const disabled=makerBusy?" disabled":"",connected=BattleLevels.connected;
+const tokenLink="https://github.com/settings/personal-access-tokens/new?name=ArenaStrike+Level+Maker&target_name=BareBonesShooters&expires_in=30&contents=write";
+return`<section class="cb-maker" aria-label="Level editor"><div class="cb-sectionhead"><b>LEVEL DETAILS</b><button class="b" data-custom="maker-new"${disabled}>New level</button></div>
+<label>Level name<input data-maker-field="n" maxlength="60" value="${esc(draft.n)}"${disabled}></label>
+<label>Player budget<input data-maker-field="budget" type="number" min="65" max="100000" step="1" value="${draft.budget}"${disabled}></label>
+<label>Description<textarea data-maker-field="hint" maxlength="240" rows="2"${disabled}>${esc(draft.hint)}</textarea></label>
+<label>Edit a published level<select data-maker-select${disabled}><option value="">${connected?"Choose a level…":"Connect GitHub below to load levels…"}</option>${catalog.filter(l=>!l.id.startsWith("builtin-")).map(l=>`<option value="${esc(l.id)}">${esc(l.n)}</option>`).join("")}</select></label>
+<p class="cb-draft-note">Drafts save on this browser. Red enemies and blue player troops can be placed anywhere inside the battlefield.</p>
+<details class="cb-publishing" ${connected||publishNote?"open":""}><summary>Publish to everyone</summary>
+${connected?`<p>Connected to ${esc(BattleLevels.repository)}.</p><button class="b" data-custom="maker-disconnect"${disabled}>Disconnect GitHub</button><button class="b" data-custom="maker-refresh"${disabled}>Refresh published levels</button>`:`<p>Connect a fine-grained GitHub token for this repository with <b>Contents: read and write</b>. It stays only in this tab and is cleared when you exit the maker.</p><a href="${tokenLink}" target="_blank" rel="noopener noreferrer">Create token on GitHub ↗</a><small>Choose only ArenaStrike. If your organization requires approval, approve the token before publishing.</small><label>GitHub token<input data-maker-token type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="github_pat_…"${disabled}></label><button class="b" data-custom="maker-connect"${disabled}>Connect GitHub</button>`}
+<button class="b p cb-publish" data-custom="maker-publish" ${!connected||makerBusy?"disabled":""}>${makerBusy?"Please wait…":baseRevision?"Publish update":"Publish level"}</button>
+<small>Publishes to the game's main branch. Players get the level when GitHub Pages finishes deploying.</small>
+<p role="status" class="cb-publish-status">${esc(publishNote)}</p>${publishCommit?`<a href="${publishCommit}" target="_blank" rel="noopener noreferrer">View published change ↗</a>`:""}</details></section>`;
+}
 function paint(){
-if(!ui)return;const t=BattleRules.troops[pick],locked=campaign&&started,spec=BattleVisuals.maps[landscape];
-ui.classList.toggle("cb-compact",compact);ui.style.setProperty("--cb-team",hex[team]);
-ui.innerHTML=`<header class="cb-top gl"><div class="cb-brand"><span class="cb-emblem">${gly(campaign?"sword":"spark",22)}</span><div><small>${campaign?"BATTLE SIMULATOR · "+(level+1)+" / 7":"SANDBOX · CREATE YOUR BATTLE"}</small><h2>${campaign?esc(BattleRules.levels[level].n):spec.n}</h2></div></div><div class="cb-score"><span class="cb-blue"><i></i>BLUE <b data-cb-blue>0</b></span><div><small data-cb-state></small><b data-cb-clock>00:00</b></div><span class="cb-red"><b data-cb-red>0</b> RED<i></i></span></div><nav class="cb-actions"><button class="b" data-custom="overview" title="Return camera to the battlefield">Overview</button><button class="b" data-custom="compact" aria-pressed="${compact}" title="Show or hide the tools and minimap">${compact?"Show tools":"Hide tools"}</button><button class="b" data-custom="pause" aria-label="Pause and settings">${gly("gear",16)}</button><button class="b" data-custom="exit">Exit</button></nav></header>
-<aside class="cb-panel gl"><div class="cb-sectionhead"><small>${campaign?"YOUR WAR CHEST":"YOUR PLAYGROUND"}</small><span>${campaign?"BLUE ARMY":"NO BUDGET LIMIT"}</span></div><div class="cb-budget"><b data-cb-budget></b><span>${campaign?"remaining / "+BattleRules.levels[level].budget:"units / 60"}</span></div><div class="cb-meter"><i data-cb-meter></i></div>
-${campaign?`<p class="cb-objective">${esc(BattleRules.levels[level].hint)}</p>`:`<div class="cb-teamseg" aria-label="Placement team"><button class="b cb-blue${team===0?" on":""}" data-custom="team" data-v="0" aria-pressed="${team===0}">Blue army</button><button class="b cb-red${team===1?" on":""}" data-custom="team" data-v="1" aria-pressed="${team===1}">Red army</button></div>`}
-<button class="b cb-fight" data-custom="fight">${finished?"Reset battle":running?"Ⅱ  Pause battle":started?"▶  Continue battle":"▶  Start battle"}</button>
-${finished==="blue"&&campaign&&level<BattleRules.levels.length-1?'<button class="b cb-next" data-custom="next">Next challenge →</button>':""}
+if(!ui)return;const t=BattleRules.troops[pick],locked=campaign&&started||makerBusy,spec=BattleVisuals.maps[landscape],levelSpec=campaign?currentLevel():null,panelScroll=ui.querySelector(".cb-panel")?.scrollTop||0;
+ui.classList.toggle("cb-compact",compact);ui.classList.toggle("cb-maker-mode",maker);ui.style.setProperty("--cb-team",hex[team]);
+ui.innerHTML=`<header class="cb-top gl"><div class="cb-brand"><span class="cb-emblem">${gly(campaign?"sword":"spark",22)}</span><div><small>${maker?"BATTLE SIM MAKER · "+(testing?"PLAYTEST":"DEVELOPER"):campaign?"BATTLE SIMULATOR · "+(level+1)+" / "+catalog.length:"SANDBOX · CREATE YOUR BATTLE"}</small><h2>${campaign?esc(levelSpec.n):spec.n}</h2></div></div><div class="cb-score"><span class="cb-blue"><i></i>BLUE <b data-cb-blue>0</b></span><div><small data-cb-state></small><b data-cb-clock>00:00</b></div><span class="cb-red"><b data-cb-red>0</b> RED<i></i></span></div><nav class="cb-actions"><button class="b" data-custom="overview" title="Return camera to the battlefield">Overview</button><button class="b" data-custom="compact" aria-pressed="${compact}" title="Show or hide the tools and minimap">${compact?"Show tools":"Hide tools"}</button><button class="b" data-custom="pause" aria-label="Pause and settings">${gly("gear",16)}</button><button class="b" data-custom="exit">Exit</button></nav></header>
+<aside class="cb-panel gl"><div class="cb-sectionhead"><small>${editing()?"ENEMY FORMATION":campaign?"YOUR WAR CHEST":"YOUR PLAYGROUND"}</small><span>${editing()?"RED ARMY":campaign?"BLUE ARMY":"NO BUDGET LIMIT"}</span></div><div class="cb-budget"><b data-cb-budget></b><span>${editing()?"enemies / 40":campaign?"remaining / "+levelSpec.budget:"units / 60"}</span></div><div class="cb-meter"><i data-cb-meter></i></div>
+${campaign?`<p class="cb-objective">${esc(levelSpec.hint)}</p>`:`<div class="cb-teamseg" aria-label="Placement team"><button class="b cb-blue${team===0?" on":""}" data-custom="team" data-v="0" aria-pressed="${team===0}">Blue army</button><button class="b cb-red${team===1?" on":""}" data-custom="team" data-v="1" aria-pressed="${team===1}">Red army</button></div>`}
+${campaign&&!maker?`<label class="cb-level-select">Challenge<select data-custom-select="level" ${started?"disabled":""}>${catalog.map((l,i)=>`<option value="${i}" ${i===level?"selected":""}>${i+1}. ${esc(l.n)}${l.id.startsWith("builtin-")?"":" · Published"}</option>`).join("")}</select></label><button class="b cb-refresh" data-custom="refresh-levels" ${started?"disabled":""}>Refresh levels</button>`:""}
+<button class="b cb-fight" data-custom="fight" ${makerBusy?"disabled":""}>${editing()?"▶  Test level":finished?"Reset battle":running?"Ⅱ  Pause battle":started?"▶  Continue battle":"▶  Start battle"}</button>
+${finished==="blue"&&campaign&&!maker&&level<catalog.length-1?'<button class="b cb-next" data-custom="next">Next challenge →</button>':""}
 <div class="cb-actions cb-toolrow"><button class="b" data-custom="reset">Edit / reset</button><button class="b" data-custom="speed">${speed}× speed</button></div>
-${!joined?`<div class="cb-actions cb-toolrow"><button class="b${erase?" on":""}" data-custom="erase" aria-pressed="${erase}" ${locked?"disabled":""}>${erase?"✓ Remove tool":"Remove tool"}</button><button class="b" data-custom="clear" ${locked?"disabled":""}>Clear ${campaign?"army":team?"Red":"Blue"}</button></div>`:""}
+${!joined?`<div class="cb-actions cb-toolrow"><button class="b${erase?" on":""}" data-custom="erase" aria-pressed="${erase}" ${locked?"disabled":""}>${erase?"✓ Remove tool":"Remove tool"}</button><button class="b" data-custom="clear" ${locked?"disabled":""}>Clear ${editing()?"enemies":campaign?"army":team?"Red":"Blue"}</button></div>`:""}
 ${!campaign?`<div class="cb-actions cb-toolrow">${joined?'<button class="b" data-custom="fly">Return to flight · F</button>':`<button class="b" data-custom="join" data-v="0" ${!started||finished?"disabled":""}>Join Blue</button><button class="b" data-custom="join" data-v="1" ${!started||finished?"disabled":""}>Join Red</button>`}</div><button class="b cb-sample" data-custom="sample">Place sample armies</button>`:""}
-<div class="cb-mapselect"><small>LANDSCAPE</small><div>${BattleVisuals.maps.map((m,i)=>`<button class="cb-mapchip${landscape===i?" on":""}" data-custom="map" data-v="${i}" aria-label="${m.n}" title="${m.n}${started?" · reset battle to change landscape":""}" aria-pressed="${landscape===i}" ${started?"disabled":""}><i style="background:#${m.grass[1].toString(16)}"></i>${["Meadow","Canyon","Frost"][i]}</button>`).join("")}</div></div>
+<div class="cb-mapselect"><small>LANDSCAPE</small><div>${BattleVisuals.maps.map((m,i)=>`<button class="cb-mapchip${landscape===i?" on":""}" data-custom="map" data-v="${i}" aria-label="${m.n}" title="${m.n}" aria-pressed="${landscape===i}" ${started||makerBusy||campaign&&!editing()?"disabled":""}><i style="background:#${m.grass[1].toString(16)}"></i>${["Meadow","Canyon","Frost"][i]}</button>`).join("")}</div></div>
+${makerPanel()}
 <p class="cb-notice" role="status">${esc(notice)}</p><small class="cb-health" data-cb-health></small></aside>
 <aside class="cb-minimap gl"><div><small>FIELD OVERVIEW</small><span>N ↑</span></div><canvas width="160" height="160" aria-label="Live map of terrain, armies and camera"></canvas><p>${esc(spec.n)}</p></aside>
 <section class="cb-bottom gl ${joined?"cb-hidden":""}"><div class="cb-selected"><div><small>${erase?"REMOVE TOOL":"SELECTED UNIT"}</small><b>${esc(t.n)}</b><span>${t.hp} HP <i>·</i> ${t.damage} DMG <i>·</i> ${t.reach}m range</span></div><p>${esc(t.tip)}</p></div><div class="cb-hotbar" role="toolbar" aria-label="Troop hotbar">${BattleRules.troops.map((u,i)=>`<button class="cb-slot${pick===i?" on":""}" data-custom="unit" data-v="${i}" aria-label="${u.n}, ${campaign?u.cost+" budget":u.hp+" health"}" aria-pressed="${pick===i}" ${locked?"disabled":""}><kbd>${i+1}</kbd>${BattleVisuals.portrait(u.id,hex[team])}<b>${u.n}</b><small>${campaign?u.cost+" budget":u.hp+" HP"}</small></button>`).join("")}</div><p class="cb-help"><span><kbd>CLICK</kbd> Place troop</span><span><kbd>RMB</kbd> Look</span><span><kbd>WASD</kbd> Fly</span><span><kbd>SPACE / C</kbd> Up / down</span><span><kbd>SCROLL</kbd> Height</span><span><kbd>SHIFT</kbd> Faster</span></p></section>
-${finished?`<div class="cb-result ${finished}"><small>BATTLE COMPLETE</small><h2>${finished==="draw"?"A draw":campaign?finished==="blue"?"Victory":"Defeat":(finished==="blue"?"Blue":"Red")+" army wins"}</h2><p>${campaign&&finished==="blue"?level===6?"All seven challenges conquered.":"Your next challenge awaits.":"Reset your formation to play again."}</p></div>`:""}
+${finished?`<div class="cb-result ${finished}"><small>BATTLE COMPLETE</small><h2>${finished==="draw"?"A draw":campaign?finished==="blue"?"Victory":"Defeat":(finished==="blue"?"Blue":"Red")+" army wins"}</h2><p>${maker?"Return to the editor to adjust or publish your level.":campaign&&finished==="blue"?level===catalog.length-1?"All challenges conquered.":"Your next challenge awaits.":"Reset your formation to play again."}</p></div>`:""}
 ${joined?'<div class="cb-joinhint gl">WASD move · Click fire · Right click aim · R reload · 1/2 gun/knife · F return to flight</div>':""}`;
-minimap=ui.querySelector(".cb-minimap canvas");status();
+minimap=ui.querySelector(".cb-minimap canvas");status();ui.querySelector(".cb-panel").scrollTop=panelScroll;
 }
 function resumeCustom(){state="play";menuOpen=false;show("");$("hud").classList.remove("hid");ui.hidden=false;clearKeys();if(joined){document.body.classList.add("playing");Aim.request()}else document.body.classList.remove("playing")}
-document.addEventListener("click",e=>{const b=e.target.closest?.("[data-custom]");if(!b||!active||b.disabled)return;const a=b.dataset.custom;
+document.addEventListener("click",e=>{const b=e.target.closest?.("[data-custom]");if(!b||!active||b.disabled||restricted())return;const a=b.dataset.custom;
+if(a.startsWith("maker-")){makerAction(a);return}if(makerBusy&&a!=="exit"&&a!=="pause")return;
 if(a==="unit"){pick=clamp(+b.dataset.v,0,BattleRules.troops.length-1);erase=false;paint()}
-else if(a==="team"){team=+b.dataset.v;paint()}else if(a==="fight")fight();else if(a==="reset")reset();else if(a==="clear")clear();else if(a==="sample")sample();else if(a==="erase"){erase=!erase;paint()}
-else if(a==="next"&&finished==="blue")loadLevel(level+1);else if(a==="join")join(+b.dataset.v);else if(a==="fly")returnToFlight();else if(a==="overview")overview();
+else if(a==="team"&&!campaign){team=+b.dataset.v;paint()}else if(a==="fight")fight();else if(a==="reset")reset();else if(a==="clear")clear();else if(a==="sample")sample();else if(a==="erase"){erase=!erase;paint()}
+else if(a==="next"&&!maker&&finished==="blue")loadLevel(level+1);else if(a==="join")join(+b.dataset.v);else if(a==="fly")returnToFlight();else if(a==="overview")overview();
+else if(a==="refresh-levels"&&!started)refreshLevels();
 else if(a==="compact"){compact=!compact;paint()}
-else if(a==="map"&&!started){landscape=clamp(+b.dataset.v,0,BattleVisuals.maps.length-1);battlefield();for(const u of units)u.g.position.y=groundHeight(u.g.position.x,u.g.position.z)+(u.t.hover||0);notice="Landscape changed to "+BattleVisuals.maps[landscape].n+". Your formation is ready.";paint()}
+else if(a==="map"&&!started&&(!campaign||editing())){landscape=clamp(+b.dataset.v,0,BattleVisuals.maps.length-1);if(maker){draft.map=BattleVisuals.maps[landscape].id;saveDraft()}battlefield();for(const u of units)u.g.position.y=groundHeight(u.g.position.x,u.g.position.z)+(u.t.hover||0);notice="Landscape changed to "+BattleVisuals.maps[landscape].n+". Your formation is ready.";paint()}
 else if(a==="speed"){speed=speed===1?.5:speed===.5?2:1;paint()}else if(a==="pause"){ui.hidden=true;pauseGame()}else if(a==="exit")quit();
+});
+function editField(input,report){
+ if(!active||!editing()||restricted()||makerBusy)return;
+ const field=input.dataset?.makerField;if(!["n","hint","budget"].includes(field))return;
+ try{draft=BattleLevelData.level({...draft,[field]:field==="budget"?Number(input.value):input.value},{draft:true});saveDraft();ui.querySelector(".cb-brand h2").textContent=draft.n;ui.querySelector(".cb-objective").textContent=draft.hint;status()}catch(error){if(report){input.value=String(draft[field]);message(error.message)}}
+}
+document.addEventListener("input",e=>editField(e.target,false));
+document.addEventListener("change",e=>{
+if(!active||restricted()||makerBusy)return;const input=e.target;
+if(input.matches?.('[data-custom-select="level"]')&&!started&&!maker){const n=Number(input.value);if(Number.isInteger(n)&&n>=0&&n<catalog.length)loadLevel(n)}
+if(!editing())return;
+if(input.matches?.('[data-maker-select]')){const chosen=catalog.find(l=>l.id===input.value&&!l.id.startsWith("builtin-"));if(chosen)setDraft(chosen,BattleLevelData.fingerprint(chosen));return}
+editField(input,true);
 });
 addEventListener("keydown",e=>{
 if(!active||state!=="play"||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)||e.metaKey||e.ctrlKey&&e.code!=="ControlLeft")return;
