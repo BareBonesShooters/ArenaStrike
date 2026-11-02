@@ -59,7 +59,7 @@ for(let i=0;i<boxes.length;i++){const b=boxes[i];
 if(!b.nc&&Math.abs(px-b.x)<b.w/2&&Math.abs(pz-b.z)<b.d/2){const rise=b.h-P.y;if(rise<STEP+.05||b.h>P.y+1.95||b.h>(WORLD.ceil?WORLD.ceil-2.1:99))continue;
 let tx=clamp(P.x+dirx*1.05,b.x-b.w/2+.34,b.x+b.w/2-.34),tz=clamp(P.z+dirz*1.05,b.z-b.d/2+.34,b.z+b.d/2-.34);
 if(b.w<.8)tx=b.x;if(b.d<.8)tz=b.z;
-if(blocked(tx,tz,b.h+.02,.34)||floorAt(tx,tz,b.h)<b.h-.01)continue;
+if(blocked(tx,tz,b.h+.02,.4)||floorAt(tx,tz,b.h,.4)<b.h-.01)continue;
 P.mantle={sx:P.x,sy:P.y,sz:P.z,tx,ty:b.h,tz,t:0,dur:.24+rise*.09,dx:dirx,dz:dirz};P.vx=P.vz=0;P.vy=0;P.jumping=false;snd("jump",.6,.8);return true}}
 return false}
 function movePlayer(dt,inp){
@@ -70,8 +70,11 @@ P.slide=.55;P.slideCD=1.1;P.crouch=1;const sn=Math.sin(P.yaw),cs=Math.cos(P.yaw)
 P.vx+=-sn*8;P.vz+=-cs*8;snd("jump",.45,1.4);Fx.burst({x:P.x,y:P.y+.05,z:P.z},0xbfeaff,8,2.2,.06,.1,6)}
 if(P.slide>0){P.slide-=dt;P.crouch=1;if(P.slide<=0)P.crouch=0}
 else P.crouch+=((0)-P.crouch)*Math.min(1,dt*9);
-if(P.mantle){const m=P.mantle;m.t+=dt;const k=Math.min(1,m.t/m.dur),e=easeIO(k);
-P.x=lerp(m.sx,m.tx,e);P.z=lerp(m.sz,m.tz,e);P.y=lerp(m.sy,m.ty,easeOut(Math.min(1,k*1.25)))+Math.sin(k*Math.PI)*.1;
+if(P.mantle){const m=P.mantle;m.t+=dt;const k=Math.min(1,m.t/m.dur),e=easeIO(clamp((k-.45)/.55,0,1));
+// Lift above the ledge before moving into it, and check the climb path too.
+const nx=lerp(m.sx,m.tx,e),nz=lerp(m.sz,m.tz,e),ny=lerp(m.sy,m.ty,easeOut(Math.min(1,k/.45)))+Math.sin(k*Math.PI)*.1;
+if(blockedMove(P.x,P.z,nx,P.z,ny,.4)||blockedMove(nx,P.z,nx,nz,ny,.4)){P.mantle=null;P.mcd=.2;return}
+P.x=nx;P.z=nz;P.y=ny;
 if(k>=1){P.y=m.ty;P.mantle=null;P.vy=0;P.gr=true;P.vx=m.dx*3.2;P.vz=m.dz*3.2;P.mcd=.35;P.landDip=.07;snd("land",.5)}return}
 P.mcd=Math.max(0,P.mcd-dt);
 const sn=Math.sin(P.yaw),cs=Math.cos(P.yaw);let mx=-sn*inp.f+cs*inp.s,mz=-cs*inp.f-sn*inp.s;const l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l}
@@ -82,10 +85,10 @@ P.vx+=(mx*sp-P.vx)*ac;P.vz+=(mz*sp-P.vz)*ac;
 const dist=Math.hypot(P.vx,P.vz)*dt,n=Math.max(1,Math.ceil(dist/.22)),sdt=dt/n;let wallHit=false;
 for(let i=0;i<n;i++){
 let nx=P.x+P.vx*sdt,nz=P.z+P.vz*sdt;
-if(blocked(nx,P.z,P.y,.4)&&!blocked(P.x,P.z,P.y,.4)){P.vx=0;nx=P.x;wallHit=true}
+if(blockedMove(P.x,P.z,nx,P.z,P.y,.4)){P.vx=0;nx=P.x;wallHit=true}
 const cb=(typeof CustomBattle!=="undefined"&&CustomBattle.active)?{x0:-118,x1:118,z0:-118,z1:118}:(mode==="parkour"&&WORLD.course&&WORLD.course.bnd)?WORLD.course.bnd:{x0:-H,x1:H,z0:-H,z1:H};
 P.x=clamp(nx,cb.x0+.5,cb.x1-.5);
-if(blocked(P.x,nz,P.y,.4)&&!blocked(P.x,P.z,P.y,.4)){P.vz=0;nz=P.z;wallHit=true}
+if(blockedMove(P.x,P.z,P.x,nz,P.y,.4)){P.vz=0;nz=P.z;wallHit=true}
 P.z=clamp(nz,cb.z0+.5,cb.z1-.5)}
 // jump buffer, coyote time, variable height
 const press=P.jpress||(inp.jump&&!P.jHeld);P.jpress=false;P.jHeld=!!inp.jump;
@@ -102,7 +105,9 @@ if(P.jumping&&!K.Space&&P.vy>3.2)P.vy-=58*dt;if(P.vy<=0)P.jumping=false;
 // ledge climbing: pushing into a ledge while rising or airborne pulls you up smoothly
 if((wallHit||!P.gr)&&(l>.1)&&(!P.gr||P.jb>0)&&P.vy>-5.5&&tryMantle(mx,mz))return;
 const wasGr=P.gr,oldY=P.y,iv=P.vy;P.vy-=MV.grav*dt;P.y+=P.vy*dt;
-let fl=floorAt(P.x,P.z,P.y);
+// Sweep from the previous height so a fast fall cannot skip a roof. Use the
+// same footprint as wall collision, including when standing on a roof edge.
+let fl=floorAt(P.x,P.z,Math.max(oldY,P.y),.4);
 if(P.y<=fl){const rise=fl-oldY;if(wasGr&&rise>.04)P.stepOff-=Math.min(rise,.6);
 if(!wasGr&&iv<-6){P.landDip=Math.min(.32,(-iv-6)*.02+.06);snd("land",clamp(-iv/18,.3,1))}
 P.y=fl;P.vy=0;P.gr=true}
@@ -186,18 +191,20 @@ const mv=Math.min(1,o.speed/8)*(o.gr?1:0),bp=t*(6+o.speed*.7);st.bx+=(Math.cos(b
 // landing thump, jump lift and a sprint carry make the weapon feel attached to a body that has weight
 const vy=o.vy||0;if(!o.gr)st.pvy=vy;if(o.gr&&!st.pg&&st.pvy<-3)st.land=Math.min(1,-st.pvy/16);st.pg=!!o.gr;st.land*=Math.exp(-dt*7.5);
 st.air+=((o.gr?0:1)-st.air)*Math.min(1,dt*9);st.spr+=((o.gr&&o.speed>7.2&&!o.scoped?1:0)-st.spr)*Math.min(1,dt*7);
-const ads=o.scoped?1:0;st.ads=(st.ads||0)+(ads-(st.ads||0))*Math.min(1,dt*14);const A1=st.ads;
+const ads=o.scoped&&!o.reload&&!st.ia&&st.swap<=0&&!o.hide&&o.slot===0?1:0;st.ads=(st.ads||0)+(ads-(st.ads||0))*Math.min(1,dt*14);const A1=st.ads;
 const rp=o.reload;st.rlp=rp;const sw=easeOut(st.swap);
 // reload choreography: tip the gun, off hand to the mag, mag out, fresh mag in, seat it with a kick, rack the charging handle, settle
 const rs=(a,b)=>clamp((rp-a)/(b-a),0,1),rEnv=rp>0?easeIO(rs(0,.13))*(1-easeIO(rs(.86,1))):0,rl=rEnv;
 const rGet=rp>0?easeIO(rs(.04,.16)):0,rOut=easeOut(rs(.16,.3)),rGone=easeIO(rs(.3,.42)),rIn=easeOut(rs(.5,.66)),rRack=rs(.74,.9),rBack=easeIO(rs(.9,1));
 const rKick=Math.sin(rs(.64,.74)*Math.PI),rPull=Math.sin(rRack*Math.PI);
 // gun
-const br=Math.sin(t*1.7)*(1-A1);
-gunH.position.set(lerp(.15,0,A1)+st.sx+st.bx*(1-A1)+br*.002,lerp(-.16,-.13,A1)+st.sy-st.by*(1-A1)+rl*.07-sw*.32-o.pull*.06+br*.0035,lerp(gz,gz+.1,A1)+st.rec*.05+o.pull*.2);
-gunH.rotation.set(st.rr*.07+rl*.3+sw*.8+o.pull*.5+st.sy*1.2+br*.004,st.sx*1.4+rl*.4+o.pull*.4+.03*(1-A1),-st.sx*.8-rl*.8);
+// Camera recoil already changes the shot direction. Additional weapon sway
+// must settle out while aiming so the lens reticle stays on that same ray.
+const freeAim=1-A1,br=Math.sin(t*1.7)*freeAim,sx=st.sx*freeAim,sy=st.sy*freeAim,pull=o.pull*freeAim;
+gunH.position.set(lerp(.15,0,A1)+sx+st.bx*freeAim+br*.002,lerp(-.16,-.13,A1)+sy-st.by*freeAim+rl*.07-sw*.32-pull*.06+br*.0035,lerp(gz,gz+.1,A1)+st.rec*.05*freeAim+pull*.2);
+gunH.rotation.set(st.rr*.07*freeAim+rl*.3+sw*.8+pull*.5+sy*1.2+br*.004,sx*1.4+rl*.4+pull*.4+.03*freeAim,-sx*.8-rl*.8);
 if(rp>0){gunH.position.y+=-rKick*.022;gunH.position.z+=rKick*.03+rPull*.035;gunH.rotation.x+=rKick*.1-rPull*.08;gunH.rotation.z+=rKick*.06}
-{const lf=st.land,sp2=st.spr*(1-A1),ar=st.air*(1-A1),lift=clamp(-vy*.0025,-.035,.03);
+{const lf=st.land*freeAim,sp2=st.spr*freeAim,ar=st.air*freeAim,lift=clamp(-vy*.0025,-.035,.03);
 gunH.position.x+=-.035*sp2;gunH.position.y+=-lf*.07-.03*sp2+lift*ar;gunH.position.z+=lf*.05+.02*sp2;
 gunH.rotation.x+=lf*.22+.1*sp2-lift*3*ar;gunH.rotation.y+=-.22*sp2;gunH.rotation.z+=-.14*sp2+Math.sin(t*(6+o.speed*.7))*.012*sp2}
 if(st.ia){ // inspect: bring the gun up, turn it over to show both sides, fire one shot, bring it back
@@ -323,3 +330,4 @@ clearKeys();clearGrenPrev();knifeCharging=false;knifeCharge=0;
 Aim.release();menuOpen=false;document.body.classList.remove("playing");
 try{if(typeof PK!=="undefined"&&PK.st&&PK.st.ghost){sc.remove(PK.st.ghost);disposeGeo(PK.st.ghost);PK.st.ghost=null}}catch(e){}
 flash("Restarting…",600);setTimeout(()=>{pkPicked=true;startGame0("parkour")},60)}
+

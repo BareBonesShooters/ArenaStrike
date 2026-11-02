@@ -289,7 +289,7 @@ if(P.fz>0){P.fz=Math.max(0,P.fz-dt);if(!P.fz)$("msg").textContent="";return}
 const g=cg(),f=(K.KeyW?1:0)-(K.KeyS?1:0),s=(K.KeyD?1:0)-(K.KeyA?1:0),fast=K.ShiftLeft||K.ShiftRight;
 if(joined){
 Aim.frame(dt,scoped);if(K.ArrowLeft||K.KeyQ)P.yaw+=dt*2;if(K.ArrowRight||K.KeyE)P.yaw-=dt*2;
-scoped=!!rmb&&slot===0;movePlayer(dt,{f,s,sprint:!!fast,jump:!!K.Space,crouch:!!K.ControlLeft});updateCamera(dt,{f,s});updateFov(dt,g,{f,sprint:fast});
+scoped=!!rmb&&slot===0&&A.rl<=0&&!VM.inspecting;movePlayer(dt,{f,s,sprint:!!fast,jump:!!K.Space,crouch:!!K.ControlLeft});updateCamera(dt,{f,s});updateFov(dt,g,{f,sprint:fast});
 VM.set(g,I(eq().s),curKn(),I(eq().p));VM.frame(dt,{dyaw:angDiff(lastYaw,P.yaw),dpitch:P.pitch-lastPitch,speed:Math.hypot(P.vx,P.vz),vy:P.vy,gr:P.gr,scoped,reload:A.rl>0?1-A.rl/g.rl:0,slot,hide:false,pull:0,knifeCD:0,charging:false,charge:0});lastYaw=P.yaw;lastPitch=P.pitch;
 Scope.frame(g,scoped,cam.fov);if(firing&&g.a&&slot===0&&running)fire();if(A.rl>0){A.rl-=dt;if(A.rl<=0)A.mag=g.m}P.rk*=Math.exp(-dt*10);P.sp*=Math.exp(-dt*8);P.prot=Math.max(0,P.prot-dt);Aim.spread(4);
 }else{
@@ -433,3 +433,4 @@ rd.domElement.addEventListener("pointerleave",()=>{pointer.seen=false;if(marker)
 rd.domElement.addEventListener("wheel",e=>{if(!active||joined||state!=="play")return;e.preventDefault();e.stopImmediatePropagation();P.y=clamp(P.y+Math.sign(e.deltaY)*2,3,freePlacement()?200:100)},{capture:true,passive:false});
 return{start,stop,update,playerDamage,playerHurt,groundHeight,rayGround:(...args)=>scenery?scenery.rayDistance(...args):args[6],resume:resumeCustom,isMode:BattleRules.isMode,get active(){return active},get joined(){return joined},get canShoot(){return joined&&running},get playerTeam(){return playerTeam}};
 })();
+

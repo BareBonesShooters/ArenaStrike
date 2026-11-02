@@ -142,7 +142,7 @@ if(!menuOpen){if(K_.ArrowLeft||K_.KeyQ)P.yaw+=dt*2;if(K_.ArrowRight||K_.KeyE)P.y
 if(f||s)tf("move");
 if(P.em&&(f||s||firing||K_.Space)){endEmote()}
 if(slot!==0||P.dead>0||P.em||menuOpen)rmb=false;
-scoped=rmb&&!lock;
+scoped=rmb&&!lock&&A.rl<=0&&!VM.inspecting;
 if(lock)P.jb=0;
 if(P.em){P.em.t+=dt;P.vx*=.85;P.vz*=.85;if(P.em.t>3.5)endEmote()}
 if(menuOpen){P.vx*=.8;P.vz*=.8}
@@ -246,4 +246,5 @@ el("lbd").innerHTML="<b>Top</b>"+rows.slice(0,5).map((r,i)=>`<div class="${r[2]|
 if(mode==="tut"){const TS=[["move","Move","W A S D to move, Shift to sprint, mouse to look around"],["jump","Jump","Space to jump, Space again in the air to double jump. Run into a ledge to climb it"],["shoot","Shoot","Left click to fire, right click to aim"],["reload","Reload","Press R to reload. In the tutorial it works even with a full magazine"],["knife","Knife","Press 2 for the knife, 1 to go back to your gun"],["dance","Dance","Press 3 to dance"],["kill","Win the match","Defeat the easy bot 3 times. Keep moving, it is slow to react"]],ns=TS.find(x=>!tutF[x[0]]);
 hide("tut",false);const th=ns?`<small>Step ${TS.indexOf(ns)+1} of ${TS.length}</small><b>${ns[1]}</b><span>${ns[2]}</span>`:`<small>All steps done</small><b>Keep going</b><span>Finish the match to complete the tutorial</span>`,te=el("tut");if(te._k!==th){te._k=th;te.innerHTML=th}}else hide("tut",true);
 if(scoreOpen)renderScoreboard()}
+
 

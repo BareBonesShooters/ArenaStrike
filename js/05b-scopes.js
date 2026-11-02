@@ -28,9 +28,10 @@ const L=(x1,y1,x2,y2,w,cls)=>`<path d="M${x1} ${y1}L${x2} ${y2}" stroke-width="$
 const cross=(a,b,w,cls)=>L(100,100-b,100,100-a,w,cls)+L(100,100+a,100,100+b,w,cls)+L(100-b,100,100-a,100,w,cls)+L(100+a,100,100+b,100,w,cls);
 const dots=(n,gap,r)=>{let s="";for(let i=1;i<=n;i++){const d=i*gap;s+=`<circle cx="${100+d}" cy="100" r="${r}"/><circle cx="${100-d}" cy="100" r="${r}"/><circle cx="100" cy="${100+d}" r="${r}"/><circle cx="100" cy="${100-d}" r="${r}"/>`}return s};
 const SV={
-// notch and post: two rear blades with the front post standing between them
-iron:`<g class="fl"><rect x="76" y="101" width="13" height="19" rx="1"/><rect x="111" y="101" width="13" height="19" rx="1"/></g><g class="fw"><rect x="98.4" y="86" width="3.2" height="27" rx=".8"/></g>`,
-rev:`<g class="fl"><path d="M66 100h26v22H66zM108 100h26v22h-26z"/></g><g class="fw"><rect x="97.6" y="94" width="4.8" height="24" rx="1"/><circle cx="100" cy="92" r="4.2"/></g>`,
+// The illuminated point is exactly on the centre shot ray (100,100).
+// Keep the post below it, rather than covering the target or pointing above it.
+iron:`<g class="fl"><rect x="80" y="101" width="11" height="18" rx="1"/><rect x="109" y="101" width="11" height="18" rx="1"/><rect x="98.4" y="102" width="3.2" height="17" rx=".8"/></g><circle class="fw" cx="100" cy="100" r="1"/>`,
+rev:`<g class="fl"><path d="M72 101h19v20H72zM109 101h19v20h-19z"/><rect x="97.6" y="102" width="4.8" height="19" rx="1"/></g><circle class="fw" cx="100" cy="100" r="1.3"/>`,
 // a floating dot inside a thin ring: the glass is a window onto the world
 dot:`<circle class="ln" cx="100" cy="100" r="17" stroke-width="2.4" fill="rgba(255,60,80,.05)"/><circle class="ln2" cx="100" cy="100" r="17" stroke-width=".5" fill="none"/><circle class="dt" cx="100" cy="100" r="1.9"/>`,
 holo:`<circle class="ln2" cx="100" cy="100" r="24" fill="none" stroke-width="1.5"/>${L(100,72,100,64,1.6,"ln2")}${L(100,128,100,136,1.6,"ln2")}${L(72,100,64,100,1.6,"ln2")}${L(128,100,136,100,1.6,"ln2")}<circle class="dt" cx="100" cy="100" r="1.7"/>`,
@@ -55,7 +56,7 @@ el.dataset.k=s.k;el.style.setProperty("--rc",s.c);
 el.innerHTML=`${s.pip?"":`<svg viewBox="0 0 200 200" aria-hidden="true">${SV[s.k]||SV.iron}</svg>`}<u class="nm">${s.n}</u>`}
 // the sight picture is up once the aim has mostly arrived; the name card shows for a moment on each new aim
 function frame(g,scoped,fov){
-render(g);const s=scopeOf(g),a=scoped&&(s.pip?VM.ads>.6:(fov-s.fov)<(75-s.fov)*.42);
+render(g);const a=!!scoped&&VM.ads>.65;
 if(a!==on){on=a;document.body.classList.toggle("scoping",a);if(a&&el){el.classList.remove("nm-on");void el.offsetWidth;el.classList.add("nm-on")}}
 return a}
 
@@ -96,3 +97,4 @@ const ac=rd.autoClear;rd.autoClear=true;rd.setRenderTarget(rt);rd.render(sc,zc);
 // mouse speed follows what the lens shows, not the wide main view behind it
 function sensFov(f){const s=scopeOf(typeof cg==="function"?cg():null);return s.pip?f+(s.fov-f)*clamp(VM.ads,0,1):f}
 return{frame,render,buildLens,lens,sensFov,get on(){return on}}})();
+

@@ -4,7 +4,18 @@ const H=40,STEP=.55;
 const SOFTDOT=(()=>{const c=document.createElement("canvas");c.width=c.height=32;const g=c.getContext("2d"),q=g.createRadialGradient(16,16,0,16,16,16);q.addColorStop(0,"rgba(255,255,255,1)");q.addColorStop(.4,"rgba(255,255,255,.55)");q.addColorStop(1,"rgba(255,255,255,0)");g.fillStyle=q;g.fillRect(0,0,32,32);return new T.CanvasTexture(c)})();
 let boxes=[],WORLD={course:null,zone:null,spawns:[],theme:"meadow",seed:0,group:null,ceil:0,lights:[],dust:null,dv:null,flames:null};
 function blocked(x,z,y,r){for(let i=0;i<boxes.length;i++){const b=boxes[i];if((b.nc?y<b.h+2.2:y<b.h-STEP)&&Math.abs(x-b.x)<b.w/2+r&&Math.abs(z-b.z)<b.d/2+r)return true}return false}
-function floorAt(x,z,y){let f=typeof CustomBattle!=="undefined"&&CustomBattle.active?CustomBattle.groundHeight(x,z):0;for(let i=0;i<boxes.length;i++){const b=boxes[i];if(!b.nc&&b.h>f&&y>=b.h-STEP&&Math.abs(x-b.x)<b.w/2+.3&&Math.abs(z-b.z)<b.d/2+.3)f=b.h}return f}
+// Resolve each obstacle separately. An existing overlap may be escaped, but must
+// never switch off collision with the rest of a house (or a neighbouring wall).
+function blockedMove(x,z,nx,nz,y,r){
+for(const b of boxes){
+if(!(b.nc?y<b.h+2.2:y<b.h-STEP))continue;
+const w=b.w/2+r,d=b.d/2+r;
+if(Math.abs(nx-b.x)>=w||Math.abs(nz-b.z)>=d)continue;
+const inside=Math.abs(x-b.x)<w&&Math.abs(z-b.z)<d;
+const escaping=inside&&((nx!==x&&Math.abs(nx-b.x)>Math.abs(x-b.x))||(nz!==z&&Math.abs(nz-b.z)>Math.abs(z-b.z)));
+if(!escaping)return true;
+}return false}
+function floorAt(x,z,y,r=.3){let f=typeof CustomBattle!=="undefined"&&CustomBattle.active?CustomBattle.groundHeight(x,z):0;for(let i=0;i<boxes.length;i++){const b=boxes[i];if(!b.nc&&b.h>f&&y>=b.h-STEP&&Math.abs(x-b.x)<b.w/2+r&&Math.abs(z-b.z)<b.d/2+r)f=b.h}return f}
 // distance along a ray to the first world surface (boxes, ground, ceiling)
 function rayWorld(ox,oy,oz,dx,dy,dz,max){
 const custom=typeof CustomBattle!=="undefined"&&CustomBattle.active;
@@ -413,3 +424,4 @@ Sky.m.position.copy(cam.position);Sky.u.time.value=t;
 for(const l of WORLD.lights)l.intensity=l.userData.base*(.82+.18*Math.sin(t*7+l.userData.ph)*Math.sin(t*2.3+l.userData.ph*2)+(Math.sin(t*31+l.userData.ph)>.97?-.4:0));
 if(WORLD.dust){const dv=WORLD.dv||{vy:.15,top:6.8},a=WORLD.dust.geometry.attributes.position,up=dv.vy>0;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*dv.vy*(1+i%3*.4);if(up){if(y>dv.top)y=.2}else if(y<0)y=dv.top;a.setY(i,y);a.setX(i,a.getX(i)+Math.sin(t*.3+i)*dt*.1)}a.needsUpdate=true}
 if(WORLD.flames)for(const c of WORLD.flames){const f=.9+.1*Math.sin(t*9+c.ph)+.06*Math.sin(t*23+c.ph*3);c.fl.scale.set(f,.8+.4*f,f);c.halo.material.opacity=.5+.3*f;if(!c.fixed){c.g.position.y=c.y+Math.sin(t*.8+c.ph)*.12;c.g.rotation.y=t*.2+c.ph}}}
+
