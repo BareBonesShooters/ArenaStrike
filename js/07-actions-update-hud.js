@@ -24,7 +24,8 @@ const end=new T.Vector3().copy(d).multiplyScalar(ok?h.distance:dw).add(o);lastEn
 if(ok){const u=h.object.userData;
 if(u.remote&&PT.on){Party.applyDmg(u.remote,g.d*gFall(g,h.distance),!!u.head);Fx.burst(end,0xff5a4a,u.head?7:4,4,.06,1.5,16)}
 else if(u.en){if(u.en.fighter){const a=acc.get(u.en)||{n:0,head:0};a.n++;if(u.head)a.head=1;acc.set(u.en,a);Fx.burst(end,0xff5a4a,u.head?7:4,4,.06,1.5,16)}
-else hurtE(u.en,g.d*gFall(g,h.distance)*(u.head?g.hs/2:1),u.head,end)}
+// Battle Pass and newly added guns may omit hs; use their rarity's headshot bonus.
+else{const hs=Number.isFinite(g.hs)&&g.hs>0?g.hs:(RM.hs[g.r]||2);hurtE(u.en,g.d*gFall(g,h.distance)*(u.head?hs/2:1),u.head,end)}}
 else if(u.tgt)tgtHit(h.object)}
 else if(dw<90)Gfx.impact(end,gc,g,pel>1&&i>1);
 Fx.tracer(mzp,end,gc.col,(pel>1?.012:.022)+g.r*.0035,gc.life);if(!pel&&(g.glow||g.coil||g.r>=4))Fx.tracer(mzp,end,gc.col,.06+g.r*.01,gc.life*.8)}
@@ -245,3 +246,4 @@ el("lbd").innerHTML="<b>Top</b>"+rows.slice(0,5).map((r,i)=>`<div class="${r[2]|
 if(mode==="tut"){const TS=[["move","Move","W A S D to move, Shift to sprint, mouse to look around"],["jump","Jump","Space to jump, Space again in the air to double jump. Run into a ledge to climb it"],["shoot","Shoot","Left click to fire, right click to aim"],["reload","Reload","Press R to reload. In the tutorial it works even with a full magazine"],["knife","Knife","Press 2 for the knife, 1 to go back to your gun"],["dance","Dance","Press 3 to dance"],["kill","Win the match","Defeat the easy bot 3 times. Keep moving, it is slow to react"]],ns=TS.find(x=>!tutF[x[0]]);
 hide("tut",false);const th=ns?`<small>Step ${TS.indexOf(ns)+1} of ${TS.length}</small><b>${ns[1]}</b><span>${ns[2]}</span>`:`<small>All steps done</small><b>Keep going</b><span>Finish the match to complete the tutorial</span>`,te=el("tut");if(te._k!==th){te._k=th;te.innerHTML=th}}else hide("tut",true);
 if(scoreOpen)renderScoreboard()}
+

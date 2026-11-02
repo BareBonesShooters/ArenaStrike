@@ -220,6 +220,8 @@ function critFx(pt){
 snd("head",1.2);snd("kill",.5);flash("CRIT!",500);flashScreen("#fbbf24");
 if(pt)Fx.burst(pt,0xfbbf24,16,7,.09,2.5,20);hitMark(true)}
 function hurtE(e,d,head,pt){
+// Invalid damage must never corrupt HP and leave an untargetable, living enemy.
+if(!Number.isFinite(d)||d<0)return;
 if(e.custom)return CustomBattle.playerDamage(e,d,head,pt);
 if(e.hp<=0||e.em>0||e.phz)return;
 // boss is invulnerable while any of its minion wave is still alive
@@ -228,6 +230,7 @@ let wasCrit=false;
 if(head){d*=2;qAdd("heads",1);flash("HEADSHOT",600)}
 if(PU.on&&e.t==="mon"){const critRoll=rnd()<PU.crit;if(critRoll){d*=2;wasCrit=true}d*=PU.dmg*(head?PU.hs:1)*(e.hp<(e.hpMax||1e9)*.3?PU.exe:1)*(P.hp<P.max*.3?PU.ls:1)}
 else if(PU.crit>0&&rnd()<PU.crit){d*=2;wasCrit=true}
+if(!Number.isFinite(d))return;
 e.hp-=d;if(e.t==="mon")monBar(e);if(e.t==="bot")botBar(e);snd(head?"head":"hit");hitMark(head);hurtFlash(e.g,true);e.hf=.09;e.alert=1;
 if(wasCrit)critFx(pt||{x:e.g.position.x,y:e.g.position.y+1.2,z:e.g.position.z});
 else if(pt){Fx.burst(pt,e.t==="mon"?0x77ff55:0xff5a4a,head?9:5,4,.07,1.5,16);Gfx.flare(pt,e.t==="mon"?0xb7ff7a:0xff8a7a,head?1.5:.9,.1)}
@@ -661,3 +664,4 @@ if(p.t==0){P.hp=Math.min(P.max,P.hp+35);flash("+35 Health")}
 if(p.t==1){P.spd=6;flash("Speed boost")}
 if(p.t==2){S.coins+=2;sv();flash("+2 coins")}return false}return true});
 P.spd=Math.max(0,P.spd-dt)}
+
