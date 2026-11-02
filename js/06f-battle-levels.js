@@ -14,8 +14,8 @@ function level(raw,{draft=false}={}){
  const enemy=[];
  for(const u of raw.enemy){
   const t=u&&BattleRules.troop(u.id);
-  if(!t||u.team!==1||!Number.isFinite(u.x)||!Number.isFinite(u.z)||Math.abs(u.x)>34||Math.abs(u.z)>34)throw Error("Enemies must be valid red troops inside the battlefield.");
-  if(enemy.some(v=>Math.hypot(v.x-u.x,v.z-u.z)<(BattleRules.troop(v.id).scale||1)+(t.scale||1)))throw Error("Leave a little space between enemy troops.");
+  if(!t||u.team!==1||!Number.isFinite(u.x)||!Number.isFinite(u.z)||Math.abs(u.x)>BattleRules.MAKER_EXTENT||Math.abs(u.z)>BattleRules.MAKER_EXTENT)throw Error("Enemies must be valid red troops on the island.");
+  if(enemy.some(v=>Math.hypot(v.x-u.x,v.z-u.z)<BattleRules.spacing(v.id,u.id)-1e-6))throw Error("Enemy troops can stand next to each other, but cannot overlap.");
   enemy.push({id:u.id,team:1,x:u.x,z:u.z});
  }
  return{id:raw.id,n,hint,budget:raw.budget,map:raw.map,enemy,updatedAt:typeof raw.updatedAt==="string"?raw.updatedAt.slice(0,40):""};

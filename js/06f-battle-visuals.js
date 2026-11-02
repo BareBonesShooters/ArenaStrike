@@ -52,7 +52,9 @@ function create(campaign,mapIndex=0,freePlacement=false){
   }
   const water=new T.Mesh(new T.PlaneGeometry(1000,1000),new T.MeshPhongMaterial({color:spec.water,shininess:65,transparent:true,opacity:.88}));water.rotation.x=-Math.PI/2;water.position.y=-13.7;group.add(water);
   // Trees, boulders and flowers stay outside the usable placement square.
-  const bound=campaign?37:119,trees=Math.round(110*Math.max(.3,LOD.props));
+  const bound=freePlacement?extent:campaign?37:119,trees=Math.round((freePlacement?24:110)*Math.max(.3,LOD.props));
+  // Put tall scenery on rock supports off the main island when its entire surface is playable.
+  function support(x,z,w,d){const y=height(x,z);box(x,(y-13)/2,z,w,y+13,d,spec.rock)}
   function tree(x,z,size){
     const y=height(x,z),color=spec.leaf[Math.floor(random()*spec.leaf.length)];
     part("cyl",x,y+size*.42,z,size*.2,size*.84,size*.2,0x795b49);
@@ -69,9 +71,10 @@ function create(campaign,mapIndex=0,freePlacement=false){
   }
   for(let i=0;i<trees;i++){
     let x=range(-extent+6,extent-6),z=range(-extent+6,extent-6);
-    if(Math.abs(x)<bound&&Math.abs(z)<bound){i--;continue}
+    if(freePlacement){x=(i%2?-1:1)*range(extent+36,extent+44);z=range(-extent,extent);if(i%4<2)[x,z]=[z,x];support(x,z,8,8)}
+    else if(Math.abs(x)<bound&&Math.abs(z)<bound){i--;continue}
     tree(x,z,range(2.5,5.5));
-    if(i%3===0)part("ico",x+4,height(x+4,z),z,range(2,4),range(2,4),range(2,4),spec.rock,range(0,6));
+    if(i%3===0&&!freePlacement)part("ico",x+4,height(x+4,z),z,range(2,4),range(2,4),range(2,4),spec.rock,range(0,6));
   }
   for(let i=0;i<Math.round(260*Math.max(.25,LOD.props));i++){
     const x=range(-bound,bound),z=range(-bound,bound);if(Math.abs(x)<25&&Math.abs(z)<13)continue;
@@ -86,7 +89,7 @@ function create(campaign,mapIndex=0,freePlacement=false){
   }
   // An elevated railway circles the field. Its bridges and train are scenery,
   // deliberately beyond placement/player bounds so no invisible collision is needed.
-  const rx=campaign?58:142,rz=campaign?51:138,corner=campaign?14:24,trackY=12;
+  const rx=freePlacement?extent+18:campaign?58:142,rz=freePlacement?extent+12:campaign?51:138,corner=campaign?14:24,trackY=12;
   const curve=new T.CatmullRomCurve3([
     [-rx+corner,trackY,-rz],[rx-corner,trackY,-rz],[rx,trackY,-rz+corner],[rx,trackY,rz-corner],
     [rx-corner,trackY,rz],[-rx+corner,trackY,rz],[-rx,trackY,rz-corner],[-rx,trackY,-rz+corner]
@@ -127,9 +130,11 @@ function create(campaign,mapIndex=0,freePlacement=false){
   }
   // Small station, spinning windmill, and a flowing stream underneath the rail bridge.
   const stationX=campaign?34:108,stationZ=-rz-7,sy=height(stationX,stationZ);
+  if(freePlacement)support(stationX,stationZ,12,9);
   box(stationX,sy+1.8,stationZ,8,3.6,5,0xf1dfba);part("gab",stationX,sy+4.4,stationZ,9,2.4,6,mapIndex===2?0xd7e4e7:0xa75e4b);
   for(const x of[-2.4,0,2.4])box(stationX+x,sy+2,stationZ+2.53,1.1,1.3,.06,0x456676);
   const wx=-bound-9,wz=-bound+8,wy=height(wx,wz);
+  if(freePlacement)support(wx,wz,8,8);
   part("cyl",wx,wy+3.5,wz,3.4,7,3.4,0xeee2c7);part("cone",wx,wy+8,wz,4.4,3,4.4,0x8e6a5c);
   const rotor=new T.Group();rotor.position.set(wx,wy+6,wz+2.05);group.add(rotor);
   for(let i=0;i<4;i++){
@@ -144,14 +149,14 @@ function create(campaign,mapIndex=0,freePlacement=false){
   }
   // Neutral pennants mark an unrestricted battlefield; preset challenges retain team sides.
   for(const side of[-1,1])for(const z of[-32,32]){
-    const x=side*(campaign?36:117),zz=z*(campaign?1:3),y=height(x,zz),col=freePlacement?0xe1e9c5:side<0?0x58bed9:0xeb7b72;
+    const x=side*(freePlacement?extent+2:campaign?36:117),zz=z*(freePlacement?(extent-4)/32:campaign?1:3),y=height(x,zz),col=freePlacement?0xe1e9c5:side<0?0x58bed9:0xeb7b72;
     part("cyl",x,y+3,zz,.13,6,.13,0xf0dec1);
     const flag=new T.Mesh(new T.PlaneGeometry(2.6,1.5,5,1),new T.MeshLambertMaterial({color:col,side:T.DoubleSide}));flag.position.set(x+1.3,y+4.9,zz);flag.userData.flag=true;group.add(flag);animated.push(flag);
   }
   const solidMesh=solid.mesh(new T.MeshLambertMaterial({vertexColors:true}));solidMesh.castShadow=true;solidMesh.receiveShadow=true;group.add(solidMesh);
   if(lit.p.length)group.add(lit.mesh(new T.MeshBasicMaterial({vertexColors:true})));
   // Contoured planning lines follow the actual terrain rather than cutting through hills.
-  const lines=[],limit=campaign?34:115,spacing=campaign?4:10;
+  const lines=[],limit=freePlacement?extent:campaign?34:115,spacing=freePlacement?8:campaign?4:10;
   for(let n=-limit;n<=limit;n+=spacing)for(let d=-limit;d<limit;d+=2){
     lines.push(n,height(n,d)+.035,d,n,height(n,d+2)+.035,d+2);
     lines.push(d,height(d,n)+.035,n,d+2,height(d+2,n)+.035,n);
@@ -182,7 +187,7 @@ function create(campaign,mapIndex=0,freePlacement=false){
   }
   frame(0,true);
   for(const puff of smoke){puff.m.position.copy(trainCars[0].position);puff.m.position.y+=3.3+puff.age*1.6}
-  return{group,surface,height,frame,rayDistance,spec,planning};
+  return{group,surface,height,frame,rayDistance,spec,planning,extent};
 }
 function light(mapIndex){
   const spec=maps[mapIndex],th=THEMES[spec.theme];Sky.set(th);

@@ -24,19 +24,22 @@ const levels=[
 ];
 const troop=id=>troops.find(t=>t.id===id),spent=(layout,team=0)=>layout.filter(u=>u.team===team).reduce((sum,u)=>sum+(troop(u.id)?.cost||0),0);
 const freePlacement=level=>typeof level?.id==="string"&&level.id.startsWith("level-");
+const MAKER_EXTENT=82;
+const spacing=(a,b)=>((troop(a)?.scale||1)+(troop(b)?.scale||1))*.5;
+const placementLimit=(campaign,level)=>freePlacement(level)?MAKER_EXTENT:campaign?34:115;
 function placement(layout,id,team,x,z,campaign,level){
-const t=troop(id),limit=campaign?34:115;
+const t=troop(id),limit=placementLimit(campaign,level);
 if(!t||![0,1].includes(team)||!Number.isFinite(x)||!Number.isFinite(z))return"Choose a valid unit and team.";
 if(Math.abs(x)>limit||Math.abs(z)>limit)return"Place inside the marked battlefield.";
 if(layout.length>=60)return"The field supports up to 60 units.";
 if(campaign&&team!==0)return"Choose a blue troop for your army.";
 if(campaign&&!freePlacement(level)&&x>-2)return"Place your army on the blue side of the field.";
 if(campaign&&spent(layout)+t.cost>(typeof level==="object"?level:levels[level]).budget)return"Not enough budget. Remove a unit to refund its cost.";
-if(layout.some(u=>Math.hypot(u.x-x,u.z-z)<(troop(u.id).scale||1)+(t.scale||1)))return"Leave a little space between units.";
+if(layout.some(u=>Math.hypot(u.x-x,u.z-z)<(freePlacement(level)?spacing(u.id,id):(troop(u.id).scale||1)+(t.scale||1))-1e-6))return freePlacement(level)?"Troops can stand next to each other, but cannot overlap.":"Leave a little space between units.";
 return"";
 }
 function result(blue,red){return blue===0&&red===0?"draw":red===0?"blue":blue===0?"red":null}
-return{troops,levels,troop,spent,placement,result,freePlacement,isMode:m=>m==="battle_sim"||m==="sandbox"||m==="battle_maker"};
+return{troops,levels,troop,spent,placement,result,freePlacement,placementLimit,spacing,MAKER_EXTENT,isMode:m=>m==="battle_sim"||m==="sandbox"||m==="battle_maker"};
 })();
 
 const CustomBattle=(()=>{
@@ -57,9 +60,9 @@ function saveDraft(){if(!maker||!draft)return;try{localStorage.setItem(draftKey,
 function rememberArmy(){if(!editing())return;draft.enemy=layout.filter(e=>e.team===1).map(e=>({...e}));saveDraft()}
 function placementError(id,x,z){
  if(editing()){
-  if(Math.abs(x)>34||Math.abs(z)>34)return"Place enemies anywhere inside the marked battlefield.";
+  if(Math.abs(x)>BattleRules.MAKER_EXTENT||Math.abs(z)>BattleRules.MAKER_EXTENT)return"Place enemies anywhere on the island, up to its edges.";
   if(layout.length>=BattleLevelData.MAX_ENEMIES)return"Use at most 40 enemies, leaving room for the player's army.";
-  return BattleRules.placement(layout,id,1,x,z,false,0);
+  return BattleRules.placement(layout,id,1,x,z,false,draft);
  }
  return BattleRules.placement(layout,id,team,x,z,campaign,currentLevel());
 }
@@ -89,14 +92,15 @@ const g=t.human?mkHuman({body:col,trim:0xe2e8f0,style:t.shield?"armor":null,gun:
 if(!t.human){g.userData.mats.forEach(m=>m.color.lerp(new T.Color(col),.45));if(t.scale)g.scale.multiplyScalar(t.scale)}
 if(t.hover){g.userData.mats.forEach(m=>{m.transparent=true;m.opacity=.65;m.emissive.setHex(col);m.emissiveIntensity=.2})}
 BattleVisuals.decorate(g,t,col);
-const ring=new T.Mesh(new T.RingGeometry(.72,.9,24),new T.MeshBasicMaterial({color:col,side:T.DoubleSide,transparent:true,opacity:.8,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.045;ring.raycast=()=>{};g.add(ring);
-const u={custom:true,id:++serial,entry,t,team:entry.team,g,hp:t.hp,hpMax:t.hp,cd:.25+rnd()*.4,retarget:0,target:null,hf:0,vx:0,vz:0,poison:0,poisonTick:0,ph:rnd()*6,rad:(t.scale||1)*.55};
+const ring=new T.Mesh(new T.RingGeometry(freePlacement()?.4:.72,freePlacement()?.5:.9,24),new T.MeshBasicMaterial({color:col,side:T.DoubleSide,transparent:true,opacity:.8,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=.045;ring.raycast=()=>{};g.add(ring);
+const u={custom:true,id:++serial,entry,t,team:entry.team,g,hp:t.hp,hpMax:t.hp,cd:.25+rnd()*.4,retarget:0,target:null,hf:0,vx:0,vz:0,poison:0,poisonTick:0,ph:rnd()*6,rad:(t.scale||1)*(freePlacement()?.5:.55)};
 g.position.set(entry.x,groundHeight(entry.x,entry.z)+(t.hover||0),entry.z);g.rotation.y=entry.team?-Math.PI/2:Math.PI/2;
 u.bar=HB.make(g,2.9,()=>({hp:u.hp,max:u.hpMax,alive:u.hp>0,far:250}),{col:()=>col,base:.62});
 bindOwner(g,u);sc.add(g);units.push(u);E.push(u);return u;
 }
 function overview(){
 if(joined)returnToFlight();P.x=campaign?-32:-38;P.z=campaign?43:57;P.y=campaign?37:43;P.yaw=campaign?-.64:-.59;P.pitch=campaign?-.58:-.53;P.vx=P.vz=P.vy=0;
+if(freePlacement()){P.x=0;P.z=120;P.y=150;P.yaw=0;P.pitch=-Math.atan2(P.y,P.z)}
 cam.position.set(P.x,P.y,P.z);cam.rotation.set(P.pitch,P.yaw,0,"YXZ");cam.fov=52;cam.updateProjectionMatrix();
 }
 function groundHeight(x,z){return scenery?scenery.height(x,z):0}
@@ -104,11 +108,11 @@ function battlefield(){
 dispose(stage);placementGhost=rangeRing=null;ghostKey="";
 scenery=BattleVisuals.create(campaign,landscape,freePlacement());stage=scenery.group;sc.add(stage);BattleVisuals.light(landscape);
 WORLD.group.children.forEach(o=>{if(o.geometry?.type==="PlaneGeometry"||o.geometry?.type==="CircleGeometry")o.visible=false});
-marker=new T.Mesh(new T.RingGeometry(.75,1,32),new T.MeshBasicMaterial({color:colors[0],side:T.DoubleSide,transparent:true,opacity:.9,depthWrite:false}));marker.rotation.x=-Math.PI/2;marker.visible=false;stage.add(marker);
+marker=new T.Mesh(new T.RingGeometry(freePlacement()?.4:.75,freePlacement()?.5:1,32),new T.MeshBasicMaterial({color:colors[0],side:T.DoubleSide,transparent:true,opacity:.9,depthWrite:false}));marker.rotation.x=-Math.PI/2;marker.visible=false;stage.add(marker);
 }
 function loadLevel(n){
 level=Math.max(0,Math.min(catalog.length-1,n));resetLayout=null;simTime=0;clearUnits();if(campaign)landscape=Math.max(0,BattleVisuals.maps.findIndex(m=>m.id===currentLevel().map));battlefield();layout=campaign?currentLevel().enemy.map(e=>({...e})):[];
-layout.forEach(makeUnit);running=started=false;finished=null;team=editing()?1:0;erase=false;notice=editing()?"Place red enemies anywhere inside the battlefield. Set a budget, then test and publish.":freePlacement()?"Place blue troops anywhere inside the battlefield within your budget, then start the battle.":campaign?"Place troops on the blue side, then start the battle.":"Choose a team and unit, then click the ground to place it.";overview();paint();
+layout.forEach(makeUnit);running=started=false;finished=null;team=editing()?1:0;erase=false;notice=editing()?"The whole island is your battlefield. Place red enemies anywhere, then test and publish.":freePlacement()?"Place blue troops anywhere on the island within your budget, then start the battle.":campaign?"Place troops on the blue side, then start the battle.":"Choose a team and unit, then click the ground to place it.";overview();paint();
 }
 function start(m){
 if(!BattleRules.isMode(m))return false;
@@ -243,7 +247,8 @@ const q=target.g.position,dx=q.x-p.x,dz=q.z-p.z,dist=Math.hypot(dx,dz)||1,stop=u
 u.g.rotation.y=turnTo(u.g.rotation.y,Math.atan2(dx,dz),dt*7);
 let move=dist>stop?1:u.t.ranged&&dist<7?-.55:0,vx=dx/dist*u.t.speed*move,vz=dz/dist*u.t.speed*move;
 for(const other of units){if(other===u)continue;const ox=p.x-other.g.position.x,oz=p.z-other.g.position.z,d=Math.hypot(ox,oz),r=u.rad+other.rad;if(d>0&&d<r){vx+=ox/d*(r-d)*3;vz+=oz/d*(r-d)*3}}
-p.x=clamp(p.x+(vx+u.vx)*dt,-117,117);p.z=clamp(p.z+(vz+u.vz)*dt,-117,117);u.vx*=Math.exp(-dt*7);u.vz*=Math.exp(-dt*7);
+const moveLimit=freePlacement()?scenery.extent-u.rad:117;
+p.x=clamp(p.x+(vx+u.vx)*dt,-moveLimit,moveLimit);p.z=clamp(p.z+(vz+u.vz)*dt,-moveLimit,moveLimit);u.vx*=Math.exp(-dt*7);u.vz*=Math.exp(-dt*7);
 if(!campaign){u.entry.x=p.x;u.entry.z=p.z}
 p.y=groundHeight(p.x,p.z)+(u.t.hover?u.t.hover+Math.sin(performance.now()*.002+u.ph)*.15:0);
 if(u.t.human)poseHuman(u.g,dt,Math.abs(move)*.6,0,false);else poseMon(u.g,dt,dist<=stop);
@@ -289,7 +294,7 @@ VM.set(g,I(eq().s),curKn(),I(eq().p));VM.frame(dt,{dyaw:angDiff(lastYaw,P.yaw),d
 Scope.frame(g,scoped,cam.fov);if(firing&&g.a&&slot===0&&running)fire();if(A.rl>0){A.rl-=dt;if(A.rl<=0)A.mag=g.m}P.rk*=Math.exp(-dt*10);P.sp*=Math.exp(-dt*8);P.prot=Math.max(0,P.prot-dt);Aim.spread(4);
 }else{
 const v=fast?34:14,sn=Math.sin(P.yaw),cs=Math.cos(P.yaw),norm=Math.max(1,Math.hypot(f,s));
-P.x=clamp(P.x+(-sn*f+cs*s)/norm*v*dt,-160,160);P.z=clamp(P.z+(-cs*f-sn*s)/norm*v*dt,-160,160);P.y=clamp(P.y+((K.Space?1:0)-(K.KeyC||K.ControlLeft?1:0))*v*dt,groundHeight(P.x,P.z)+3,100);
+P.x=clamp(P.x+(-sn*f+cs*s)/norm*v*dt,-160,160);P.z=clamp(P.z+(-cs*f-sn*s)/norm*v*dt,-160,160);P.y=clamp(P.y+((K.Space?1:0)-(K.KeyC||K.ControlLeft?1:0))*v*dt,groundHeight(P.x,P.z)+3,freePlacement()?200:100);
 if(K.KeyQ||K.ArrowLeft)P.yaw+=dt*1.6;if(K.KeyE||K.ArrowRight)P.yaw-=dt*1.6;
 if(K.ArrowUp)P.pitch=clamp(P.pitch+dt,-1.5,1.3);if(K.ArrowDown)P.pitch=clamp(P.pitch-dt,-1.5,1.3);
 cam.position.set(P.x,P.y,P.z);cam.rotation.set(P.pitch,P.yaw,0,"YXZ");
@@ -339,7 +344,7 @@ drawMap();
 }
 const gName=()=>cg().n;
 function drawMap(){
-if(!minimap)return;const c=minimap.getContext("2d");if(!c)return;const w=160,bound=campaign?38:120,scale=w/(2*bound),px=x=>80+x*scale,pz=z=>80+z*scale;
+if(!minimap)return;const c=minimap.getContext("2d");if(!c)return;const w=160,bound=freePlacement()?scenery.extent+4:campaign?38:120,scale=w/(2*bound),px=x=>80+x*scale,pz=z=>80+z*scale;
 c.clearRect(0,0,w,w);c.fillStyle="#213c41";c.fillRect(0,0,w,w);
 for(let z=0;z<20;z++)for(let x=0;x<20;x++){const h=groundHeight((x/20*2-1)*bound,(z/20*2-1)*bound);c.fillStyle=`rgba(180,202,164,${.09+h*.035})`;c.fillRect(x*8,z*8,8,8)}
 c.strokeStyle="#d8e4cd33";c.strokeRect(4,4,152,152);if(campaign&&!freePlacement()){c.strokeStyle="#e6e5ce44";c.beginPath();c.moveTo(80,4);c.lineTo(80,156);c.stroke()}
@@ -356,7 +361,7 @@ return`<section class="cb-maker" aria-label="Level editor"><div class="cb-sectio
 <label>Player budget<input data-maker-field="budget" type="number" min="65" max="100000" step="1" value="${draft.budget}"${disabled}></label>
 <label>Description<textarea data-maker-field="hint" maxlength="240" rows="2"${disabled}>${esc(draft.hint)}</textarea></label>
 <label>Edit a published level<select data-maker-select${disabled}><option value="">${connected?"Choose a level…":"Connect GitHub below to load levels…"}</option>${catalog.filter(l=>!l.id.startsWith("builtin-")).map(l=>`<option value="${esc(l.id)}">${esc(l.n)}</option>`).join("")}</select></label>
-<p class="cb-draft-note">Drafts save on this browser. Red enemies and blue player troops can be placed anywhere inside the battlefield.</p>
+<p class="cb-draft-note">Drafts save on this browser. The whole island is the battlefield. Place red enemies or blue troops right next to each other, anywhere up to the map edges.</p>
 <details class="cb-publishing" ${connected||publishNote?"open":""}><summary>Publish to everyone</summary>
 ${connected?`<p>Connected to ${esc(BattleLevels.repository)}.</p><button class="b" data-custom="maker-disconnect"${disabled}>Disconnect GitHub</button><button class="b" data-custom="maker-refresh"${disabled}>Refresh published levels</button>`:`<p>Connect a fine-grained GitHub token for this repository with <b>Contents: read and write</b>. It stays only in this tab and is cleared when you exit the maker.</p><a href="${tokenLink}" target="_blank" rel="noopener noreferrer">Create token on GitHub ↗</a><small>Choose only ArenaStrike. If your organization requires approval, approve the token before publishing.</small><label>GitHub token<input data-maker-token type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="github_pat_…"${disabled}></label><button class="b" data-custom="maker-connect"${disabled}>Connect GitHub</button>`}
 <button class="b p cb-publish" data-custom="maker-publish" ${!connected||makerBusy?"disabled":""}>${makerBusy?"Please wait…":baseRevision?"Publish update":"Publish level"}</button>
@@ -425,6 +430,6 @@ if(e.button===2){drag=true;lastX=e.clientX;lastY=e.clientY}else if(e.button===0)
 },true);
 addEventListener("mouseup",()=>drag=false);
 rd.domElement.addEventListener("pointerleave",()=>{pointer.seen=false;if(marker)marker.visible=false;if(placementGhost)placementGhost.visible=false;if(rangeRing)rangeRing.visible=false});
-rd.domElement.addEventListener("wheel",e=>{if(!active||joined||state!=="play")return;e.preventDefault();e.stopImmediatePropagation();P.y=clamp(P.y+Math.sign(e.deltaY)*2,3,100)},{capture:true,passive:false});
+rd.domElement.addEventListener("wheel",e=>{if(!active||joined||state!=="play")return;e.preventDefault();e.stopImmediatePropagation();P.y=clamp(P.y+Math.sign(e.deltaY)*2,3,freePlacement()?200:100)},{capture:true,passive:false});
 return{start,stop,update,playerDamage,playerHurt,groundHeight,rayGround:(...args)=>scenery?scenery.rayDistance(...args):args[6],resume:resumeCustom,isMode:BattleRules.isMode,get active(){return active},get joined(){return joined},get canShoot(){return joined&&running},get playerTeam(){return playerTeam}};
 })();
