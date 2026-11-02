@@ -61,6 +61,9 @@ o=o||{};const ow=owns(it);
 return`<button class="it${o.sel?" sel":""}${ow||o.all?"":" lock"}${it.r>=3?" hi":""}" data-a="${o.a}"${o.f?` data-f="${o.f}"`:""} data-v="${it.id}" style="--rc:${rcol(it)};--i:${Math.min(o.i||0,12)}">${thumb(it,o)}<b>${esc(it.n)}</b><span class="m"><span class="rar">${R[it.r]}</span>${ow?"":ico("lock",14)}</span>${o.badge?`<span class="badge ok">${ico("check",13)}</span>`:""}</button>`}
 
 // ---------- lobby ----------
+MD.splice(MD.findIndex(m=>m[0]==="tut"),0,
+["battle_sim","Battle Simulator","Choose a challenge, build an army within its budget, and defeat the enemy formation. Includes levels published by developers."],
+["sandbox","Sandbox","Fly freely, place troops on either team, watch them fight, or join a battle yourself."]);
 // the party stays together between matches, so the lobby keeps saying so
 function roomLine(){const s=Net.state;if(s!=="hosting"&&s!=="joined")return "";const n=Net.roster().length;return (s==="hosting"?"Hosting party ":"In party ")+Net.code+" \u00b7 "+n+" player"+(n===1?"":"s")+(s==="hosting"?" \u00b7 open Servers to manage teams and start":"")}
 function lobbyUI(msg){
@@ -79,9 +82,9 @@ $("sg-df").innerHTML=seg("df",[["easy","Easy"],["medium","Medium"],["hard","Hard
 $("sg-rg").innerHTML=seg("rg",[[3,"3"],[5,"5"],[10,"10"]],rgv);
 hide("o-df",!(sel==="duel"||sel==="gg"||sel==="parkour"||sel==="waves"));$("o-dft").textContent=sel==="parkour"?"Course difficulty":sel==="waves"?"Monster difficulty":"Bot difficulty";hide("o-rd",sel!=="duel");hide("o-party",!PMS(sel));
 const hasGhost=Object.keys(S.pkt||{}).some(k=>k.indexOf((S.opt.df||"easy")+"_")===0&&S.pkg&&S.pkg[k]&&S.pkg[k].length>2);
-hide("o-gr",false);{const access=DevAccess.unlocked,gr=access&&!!S.opt.grind;
-$("sg-gr").innerHTML=access?(sel==="waves"?seg("gr",[["0","Off"],["1","On"]],gr?1:0):"")+'<button class="b" data-a="custommode" data-v="battle_sim">Battle Simulator</button><button class="b" data-a="custommode" data-v="sandbox">Sandbox</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
-$("grinfo").textContent=!access?"Input code for a dev-only game mode.":gr&&sel==="waves"?"Custom mode enabled for this session.":"Custom mode unlocked for this session. Choose a game above."}
+hide("o-gr",false);{const access=DevAccess.unlocked;
+$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
+$("grinfo").textContent=access?"Developer modes unlocked for this session.":"Input code for a dev-only gamemode."}
 hide("o-gl",sel!=="waves");{const gl=!!S.opt.ghostLvl;$("sg-gl").innerHTML=seg("gl",[["0","Classic"],["1","Ghost level"]],gl?1:0);$("glinfo").textContent=gl?"Every monster is a ghost: they hover, keep their distance and shoot when they see you. Every 5th wave brings the Ghost boss.":"Classic Monster Rush. A ghost wave still haunts the arena every 7th wave."}
 hide("o-ghost",sel!=="parkour");hide("o-pkk",sel!=="parkour");$("sg-pk").innerHTML=seg("pkknife",[["0","Off"],["1","On"]],pkKnifeOn()?1:0);
 if(sel==="parkour"){
@@ -760,8 +763,8 @@ return`<div class="codes-layout">
 <p id="redeem-status" class="code-status" role="status" aria-live="polite"></p>
 <div id="code-rewards" class="code-rewards"></div>
 <button class="b" data-a="page" data-v="load">${ico("pack",16)}Open Loadout</button><small class="code-note">Rewards save on this browser, just like your other items.</small></section>
-<section class="code-panel developer-panel"><span class="eyebrow">Developer exclusive</span><h3>Custom mode</h3><p>Input code for a dev-only game mode.</p>
-${unlocked?`<div class="code-access">${ico("check",18)}Custom mode unlocked</div><p>Access lasts until you reload or lock it. Choose a custom game.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="battle_sim">Battle Simulator</button><button class="b p" data-a="custommode" data-v="sandbox">Sandbox</button><button class="b" data-a="devwaves">Open Monster Rush</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
+<section class="code-panel developer-panel"><span class="eyebrow">Developer exclusive</span><h3>Custom Gamemodes</h3><p>Input code for a dev-only gamemode.</p>
+${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Access lasts until you reload or lock it. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
 <p id="developer-status" class="code-status" role="status" aria-live="polite"></p></section></div>`
 }
 function codeStatus(id,message,ok){const el=$(id);if(el){el.textContent=message;el.classList.toggle("success",!!ok);el.classList.toggle("error",!ok)}}
@@ -781,8 +784,8 @@ const input=form.querySelector("input"),button=form.querySelector("button");if(b
 if(!input.value){codeStatus("developer-status","Enter the developer code first.",false);input.setAttribute("aria-invalid","true");return}
 button.disabled=true;button.textContent="Checking…";const password=input.value;input.value="";
 try{const ok=await DevAccess.unlock(password);if(!form.isConnected)return;
-if(ok){snd("equip",.7);renderPage(true);codeStatus("developer-status","Unlocked. Choose Battle Simulator, Sandbox, or Monster Rush.",true);$("pgb").querySelector('[data-a="custommode"]').focus()}
-else{codeStatus("developer-status","Incorrect code. Custom mode is still locked.",false);input.setAttribute("aria-invalid","true");input.focus();snd("err",.7)}
+if(ok){snd("equip",.7);renderPage(true);codeStatus("developer-status","Unlocked. Choose Grinding Mode or Battle Sim Maker.",true);$("pgb").querySelector('[data-a="custommode"]').focus()}
+else{codeStatus("developer-status","Incorrect code. Custom Gamemodes are still locked.",false);input.setAttribute("aria-invalid","true");input.focus();snd("err",.7)}
 }catch(error){if(form.isConnected)codeStatus("developer-status",error.message,false)}
 finally{if(button.isConnected){button.disabled=false;button.textContent="Unlock"}}
 }
@@ -937,11 +940,9 @@ mode(e){sel=e.dataset.v;lobbyUI()},
 df(e){S.opt.df=e.dataset.v;sv();lobbyUI()},
 pkknife(e){S.opt.pkKnife=e.dataset.v==="1";sv();lobbyUI()},
 gl(e){S.opt.ghostLvl=e.dataset.v==="1";sv();lobbyUI()},
-gr(e){if(!DevAccess.unlocked){S.opt.grind=false;sv();ACT.devaccess();return}S.opt.grind=e.dataset.v==="1";sv();lobbyUI()},
 devaccess(){openPage("codes");const input=$("developer-password");if(input)input.focus()},
 custommode(e){if(!DevAccess.unlocked){ACT.devaccess();return}startGame(e.dataset.v)},
-devwaves(){sel="waves";goLobby()},
-devlock(){DevAccess.lock();renderPage(true);codeStatus("developer-status","Custom mode locked and switched off.",true);$("developer-password").focus()},
+devlock(){DevAccess.lock();BattleLevels.disconnect();if(view==="lobby")lobbyUI();else{renderPage(true);codeStatus("developer-status","Custom Gamemodes locked.",true);$("developer-password")?.focus()}},
 ghost(e){S.opt.ghostRace=clamp(+e.dataset.v||0,0,2);sv();lobbyUI()},
 rg(e){S.opt.rg=+e.dataset.v;sv();lobbyUI()},
 pmode(e){if(PM_MODES[e.dataset.v]){S.mp.mode=e.dataset.v;sv();lobbyUI()}},
