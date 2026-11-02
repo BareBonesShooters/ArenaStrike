@@ -23,18 +23,20 @@ const levels=[
 {n:"The final stand",budget:2200,hint:"A titan leads a mixed army. Build a force that covers several weaknesses.",enemy:[...line("titan",1,13,0),...line("shield",2,15,0,14),...line("rifle",4,24,0,6),...line("runner",4,19,0,7)]}
 ];
 const troop=id=>troops.find(t=>t.id===id),spent=(layout,team=0)=>layout.filter(u=>u.team===team).reduce((sum,u)=>sum+(troop(u.id)?.cost||0),0);
+const freePlacement=level=>typeof level?.id==="string"&&level.id.startsWith("level-");
 function placement(layout,id,team,x,z,campaign,level){
 const t=troop(id),limit=campaign?34:115;
 if(!t||![0,1].includes(team)||!Number.isFinite(x)||!Number.isFinite(z))return"Choose a valid unit and team.";
 if(Math.abs(x)>limit||Math.abs(z)>limit)return"Place inside the marked battlefield.";
 if(layout.length>=60)return"The field supports up to 60 units.";
-if(campaign&&(team!==0||x>-2))return"Place your army on the blue side of the field.";
+if(campaign&&team!==0)return"Choose a blue troop for your army.";
+if(campaign&&!freePlacement(level)&&x>-2)return"Place your army on the blue side of the field.";
 if(campaign&&spent(layout)+t.cost>(typeof level==="object"?level:levels[level]).budget)return"Not enough budget. Remove a unit to refund its cost.";
 if(layout.some(u=>Math.hypot(u.x-x,u.z-z)<(troop(u.id).scale||1)+(t.scale||1)))return"Leave a little space between units.";
 return"";
 }
 function result(blue,red){return blue===0&&red===0?"draw":red===0?"blue":blue===0?"red":null}
-return{troops,levels,troop,spent,placement,result,isMode:m=>m==="battle_sim"||m==="sandbox"||m==="battle_maker"};
+return{troops,levels,troop,spent,placement,result,freePlacement,isMode:m=>m==="battle_sim"||m==="sandbox"||m==="battle_maker"};
 })();
 
 const CustomBattle=(()=>{
@@ -47,6 +49,7 @@ let catalog=[];
 const draftKey="arena_battle_maker_draft_v1";
 const builtins=()=>BattleRules.levels.map((l,i)=>({...l,id:"builtin-"+i,map:BattleVisuals.maps[i%3].id}));
 const currentLevel=()=>maker?draft:catalog[level];
+const freePlacement=()=>campaign&&BattleRules.freePlacement(currentLevel());
 const editing=()=>maker&&!testing;
 const restricted=()=>maker&&!DevAccess.unlocked;
 function freshDraft(){return{id:"level-"+crypto.randomUUID(),n:"Untitled battle",hint:"Choose your troops and defeat the red army.",budget:600,map:"vale",enemy:[],updatedAt:""}}
@@ -54,7 +57,7 @@ function saveDraft(){if(!maker||!draft)return;try{localStorage.setItem(draftKey,
 function rememberArmy(){if(!editing())return;draft.enemy=layout.filter(e=>e.team===1).map(e=>({...e}));saveDraft()}
 function placementError(id,x,z){
  if(editing()){
-  if(x<2||x>34||Math.abs(z)>34)return"Place enemies on the red side, inside the battlefield.";
+  if(Math.abs(x)>34||Math.abs(z)>34)return"Place enemies anywhere inside the marked battlefield.";
   if(layout.length>=BattleLevelData.MAX_ENEMIES)return"Use at most 40 enemies, leaving room for the player's army.";
   return BattleRules.placement(layout,id,1,x,z,false,0);
  }
@@ -99,13 +102,13 @@ cam.position.set(P.x,P.y,P.z);cam.rotation.set(P.pitch,P.yaw,0,"YXZ");cam.fov=52
 function groundHeight(x,z){return scenery?scenery.height(x,z):0}
 function battlefield(){
 dispose(stage);placementGhost=rangeRing=null;ghostKey="";
-scenery=BattleVisuals.create(campaign,landscape);stage=scenery.group;sc.add(stage);BattleVisuals.light(landscape);
+scenery=BattleVisuals.create(campaign,landscape,freePlacement());stage=scenery.group;sc.add(stage);BattleVisuals.light(landscape);
 WORLD.group.children.forEach(o=>{if(o.geometry?.type==="PlaneGeometry"||o.geometry?.type==="CircleGeometry")o.visible=false});
 marker=new T.Mesh(new T.RingGeometry(.75,1,32),new T.MeshBasicMaterial({color:colors[0],side:T.DoubleSide,transparent:true,opacity:.9,depthWrite:false}));marker.rotation.x=-Math.PI/2;marker.visible=false;stage.add(marker);
 }
 function loadLevel(n){
 level=Math.max(0,Math.min(catalog.length-1,n));resetLayout=null;simTime=0;clearUnits();if(campaign)landscape=Math.max(0,BattleVisuals.maps.findIndex(m=>m.id===currentLevel().map));battlefield();layout=campaign?currentLevel().enemy.map(e=>({...e})):[];
-layout.forEach(makeUnit);running=started=false;finished=null;team=editing()?1:0;erase=false;notice=editing()?"Place the enemy army on the red side. Set a budget, then test and publish.":campaign?"Place troops on the blue side, then start the battle.":"Choose a team and unit, then click the ground to place it.";overview();paint();
+layout.forEach(makeUnit);running=started=false;finished=null;team=editing()?1:0;erase=false;notice=editing()?"Place red enemies anywhere inside the battlefield. Set a budget, then test and publish.":freePlacement()?"Place blue troops anywhere inside the battlefield within your budget, then start the battle.":campaign?"Place troops on the blue side, then start the battle.":"Choose a team and unit, then click the ground to place it.";overview();paint();
 }
 function start(m){
 if(!BattleRules.isMode(m))return false;
@@ -339,7 +342,7 @@ function drawMap(){
 if(!minimap)return;const c=minimap.getContext("2d");if(!c)return;const w=160,bound=campaign?38:120,scale=w/(2*bound),px=x=>80+x*scale,pz=z=>80+z*scale;
 c.clearRect(0,0,w,w);c.fillStyle="#213c41";c.fillRect(0,0,w,w);
 for(let z=0;z<20;z++)for(let x=0;x<20;x++){const h=groundHeight((x/20*2-1)*bound,(z/20*2-1)*bound);c.fillStyle=`rgba(180,202,164,${.09+h*.035})`;c.fillRect(x*8,z*8,8,8)}
-c.strokeStyle="#d8e4cd33";c.strokeRect(4,4,152,152);if(campaign){c.strokeStyle="#e6e5ce44";c.beginPath();c.moveTo(80,4);c.lineTo(80,156);c.stroke()}
+c.strokeStyle="#d8e4cd33";c.strokeRect(4,4,152,152);if(campaign&&!freePlacement()){c.strokeStyle="#e6e5ce44";c.beginPath();c.moveTo(80,4);c.lineTo(80,156);c.stroke()}
 for(const u of units){c.fillStyle=hex[u.team];c.beginPath();c.arc(px(u.g.position.x),pz(u.g.position.z),u.t.id==="titan"?4:2.4,0,Math.PI*2);c.fill()}
 c.save();c.translate(px(P.x),pz(P.z));c.rotate(-P.yaw);c.fillStyle="#fff0bd";c.beginPath();c.moveTo(0,-5);c.lineTo(-3,4);c.lineTo(3,4);c.closePath();c.fill();c.restore();
 }
@@ -353,7 +356,7 @@ return`<section class="cb-maker" aria-label="Level editor"><div class="cb-sectio
 <label>Player budget<input data-maker-field="budget" type="number" min="65" max="100000" step="1" value="${draft.budget}"${disabled}></label>
 <label>Description<textarea data-maker-field="hint" maxlength="240" rows="2"${disabled}>${esc(draft.hint)}</textarea></label>
 <label>Edit a published level<select data-maker-select${disabled}><option value="">${connected?"Choose a level…":"Connect GitHub below to load levels…"}</option>${catalog.filter(l=>!l.id.startsWith("builtin-")).map(l=>`<option value="${esc(l.id)}">${esc(l.n)}</option>`).join("")}</select></label>
-<p class="cb-draft-note">Drafts save on this browser. Place enemies on Red; players build their army on Blue.</p>
+<p class="cb-draft-note">Drafts save on this browser. Red enemies and blue player troops can be placed anywhere inside the battlefield.</p>
 <details class="cb-publishing" ${connected||publishNote?"open":""}><summary>Publish to everyone</summary>
 ${connected?`<p>Connected to ${esc(BattleLevels.repository)}.</p><button class="b" data-custom="maker-disconnect"${disabled}>Disconnect GitHub</button><button class="b" data-custom="maker-refresh"${disabled}>Refresh published levels</button>`:`<p>Connect a fine-grained GitHub token for this repository with <b>Contents: read and write</b>. It stays only in this tab and is cleared when you exit the maker.</p><a href="${tokenLink}" target="_blank" rel="noopener noreferrer">Create token on GitHub ↗</a><small>Choose only ArenaStrike. If your organization requires approval, approve the token before publishing.</small><label>GitHub token<input data-maker-token type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="github_pat_…"${disabled}></label><button class="b" data-custom="maker-connect"${disabled}>Connect GitHub</button>`}
 <button class="b p cb-publish" data-custom="maker-publish" ${!connected||makerBusy?"disabled":""}>${makerBusy?"Please wait…":baseRevision?"Publish update":"Publish level"}</button>

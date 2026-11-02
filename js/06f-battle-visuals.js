@@ -15,7 +15,7 @@ function profile(campaign,map,x,z){
   const corner=sat((Math.abs(xx)-20)/11)*sat((Math.abs(zz)-7)/12)*3;
   return Math.max(north,south)+corner;
 }
-function create(campaign,mapIndex=0){
+function create(campaign,mapIndex=0,freePlacement=false){
   const spec=maps[mapIndex],group=new T.Group(),planning=new T.Group(),animated=[],trainCars=[],smoke=[];
   group.name="custom-diorama";group.add(planning);
   const random=mkRng(9107+mapIndex*619+(campaign?0:31)),range=(a,b)=>a+(b-a)*random();
@@ -142,9 +142,9 @@ function create(campaign,mapIndex=0){
     const ripple=new T.Mesh(new T.PlaneGeometry(range(1,3),.08),new T.MeshBasicMaterial({color:0xe5ffff,transparent:true,opacity:.35}));ripple.rotation.x=-Math.PI/2;
     ripple.position.set(range(-extent*.7,extent*.7),stream.position.y+.02,streamZ+range(-1.8,1.8));group.add(ripple);animated.push(ripple);
   }
-  // A few lightweight pennants make the armies' sides legible from high above.
+  // Neutral pennants mark an unrestricted battlefield; preset challenges retain team sides.
   for(const side of[-1,1])for(const z of[-32,32]){
-    const x=side*(campaign?36:117),zz=z*(campaign?1:3),y=height(x,zz),col=side<0?0x58bed9:0xeb7b72;
+    const x=side*(campaign?36:117),zz=z*(campaign?1:3),y=height(x,zz),col=freePlacement?0xe1e9c5:side<0?0x58bed9:0xeb7b72;
     part("cyl",x,y+3,zz,.13,6,.13,0xf0dec1);
     const flag=new T.Mesh(new T.PlaneGeometry(2.6,1.5,5,1),new T.MeshLambertMaterial({color:col,side:T.DoubleSide}));flag.position.set(x+1.3,y+4.9,zz);flag.userData.flag=true;group.add(flag);animated.push(flag);
   }
@@ -165,7 +165,7 @@ function create(campaign,mapIndex=0){
     }
     planning.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:col,transparent:true,opacity:.8})));
   }
-  if(campaign){boundary(-34,-2,-34,34,0x72d4ed);boundary(2,34,-34,34,0xffa49a)}else boundary(-115,115,-115,115,0xe1e9c5);
+  if(campaign&&!freePlacement){boundary(-34,-2,-34,34,0x72d4ed);boundary(2,34,-34,34,0xffa49a)}else boundary(-limit,limit,-limit,limit,0xe1e9c5);
   const ray=new T.Raycaster();let time=0;
   function frame(dt,reduced=false){
     if(!reduced)time+=dt;

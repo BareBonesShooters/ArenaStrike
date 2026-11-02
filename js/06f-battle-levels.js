@@ -10,11 +10,11 @@ function level(raw,{draft=false}={}){
  if(hint.length>240)throw Error("Keep the level description under 241 characters.");
  if(!Number.isInteger(raw.budget)||raw.budget<65||raw.budget>100000)throw Error("Player budget must be a whole number between 65 and 100,000.");
  if(!maps.includes(raw.map))throw Error("Choose a valid landscape.");
- if(!Array.isArray(raw.enemy)||raw.enemy.length>MAX_ENEMIES||(!draft&&!raw.enemy.length))throw Error("Place 1–40 enemies on the red side before testing or publishing.");
+ if(!Array.isArray(raw.enemy)||raw.enemy.length>MAX_ENEMIES||(!draft&&!raw.enemy.length))throw Error("Place 1–40 enemies inside the battlefield before testing or publishing.");
  const enemy=[];
  for(const u of raw.enemy){
   const t=u&&BattleRules.troop(u.id);
-  if(!t||u.team!==1||!Number.isFinite(u.x)||!Number.isFinite(u.z)||u.x<2||u.x>34||Math.abs(u.z)>34)throw Error("Enemies must be valid troops on the red side, inside the battlefield.");
+  if(!t||u.team!==1||!Number.isFinite(u.x)||!Number.isFinite(u.z)||Math.abs(u.x)>34||Math.abs(u.z)>34)throw Error("Enemies must be valid red troops inside the battlefield.");
   if(enemy.some(v=>Math.hypot(v.x-u.x,v.z-u.z)<(BattleRules.troop(v.id).scale||1)+(t.scale||1)))throw Error("Leave a little space between enemy troops.");
   enemy.push({id:u.id,team:1,x:u.x,z:u.z});
  }
