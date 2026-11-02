@@ -12,8 +12,7 @@ for(let y=0;y<h;y+=16){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
 g.fillStyle=tint(c,0);g.fillRect(0,8,w,5);g.fillRect(0,h-13,w,5);
 g.fillStyle="#ffb16b";g.font="bold 36px monospace";g.textAlign="center";g.textBaseline="middle";g.fillText("<DEV/>",w/2,h/2);
 g.fillStyle="#e2f7ff";g.fillRect(15,h/2-3,12,6);g.fillRect(w-27,h/2-3,12,6)},
-metal(g,w,h,c,r){const q=g.createLinearGradient(0,0,0,h);q.addColorStop(0,tint(c,.45));q.addColorStop(.45,tint(c,0));q.addColorStop(1,tint(c,-.45));g.fillStyle=q;g.fillRect(0,0,w,h);
-for(let i=0;i<260;i++){g.fillStyle=r()<.5?"rgba(255,255,255,.07)":"rgba(0,0,0,.08)";g.fillRect(0,r()*h,w,1)}g.fillStyle="rgba(255,255,255,.1)";g.fillRect(0,h*.08,w,2)},
+metal(g,w,h,c,r){g.fillStyle=tint(c,-.08);g.fillRect(0,0,w,h);g.fillStyle=tint(c,.2);g.fillRect(0,0,w,h*.22);g.fillStyle="#e8d5a8";g.fillRect(0,h*.68,w,h*.12);g.fillStyle="#3d5853";g.fillRect(w*.73,0,w*.08,h);},
 camo(g,w,h,c,r){g.fillStyle=tint(c,-.35);g.fillRect(0,0,w,h);const cols=[tint(c,.15),tint(c,-.6),"#4a3b24",tint(c,.4)];
 for(let i=0;i<46;i++){g.fillStyle=cols[i%4];g.beginPath();const x=r()*w,y=r()*h,rx=10+r()*30,ry=6+r()*16;g.ellipse(x,y,rx,ry,r()*3,0,6.283);g.fill()}},
 fade(g,w,h,c,r){const q=g.createLinearGradient(0,0,w,h*.4);q.addColorStop(0,tint(c,-.35));q.addColorStop(.5,tint(c,.1));q.addColorStop(1,tint(c,.85));g.fillStyle=q;g.fillRect(0,0,w,h);
@@ -58,7 +57,7 @@ function skinMat(sk){
 if(SKM[sk.id])return SKM[sk.id];
 const c=document.createElement("canvas");c.width=256;c.height=128;SKP[sk.kind](c.getContext("2d"),256,128,sk.c,mkRng(sk.c*7+13));
 const map=new T.CanvasTexture(c);map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4;const sp=SKS[sk.kind]||SKS.metal;
-const o={map,specular:sp[0],shininess:sp[1],envMap:ENV,reflectivity:sp[3],combine:T.AddOperation};if(sp[2]){o.emissive=0xffffff;o.emissiveMap=map;o.emissiveIntensity=sp[2]}
+const o={map,specular:0x52645c,shininess:18,flatShading:true};if(sp[2]){o.emissive=0xffffff;o.emissiveMap=map;o.emissiveIntensity=sp[2]}
 const m=new T.MeshPhongMaterial(o);m.userData.kind=sk.kind;if(ANIMK[sk.kind])ANIMM.push(m);return SKM[sk.id]=m}
 function animSkins(t){for(const m of ANIMM){const k=m.userData.kind;
 if(k==="prism"){m.map.offset.x=(t*.12)%1;m.emissive.setHSL((t*.15)%1,.9,.35);m.emissiveIntensity=.55}
@@ -75,7 +74,7 @@ top=mk(g=>{g.fillStyle="#8da2c6";g.fillRect(0,0,S2,S2);g.fillStyle="#fff";g.fill
 const t=new T.CubeTexture([side([[6,14],[40,12]]),side([[20,18]]),top,bot,side([[4,10],[30,16],[52,8]]),side([[12,12],[44,14]])]);t.needsUpdate=true;return t})();
 
 // ---------- shared materials ----------
-const MDK=new T.MeshPhongMaterial({color:0x23262d,specular:0x555555,shininess:55,envMap:ENV,reflectivity:.12,combine:T.AddOperation}),MMT=new T.MeshPhongMaterial({color:0x6b7280,specular:0xcccccc,shininess:110,envMap:ENV,reflectivity:.3,combine:T.AddOperation}),
+const MDK=new T.MeshPhongMaterial({color:0x293e3b,specular:0x425b52,shininess:12,flatShading:true}),MMT=new T.MeshPhongMaterial({color:0x9d9d80,specular:0xb8c0a3,shininess:22,flatShading:true}),
 MWD=new T.MeshPhongMaterial({color:0x6b4423,shininess:20}),MGL=new T.MeshBasicMaterial({color:0x00ffd0}),MBL=new T.MeshBasicMaterial({color:0x66ccff}),MRD=new T.MeshBasicMaterial({color:0xff4f6a}),MMG=new T.MeshBasicMaterial({color:0xf0abfc});
 const RAILM=(()=>{const c=document.createElement("canvas");c.width=32;c.height=4;const g=c.getContext("2d");g.fillStyle="#2b2f38";g.fillRect(0,0,32,4);g.fillStyle="#0a0b0e";g.fillRect(0,0,12,4);const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.magFilter=T.NearestFilter;return new T.MeshPhongMaterial({map:t,shininess:40})})();
 const FLASH=(()=>{const c=document.createElement("canvas");c.width=c.height=64;const g=c.getContext("2d"),q=g.createRadialGradient(32,32,0,32,32,32);q.addColorStop(0,"rgba(255,255,230,1)");q.addColorStop(.3,"rgba(255,210,90,.85)");q.addColorStop(1,"rgba(255,140,0,0)");g.fillStyle=q;g.fillRect(0,0,64,64);return new T.CanvasTexture(c)})();
@@ -128,6 +127,7 @@ if(sk2==="iron"||sk2==="rev"||sk2==="bead"){ob(.012,.035,.012,0,.1,f-g.b*.75,MDK
 grp.add(optic);
 const mf=new T.Sprite(new T.SpriteMaterial({map:FLASH,blending:T.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));
 const mz={x:0,y:.02,z:f-g.b-.07};mf.position.set(mz.x,mz.y,mz.z);mf.scale.setScalar(.34);mf.visible=false;grp.add(mf);
+YardArt.gun(grp,g);
 return{grp,mf,mz,f,optic,lens,mag,prop,grip:{x:0,y:pistol?-.1:-.125,z:g.l*.27},fore:{x:0,y:g.pump?-.07:-.045,z:g.pump?f-.1:f-Math.min(g.b,.3)*.55}}}
 
 // ---------- knife model (blade points toward -z, edge downward) ----------
@@ -229,7 +229,7 @@ tryPlace(bp[0],bp[1]);
 hold={rig,piv,tg:tg.clone(),tf:tf.clone()};
 gun.grp.traverse(m=>{if(m.isMesh)m.castShadow=false})}
 hurtBox(g,.62,1.52,.42,0,.88,0,false,hit);hurtBox(head,.44,.5,.44,0,.02,0,true,hit);
-g.userData={legs,arms,torso,head,hit,mats,gun,hold,body,ph:0,sp:0,kick:0,flashT:0};g.scale.setScalar(.88);g.add(blobShadow(.55));if(hold)poseHuman(g,0,0,0);return g}
+g.userData={legs,arms,torso,head,hit,mats,gun,hold,body,ph:0,sp:0,kick:0,flashT:0};YardArt.human(g,o);g.scale.setScalar(.88);g.add(blobShadow(.55));if(hold)poseHuman(g,0,0,0);return g}
 // invisible hurt boxes: forgiving, gap-free volumes around the body and the head so shots at the visible shape never slip between the thin limbs
 const HURT=new T.MeshBasicMaterial({visible:false});
 function hurtBox(par,w,h,d,x,y,z,head,hit){const m=new T.Mesh(new T.BoxGeometry(w,h,d),HURT);m.position.set(x,y,z);m.userData.head=!!head;par.add(m);hit.push(m);return m}
@@ -298,22 +298,7 @@ else{l[0].rotation.x=s*.6;l[1].rotation.x=-s*.6;a[0].rotation.z=-s*.9-.2;a[1].ro
 return dy}
 
 // ---------- monsters ----------
-function mkMon(k){
-const pal=[[0x3f7a35,0xff2200],[0x6b2d8f,0xffee00],[0x8a1c1c,0x00ffcc]][k],g=new T.Group(),hit=[],mats=[];
-const mk=c=>{const m=new T.MeshLambertMaterial({color:c});mats.push(m);return m},mb=mk(pal[0]),md=mk(0x222222),mbone=mk(0xe8e4d0),eye=new T.MeshBasicMaterial({color:pal[1]});
-const part=(w,h,d,x,y,z,mat,head,par)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.userData.head=!!head;(par||g).add(m);hit.push(m);return m};
-const torso=new T.Group();torso.position.y=1.1;g.add(torso);const tm=new T.Mesh(new T.BoxGeometry(.9,1,.6),mb);tm.castShadow=true;torso.add(tm);hit.push(tm);
-const hd=new T.Group();hd.position.set(0,1.85,.15);g.add(hd);
-const hm=new T.Mesh(new T.BoxGeometry(.6,.5,.5),mb);hm.userData.head=true;hm.castShadow=true;hd.add(hm);hit.push(hm);
-[[-.15],[.15]].forEach(([x])=>{const e=new T.Mesh(new T.BoxGeometry(.13,.12,.05),eye);e.position.set(x,.05,.27);e.userData.head=true;hd.add(e);hit.push(e)});
-const mo=new T.Mesh(new T.BoxGeometry(.4,.1,.05),md);mo.position.set(0,-.14,.27);hd.add(mo);
-[-.25,.25].forEach(x=>{const c=new T.Mesh(new T.ConeGeometry(.08,.4,5),mbone);c.position.set(x,.4,0);c.userData.head=true;hd.add(c);hit.push(c)});
-for(let i=0;i<3;i++){const c=new T.Mesh(new T.ConeGeometry(.1,.35,5),mbone);c.position.set(0,1.5+i*.3-1.1+.1,-.35);c.rotation.x=-1.9;torso.add(c);c.position.y=.4-i*.3;hit.push(c)}
-const legs=[limb(g,-.25,.7,0,.3,.7,.3,md,hit),limb(g,.25,.7,0,.3,.7,.3,md,hit)];
-const arms=[limb(g,-.6,1.55,0,.2,1.1,.2,mb,hit),limb(g,.6,1.55,0,.2,1.1,.2,mb,hit)];
-arms.forEach(a=>{const cl=new T.Mesh(new T.ConeGeometry(.1,.3,4),mbone);cl.position.y=-1.2;cl.rotation.x=Math.PI;a.add(cl)});
-hurtBox(g,1.05,1.5,.75,0,.82,0,false,hit);hurtBox(hd,.78,.68,.66,0,0,0,true,hit);
-g.userData={legs,arms,torso,head:hd,hit,mats,ph:rnd()*6,sp:1,kick:0};g.add(blobShadow(k==2?.85:.7));g.scale.setScalar(k==2?1.4:k==1?.95:1.05);return g}
+function mkMon(k){return YardArt.monster(k)}
 function poseMon(m,dt,att){
 const u=m.userData,p=m.position,sc=m.scale.y||1;
 // the walk cycle is driven by the ground actually covered: one leg swing per step length, so the feet stay planted instead of skating
@@ -400,7 +385,7 @@ const s=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),depthWrite
 const Thumb=(()=>{
 let r=null,scn=null,tcam=null;const cache=new Map(),q=[];let busy=false;
 function init(){if(r)return true;try{r=new T.WebGLRenderer({antialias:!SOFT,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(1)}catch(e){r=false;return false}
-scn=new T.Scene();scn.add(new T.HemisphereLight(0xdfe9ff,0x303040,.85));const d=new T.DirectionalLight(0xffffff,1.1);d.position.set(3,4,5);scn.add(d);const rim=new T.DirectionalLight(0x8ab4ff,.7);rim.position.set(-4,2,-3);scn.add(rim);const d2=new T.DirectionalLight(0xfff0d0,.45);d2.position.set(-3,-1,4);scn.add(d2);
+scn=new T.Scene();scn.add(new T.HemisphereLight(0xa9d2ce,0x7c7054,.67));const d=new T.DirectionalLight(0xffe0a5,.85);d.position.set(3,4,5);scn.add(d);const rim=new T.DirectionalLight(0xa9d2ce,.3);rim.position.set(-4,2,-3);scn.add(rim);const d2=new T.DirectionalLight(0xfff0d0,.45);d2.position.set(-3,-1,4);scn.add(d2);
 tcam=new T.PerspectiveCamera(30,1.6,.05,50);return true}
 function make(kind,item,w,h){
 if(!init())return"";r.setSize(w,h,false);tcam.aspect=w/h;tcam.updateProjectionMatrix();
@@ -410,7 +395,7 @@ else if(kind==="skin"){const b=buildGun(GB("g2"),item);obj=b.grp;obj.rotation.se
 else if(kind==="knife"){const b=buildKnife(item);obj=b.grp;obj.rotation.set(0,-Math.PI/2-.35,.25);obj.rotation.x=0}
 else{obj=mkHuman({body:item.c,trim:item.t,style:item.sty,gun:GB("g2")});obj.scale.setScalar(1);obj.rotation.y=.55;obj.traverse(m=>{if(m.isMesh)m.castShadow=false})}
 scn.add(obj);const box=new T.Box3().setFromObject(obj),c=box.getCenter(new T.Vector3()),s=box.getSize(new T.Vector3()),
-th=Math.tan(T.MathUtils.degToRad(tcam.fov/2)),span=Math.max(s.x,s.y*1.6,s.z)*fit,dist=kind==="out"?span/(2*th)*1.05:Math.max(s.x/(2*th*tcam.aspect),s.y/(2*th))*1.18/fit*1.0;
+th=Math.tan(T.MathUtils.degToRad(tcam.fov/2)),span=Math.max(s.x,s.y*1.6,s.z)*fit,dist=kind==="out"?Math.max(s.x/(2*th*tcam.aspect),s.y/(2*th))*1.05:Math.max(s.x/(2*th*tcam.aspect),s.y/(2*th))*1.18/fit*1.0;
 obj.position.sub(c);tcam.position.set(0,kind==="out"?0:.05,dist+Math.max(s.x,s.z)/2);tcam.lookAt(0,0,0);
 r.render(scn,tcam);const url=r.domElement.toDataURL("image/png");scn.remove(obj);disposeGeo(obj);return url}
 function get(kind,item,w,h){const key=kind+item.id+(item.skin!=null?item.skin:"")+w;return cache.get(key)}
@@ -419,3 +404,4 @@ q.push({key,kind,item,w,h,cb});pump()}
 function pump(){if(busy||!q.length)return;busy=true;setTimeout(()=>{const j=q.shift();if(j){try{let u=cache.get(j.key);if(!u){u=make(j.kind,j.item,j.w,j.h);cache.set(j.key,u)}j.cb(u)}catch(e){}}busy=false;pump()},SOFT?40:12)}
 function flush(){q.length=0}
 return{req,get,flush}})();
+

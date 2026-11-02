@@ -2,7 +2,7 @@
 // ---------- lobby backdrop, adaptive quality and main loop ----------
 function backdrop(){
 bkReady=true;clearEnts();Fx.clear();endEmote();
-buildWorld(pk(OUTDOOR),(rnd()*2147483647)|0,{});
+buildWorld("meadow",918273,{});
 cam.fov=58;cam.updateProjectionMatrix()}
 
 // Four quality levels plus a render scale. Auto first shrinks the render resolution (down to half) whenever play averages under ~38 fps, drops a whole level once that is not enough, and
@@ -41,9 +41,9 @@ fit();
 sun.castShadow=q.sh>0;
 if(q.sh&&sun.shadow.mapSize.x!==q.sh){sun.shadow.mapSize.set(q.sh,q.sh);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}
 if(!q.sh&&sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
-Bloom.set(l===0);Flare.set(l<=1);document.body.classList.toggle("grade",l===0);document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
+Bloom.set(false);Flare.set(false);document.body.classList.remove("grade");document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
 // filmic tone mapping (High and Medium) rolls bright skies and muzzle glare off smoothly instead of clipping them
-const tmWas=rd.toneMapping;rd.toneMapping=q.tm?T.ACESFilmicToneMapping:T.NoToneMapping;rd.toneMappingExposure=q.tm||1;
+const tmWas=rd.toneMapping;rd.toneMapping=T.NoToneMapping;rd.toneMappingExposure=1;
 if(q.mz&&!mzL.parent)sc.add(mzL);else if(!q.mz&&mzL.parent)sc.remove(mzL);
 sc.traverse(o=>{if(o.userData&&o.userData.blob)o.visible=!q.sh});
 if(tmWas!==rd.toneMapping)sc.traverse(o=>{if(o.material){for(const m of[].concat(o.material))m.needsUpdate=true}});
@@ -82,9 +82,9 @@ if(paused&&fr%(S.gfx>1?4:2)){return}
 if(playing){update(dt*Death.frame(dt));Q.tick(raw)}
 else if(state==="title"){Title.frame(dt,clock)}
 else if(!paused){
-const a=clock*.11;
+const a=.72+Math.sin(clock*.035)*.075;
 if(cam.fov!==58){cam.fov=58;cam.updateProjectionMatrix()}
-cam.position.set(Math.sin(a)*30,14+Math.sin(clock*.2)*1.5,Math.cos(a)*30);cam.lookAt(0,2,0)}
+cam.position.set(Math.sin(a)*34,18,Math.cos(a)*34);cam.lookAt(-3,2,-5)}
 worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
 rd.shadowMap.needsUpdate=!(fr&1)||S.gfx>1;
@@ -396,3 +396,4 @@ if(w<prev){tr.style.transition="none";tr.style.width=prev+"%";void tr.offsetWidt
 else{tr.style.transition="none";tr.style.width=w+"%"}
 prev=w}).observe(hp,{attributes:true,attributeFilter:["style"]})}
 document.addEventListener("pointermove",e=>{const b=e.target&&e.target.closest&&e.target.closest(".b");if(!b)return;const r=b.getBoundingClientRect();b.style.setProperty("--bx",(e.clientX-r.left)+"px");b.style.setProperty("--by",(e.clientY-r.top)+"px")},{passive:true})}
+
