@@ -267,7 +267,8 @@ crateAt(q1[0],q1[1],1.2,2);crateAt(q2[0],q2[1],1.2,1)}
 // outdoor staircase up the side wall to the roof (steps are under STEP, so walking is enough); tries each side and direction until it fits
 {const top=pitched?h+.2:h+.32,n=Math.ceil(top/.5),sh=top/n,dep=.9,scol=lerpC(th.trim,0xffffff,.18);let done=false;
 for(const sg of(rng()<.5?[1,-1]:[-1,1])){if(done)break;for(const dz of[1,-1]){const lxs=sg*(w/2+.8),z0=-dz*(d/2-.8),pts=[];for(let i=0;i<n;i++)pts.push(L(lxs,z0+dz*(n-1-i)*dep));
-if(pts.every(q=>free(q[0],q[1],.6,1))){for(let i=0;i<n;i++)lb(x,z,rot,lxs,z0+dz*(n-1-i)*dep,1.2,sh*(i+1),dep+.04,scol,.7);
+// Touching treads share an edge, never a strip of coplanar side faces.
+if(pts.every(q=>free(q[0],q[1],.6,1))){for(let i=0;i<n;i++)lb(x,z,rot,lxs,z0+dz*(n-1-i)*dep,1.2,sh*(i+1),dep,scol,.7);
 for(let i=0;i<n;i+=3){const q=L(lxs+sg*.6,z0+dz*(n-1-i)*dep);P("box",q[0],sh*(i+1)+.5,q[1],.08,1,.08,0x2a2c34,0,1)}
 done=true;break}}}}
 p=L(0,d/2+.05);P("box",p[0],1,p[1],1.1,2,.12,0x5b3a21,ry,.9);p=L(0,d/2+.5);P("box",p[0],.08,p[1],1.9,.16,.9,th.trim,ry,1);
@@ -284,11 +285,13 @@ if(pine){for(let i=0;i<4;i++){const r=(2.6-i*.5)*t;P("cone",x,(2+i*1.05)*t,z,r*1
 else{P("ico",x,3.5*t,z,3.3*t,2.8*t,3.3*t,leaf,rng()*3,.55);P("ico",x+.9*t,3.0*t,z+.4*t,2.2*t,1.9*t,2.2*t,lerpC(leaf,0xffffff,.1),rng()*3,.6);P("ico",x-.7*t,3.1*t,z-.6*t,2.3*t,2*t,2.3*t,leaf,rng()*3,.6)}
 return true};
 const crateAt=(x,z,s,stack)=>{const h=s*stack,col=pick([0x8b6b3d,0x9a7a48,0x7a5c34]);reg(x,z,s,s,h);
-for(let i=0;i<stack;i++){P("box",x,s*(i+.5),z,s,s,s,col,0,.62);P("box",x,s*(i+.5),z,s+.06,s*.14,s+.06,0x4e3a20,0,.9);P("box",x,s*(i+.5),z,s*.14,s+.06,s+.06,0x4e3a20,0,.9)}return true};
+// Keep crossing straps at different depths, and inset their ends from the lids.
+for(let i=0;i<stack;i++){P("box",x,s*(i+.5),z,s,s,s,col,0,.62);P("box",x,s*(i+.5),z,s+.06,s*.14,s+.06,0x4e3a20,0,.9);P("box",x,s*(i+.5),z,s*.14,s-.02,s+.08,0x4e3a20,0,.9)}return true};
 const crate=(x,z,s,stack)=>{if(!free(x,z,s*.8+.3))return false;crateAt(x,z,s,stack);return true};
 const barrel=(x,z)=>{if(!free(x,z,.9))return false;reg(x,z,.9,.9,1.1);const c=pick([0xbb6043,0x4c8f89,0x83966b,0xd1ad5c]);P("cyl",x,.55,z,.9,1.1,.9,c,0,.6);P("cyl",x,.55,z,.93,.16,.93,lerpC(c,0xffffff,.5),0,.9);P("cyl",x,.25,z,.95,.1,.95,0x333333,0,1);P("cyl",x,.85,z,.95,.1,.95,0x333333,0,1);P("cyl",x,1.1,z,.8,.04,.8,0x222222,0,1);P("cyl",x,1.14,z,.22,.05,.22,0x555555,0,1);return true};
 const barrelGroup=(x,z)=>{let n=0;for(const [a,b] of[[0,0],[.95,.25],[-.2,.98]])if(barrel(x+a,z+b))n++;return n>0};
-const barrier=(x,z,rot)=>{const w=rot&1?.7:3,d=rot&1?3:.7;if(!free(x,z,Math.max(w,d)/2+.4))return false;reg(x,z,w,d,1);const c=0xa7a9ad;P("box",x,.35,z,w*(rot&1?1.4:1),.7,d*(rot&1?1:1.4),c,0,.6);P("box",x,.85,z,w,.6,d,c,0,.65);P("box",x,.8,z,w+.02,.14,d+.02,0xff7a1a,0,1);return true};
+// The upper block starts at the base's top; overlapping ends caused z-fighting.
+const barrier=(x,z,rot)=>{const w=rot&1?.7:3,d=rot&1?3:.7;if(!free(x,z,Math.max(w,d)/2+.4))return false;reg(x,z,w,d,1);const c=0xa7a9ad;P("box",x,.35,z,w*(rot&1?1.4:1),.7,d*(rot&1?1:1.4),c,0,.6);P("box",x,.925,z,w,.45,d,c,0,.65);P("box",x,.8,z,w+.02,.14,d+.02,0xff7a1a,0,1);return true};
 const sandbags=(x,z,rot)=>{const w=rot&1?.9:2.6,d=rot&1?2.6:.9;if(!free(x,z,Math.max(w,d)/2+.4))return false;reg(x,z,w,d,.9);const c=pick([0xb8a67a,0xa89a74]);P("box",x,.22,z,w,.44,d,c,0,.6);P("box",x,.62,z,w*(rot&1?.9:.82),.38,d*(rot&1?.82:.9),lerpC(c,0x000000,.08),0,.65);return true};
 const tires=(x,z)=>{if(!free(x,z,.9))return false;reg(x,z,.95,.95,1.2);for(let i=0;i<3;i++){P("cyl",x,.2+i*.4,z,.95-i*.04,.4,.95-i*.04,0x1b1c20,0,.6);P("cyl",x,.2+i*.4,z,.5,.42,.5,0x3a3b42,0,1)}return true};
 const car=(x,z,rot,ig)=>{const w=rot&1?1.8:3.6,d=rot&1?3.6:1.8;if(!free(x,z,2.3,ig))return false;reg(x,z,w,d,1.5);const ry=rot*PI/2,c=Math.cos(ry),s=Math.sin(ry),L=(lx,lz)=>[x+lx*c+lz*s,z-lx*s+lz*c],col=pick([0xb65d40,0x4c8988,0xd5b15e,0xe7d6af,0x4b6053,0x77916a]);
@@ -321,7 +324,7 @@ const arenaPack=v=>{
 const c1=lerpC(th.trim,0x8a8e9a,.4),c2=lerpC(th.trim,0xffffff,.25),gl=th.lamp,wc3=pick(th.house);
 const deck=(x,z,w,d,hh)=>{blk(x,z,w,hh,d,c1,.7);P("box",x,hh+.05,z,w+.16,.1,d+.16,c2,0,1);
 for(const [a,b,ww,dd] of[[0,d/2+.01,w,.07],[0,-d/2-.01,w,.07],[w/2+.01,0,.07,d],[-w/2-.01,0,.07,d]])P("box",x+a,hh-.25,z+b,ww,.12,dd,gl,0,1,glow)};
-const stairs=(ex,ez,dx,dz,h0,h1,wd)=>{const n=Math.ceil((h1-h0)/.5);for(let i=0;i<n;i++){const k=.45+(n-1-i)*.9,cx=ex-dx*k,cz=ez-dz*k;blk(cx,cz,dx?.94:wd,h0+(h1-h0)*(i+1)/n,dx?wd:.94,c2,.75)}};
+const stairs=(ex,ez,dx,dz,h0,h1,wd)=>{const n=Math.ceil((h1-h0)/.5);for(let i=0;i<n;i++){const k=.45+(n-1-i)*.9,cx=ex-dx*k,cz=ez-dz*k;blk(cx,cz,dx?.9:wd,h0+(h1-h0)*(i+1)/n,dx?wd:.9,c2,.75)}};
 const low=(x,z,w,d,hh)=>{blk(x,z,w,hh,d,wc3,.65);P("box",x,hh+.06,z,w+.1,.12,d+.1,th.trim,0,1)};
 const pillar=(x,z,hh)=>{blk(x,z,1.7,hh,1.7,lerpC(c1,0x000000,.15),.6);P("box",x,.3,z,2.1,.6,2.1,c2,0,.8);P("box",x,hh+.2,z,2.1,.4,2.1,c2,0,.8);P("box",x,hh*.6,z,.12,hh*.5,1.76,gl,0,1,glow)};
 if(v===0){ // keep: two-tier fortress, corner bunkers, ring of cover
