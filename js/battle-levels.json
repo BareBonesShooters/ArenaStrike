@@ -1,4 +1,123 @@
 {
   "version": 1,
-  "levels": []
+  "levels": [
+    {
+      "id": "level-ef533a65-2619-45c9-9b24-1fe70a9f9d2c",
+      "n": "Titan Challenge",
+      "hint": "Choose your troops and defeat the red army.",
+      "budget": 1000,
+      "map": "vale",
+      "enemy": [
+        {
+          "id": "titan",
+          "team": 1,
+          "x": 33,
+          "z": 12
+        },
+        {
+          "id": "titan",
+          "team": 1,
+          "x": 28,
+          "z": -20
+        },
+        {
+          "id": "titan",
+          "team": 1,
+          "x": 27.5,
+          "z": -5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 8,
+          "z": 20.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 8.5,
+          "z": 18
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 9,
+          "z": 15.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 8.5,
+          "z": 13.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 8.5,
+          "z": 11
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 8.5,
+          "z": 8.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 9,
+          "z": 5.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 9.5,
+          "z": 2.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 9,
+          "z": -1
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 10,
+          "z": -4
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 9.5,
+          "z": -6.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 10.5,
+          "z": -11
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 11.5,
+          "z": -14.5
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 11,
+          "z": -17
+        },
+        {
+          "id": "brawler",
+          "team": 1,
+          "x": 10.5,
+          "z": -20.5
+        }
+      ],
+      "updatedAt": "2026-11-02T02:17:11.350Z"
+    }
+  ]
 }
