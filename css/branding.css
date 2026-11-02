@@ -1,0 +1,8 @@
+/* Shared identity only; layout and colors still come from the original UI. */
+.arena-brand-mark{width:42px;height:42px;object-fit:contain;border-radius:10px;flex:none;float:left;margin-right:10px}
+.brand h1{min-width:0}
+.cb-touch-guide{display:none}
+.arena-title-mark{display:block;width:88px;height:88px;object-fit:contain;border-radius:20px;margin:0 auto 16px}
+.mobile-ui .arena-title-mark{width:72px;height:72px;margin-bottom:12px}
+.mobile-ui .arena-brand-mark{width:42px;height:42px}
+@media (orientation:landscape) and (max-height:600px){.mobile-ui .arena-title-mark{grid-row:1 / span 3;margin:0;width:80px;height:80px}}
