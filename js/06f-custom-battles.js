@@ -118,7 +118,7 @@ function start(m){
 if(!BattleRules.isMode(m))return false;
 if(m==="battle_maker"&&!DevAccess.unlocked){toast("Enter the developer code to unlock Battle Sim Maker.");return false}
 Party.leave();Death.stop();corrReset();clearEnts();Fx.clear();clearKeys();
-mode=m;grind=false;maker=m==="battle_maker";editorSession++;testing=false;makerBusy=false;publishNote="";publishCommit="";catalog=builtins();campaign=m!=="sandbox";active=true;joined=false;speed=1;pick=0;level=0;landscape=0;simTime=0;compact=false;pointer.seen=false;P.max=100;PU=PUbase();
+mode=m;grind=false;maker=m==="battle_maker";editorSession++;testing=false;makerBusy=false;publishNote="";publishCommit="";catalog=builtins();campaign=m!=="sandbox";active=true;joined=false;speed=1;pick=0;level=0;landscape=0;simTime=0;compact=document.body.classList.contains("touch");pointer.seen=false;P.max=100;PU=PUbase();
 if(maker){draft=freshDraft();baseRevision=null;try{const saved=JSON.parse(localStorage.getItem(draftKey));if(saved){draft=BattleLevelData.level(saved.level,{draft:true});baseRevision=typeof saved.revision==="string"?saved.revision:null}}catch(e){publishNote="The old draft could not be loaded. A new draft is ready."}}
 rL=0;P.fz=0;P.dead=0;slot=0;knifeCD=0;nextShot=0;wave=0;wq=wn=0;placePlayer({x:0,z:28},0,0);
 buildWorld("meadow",81261,{empty:true,custom:true});
@@ -384,9 +384,9 @@ ${!campaign?`<div class="cb-actions cb-toolrow">${joined?'<button class="b" data
 ${makerPanel()}
 <p class="cb-notice" role="status">${esc(notice)}</p><small class="cb-health" data-cb-health></small></aside>
 <aside class="cb-minimap gl"><div><small>FIELD OVERVIEW</small><span>N ↑</span></div><canvas width="160" height="160" aria-label="Live map of terrain, armies and camera"></canvas><p>${esc(spec.n)}</p></aside>
-<section class="cb-bottom gl ${joined?"cb-hidden":""}"><div class="cb-selected"><div><small>${erase?"REMOVE TOOL":"SELECTED UNIT"}</small><b>${esc(t.n)}</b><span>${t.hp} HP <i>·</i> ${t.damage} DMG <i>·</i> ${t.reach}m range</span></div><p>${esc(t.tip)}</p></div><div class="cb-hotbar" role="toolbar" aria-label="Troop hotbar">${BattleRules.troops.map((u,i)=>`<button class="cb-slot${pick===i?" on":""}" data-custom="unit" data-v="${i}" aria-label="${u.n}, ${campaign?u.cost+" budget":u.hp+" health"}" aria-pressed="${pick===i}" ${locked?"disabled":""}><kbd>${i+1}</kbd>${BattleVisuals.portrait(u.id,hex[team])}<b>${u.n}</b><small>${campaign?u.cost+" budget":u.hp+" HP"}</small></button>`).join("")}</div><p class="cb-help"><span><kbd>CLICK</kbd> Place troop</span><span><kbd>RMB</kbd> Look</span><span><kbd>WASD</kbd> Fly</span><span><kbd>SPACE / C</kbd> Up / down</span><span><kbd>SCROLL</kbd> Height</span><span><kbd>SHIFT</kbd> Faster</span></p></section>
+<section class="cb-bottom gl ${joined?"cb-hidden":""}"><div class="cb-selected"><div><small>${erase?"REMOVE TOOL":"SELECTED UNIT"}</small><b>${esc(t.n)}</b><span>${t.hp} HP <i>·</i> ${t.damage} DMG <i>·</i> ${t.reach}m range</span></div><p>${esc(t.tip)}</p></div><div class="cb-hotbar" role="toolbar" aria-label="Troop hotbar">${BattleRules.troops.map((u,i)=>`<button class="cb-slot${pick===i?" on":""}" data-custom="unit" data-v="${i}" aria-label="${u.n}, ${campaign?u.cost+" budget":u.hp+" health"}" aria-pressed="${pick===i}" ${locked?"disabled":""}><kbd>${i+1}</kbd>${BattleVisuals.portrait(u.id,hex[team])}<b>${u.n}</b><small>${campaign?u.cost+" budget":u.hp+" HP"}</small></button>`).join("")}</div><p class="cb-help"><span class="cb-touch-guide">Tap ground to place · Drag to look · Left stick to fly</span><span><kbd>CLICK</kbd> Place troop</span><span><kbd>RMB</kbd> Look</span><span><kbd>WASD</kbd> Fly</span><span><kbd>SPACE / C</kbd> Up / down</span><span><kbd>SCROLL</kbd> Height</span><span><kbd>SHIFT</kbd> Faster</span></p></section>
 ${finished?`<div class="cb-result ${finished}"><small>BATTLE COMPLETE</small><h2>${finished==="draw"?"A draw":campaign?finished==="blue"?"Victory":"Defeat":(finished==="blue"?"Blue":"Red")+" army wins"}</h2><p>${maker?"Return to the editor to adjust or publish your level.":campaign&&finished==="blue"?level===catalog.length-1?"All challenges conquered.":"Your next challenge awaits.":"Reset your formation to play again."}</p></div>`:""}
-${joined?'<div class="cb-joinhint gl">WASD move · Click fire · Right click aim · R reload · 1/2 gun/knife · F return to flight</div>':""}`;
+${joined?(document.body.classList.contains("touch")?'<div class="cb-joinhint gl"><button class="b" data-custom="flight">Return to flight</button></div>':'<div class="cb-joinhint gl">WASD move · Click fire · Right click aim · R reload · 1/2 gun/knife · F return to flight</div>'):""}`;
 minimap=ui.querySelector(".cb-minimap canvas");status();ui.querySelector(".cb-panel").scrollTop=panelScroll;
 }
 function resumeCustom(){state="play";menuOpen=false;show("");$("hud").classList.remove("hid");ui.hidden=false;clearKeys();if(joined){document.body.classList.add("playing");Aim.request()}else document.body.classList.remove("playing")}
@@ -397,6 +397,7 @@ else if(a==="team"&&!campaign){team=+b.dataset.v;paint()}else if(a==="fight")fig
 else if(a==="next"&&!maker&&finished==="blue")loadLevel(level+1);else if(a==="join")join(+b.dataset.v);else if(a==="fly")returnToFlight();else if(a==="overview")overview();
 else if(a==="refresh-levels"&&!started)refreshLevels();
 else if(a==="compact"){compact=!compact;paint()}
+else if(a==="flight"&&joined)returnToFlight();
 else if(a==="map"&&!started&&(!campaign||editing())){landscape=clamp(+b.dataset.v,0,BattleVisuals.maps.length-1);if(maker){draft.map=BattleVisuals.maps[landscape].id;saveDraft()}battlefield();for(const u of units)u.g.position.y=groundHeight(u.g.position.x,u.g.position.z)+(u.t.hover||0);notice="Landscape changed to "+BattleVisuals.maps[landscape].n+". Your formation is ready.";paint()}
 else if(a==="speed"){speed=speed===1?.5:speed===.5?2:1;paint()}else if(a==="pause"){ui.hidden=true;pauseGame()}else if(a==="exit")quit();
 });
@@ -431,6 +432,9 @@ if(e.button===2){drag=true;lastX=e.clientX;lastY=e.clientY}else if(e.button===0)
 addEventListener("mouseup",()=>drag=false);
 rd.domElement.addEventListener("pointerleave",()=>{pointer.seen=false;if(marker)marker.visible=false;if(placementGhost)placementGhost.visible=false;if(rangeRing)rangeRing.visible=false});
 rd.domElement.addEventListener("wheel",e=>{if(!active||joined||state!=="play")return;e.preventDefault();e.stopImmediatePropagation();P.y=clamp(P.y+Math.sign(e.deltaY)*2,3,freePlacement()?200:100)},{capture:true,passive:false});
-return{start,stop,update,playerDamage,playerHurt,groundHeight,rayGround:(...args)=>scenery?scenery.rayDistance(...args):args[6],resume:resumeCustom,isMode:BattleRules.isMode,get active(){return active},get joined(){return joined},get canShoot(){return joined&&running},get playerTeam(){return playerTeam}};
+function touchLook(dx,dy){if(!active||joined||state!=="play")return;P.yaw-=dx*.004;P.pitch=clamp(P.pitch-dy*.004,-1.5,1.3)}
+function touchPlace(x,y){if(!active||joined||state!=="play")return;const r=rd.domElement.getBoundingClientRect();pointer={x:(x-r.left)/r.width*2-1,y:1-(y-r.top)/r.height*2,seen:true};updateMarker();if(hover)add(hover.x,hover.z)}
+return{start,stop,update,touchLook,touchPlace,playerDamage,playerHurt,groundHeight,rayGround:(...args)=>scenery?scenery.rayDistance(...args):args[6],resume:resumeCustom,isMode:BattleRules.isMode,get active(){return active},get joined(){return joined},get canShoot(){return joined&&running},get playerTeam(){return playerTeam}};
 })();
+
 

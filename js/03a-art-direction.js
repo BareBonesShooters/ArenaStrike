@@ -96,8 +96,10 @@ const YardArt = (() => {
   }
   function monster(k) {
     const g=new T.Group(),hit=[],mats=[],pal=[0x789863,0x86779f,0xc46648];
-    const body=material(pal[k],mats),ink=material(C.ink,mats),bone=material(C.paper,mats),
+    const body=material(pal[k],mats),ink=material(0x202d32,mats),bone=material(0xb6c4be,mats),
       trim=material(k===1?C.teal:C.brass,mats),iron=material(C.iron,mats);
+    const rust=material(0xa95737,mats),lens=material(k===1?0x7edbd5:0xffcc68,mats);
+    lens.emissive.setHex(k===1?0x266363:0x6b3a0c);lens.emissiveIntensity=.55;
     const add=(p,w,h,d,m,x,y,z,head=false)=>box(p,w,h,d,m,x,y,z,hit,head);
     const torso=new T.Group();torso.position.y=1.1;g.add(torso);
     const hd=new T.Group();hd.position.set(0,1.85,.15);g.add(hd);
@@ -106,59 +108,71 @@ const YardArt = (() => {
     add(torso,k===1?.73:.92,1,.62,body,0,0,0);
     add(torso,k===1?.75:.95,.14,.65,iron,0,-.38,0);
     // Each family has a different face and silhouette, even without its color.
-    if(k===0){ // Tin gremlin: oversized can lid, one goggle and a hinged jaw.
+    if(k===0){ // Scavenger: a dented appliance shell with a salvaged camera eye.
       add(hd,.65,.48,.53,body,0,0,0,true);
       add(hd,.72,.085,.59,iron,0,.25,0,true);
-      add(hd,.51,.13,.59,bone,0,-.205,.025,true);
+      add(hd,.51,.13,.59,rust,0,-.205,.025,true);
       const eye=mesh(hd,new T.CylinderGeometry(.126,.126,.065,8),ink,-.14,.035,.29,hit,true);eye.rotation.x=Math.PI/2;
-      mesh(hd,new T.CylinderGeometry(.084,.084,.068,8),bone,-.14,.035,.305).rotation.x=Math.PI/2;
-      add(hd,.045,.06,.02,ink,-.13,.03,.35);
-      add(hd,.135,.10,.035,bone,.15,.025,.285);
-      add(hd,.05,.06,.025,ink,.15,.02,.31);
+      mesh(hd,new T.CylinderGeometry(.084,.084,.068,8),lens,-.14,.035,.305).rotation.x=Math.PI/2;
+      add(hd,.024,.04,.02,bone,-.16,.065,.35);
+      const patch=add(hd,.19,.18,.055,rust,.16,.025,.285,true);patch.rotation.z=.17;
+      add(hd,.055,.055,.03,bone,.15,.02,.32);
       const brow=add(hd,.2,.05,.055,iron,.15,.13,.285);brow.rotation.z=-.2;
       for(const s of[-1,1]){
         mesh(hd,new T.CylinderGeometry(.06,.06,.09,6),trim,s*.34,-.1,.18,hit,true).rotation.z=Math.PI/2;
-        const ear=mesh(hd,new T.ConeGeometry(.11,.3,4),body,s*.36,.29,0,hit,true);ear.rotation.z=-s*.55;
+        const aerial=add(hd,.035,s<0?.34:.19,.035,iron,s*.26,.38,-.08,true);aerial.rotation.z=s*.28;
       }
       add(torso,.44,.38,.045,iron,.08,.12,.335);
-      add(torso,.12,.2,.03,trim,.08,.12,.37);
-    }else if(k===1){ // Fleet-footed scrap imp: wedge muzzle and swept-back ears.
+      for(let n=-1;n<=1;n++)add(torso,.29,.035,.03,ink,.08,.12+n*.085,.37);
+    }else if(k===1){ // Scout: a security-camera head, antennae and a narrow servo frame.
       add(hd,.54,.44,.5,body,0,0,0,true);
-      const muzzle=mesh(hd,new T.CylinderGeometry(.13,.24,.27,4),bone,0,-.115,.285,hit,true);muzzle.rotation.x=Math.PI/2;
-      add(hd,.16,.08,.08,ink,0,-.05,.435,true);
+      add(hd,.46,.21,.055,ink,0,.015,.28,true);
+      const camera=mesh(hd,new T.CylinderGeometry(.12,.15,.17,8),iron,.035,.015,.33,hit,true);camera.rotation.x=Math.PI/2;
+      mesh(hd,new T.CylinderGeometry(.085,.085,.025,8),lens,.035,.015,.43).rotation.x=Math.PI/2;
+      add(hd,.25,.08,.07,rust,-.1,-.17,.285,true);
       for(const s of[-1,1]){
-        const ear=mesh(hd,new T.ConeGeometry(.15,.48,4),body,s*.245,.34,-.03,hit,true);ear.rotation.z=-s*.43;ear.rotation.x=-.24;
-        const eye=add(hd,.15,.07,.035,bone,s*.14,.06,.263);eye.rotation.z=-s*.23;
-        add(hd,.042,.052,.03,ink,s*.13,.055,.287);
+        const aerial=add(hd,.055,s<0?.48:.32,.045,iron,s*.22,.35,-.04,true);aerial.rotation.z=-s*.38;
+        add(hd,.11,.06,.08,trim,s*.30,s<0?.57:.49,-.04);
       }
       add(torso,.78,.18,.65,trim,0,.4,0);
-      const tail=add(torso,.15,.45,.04,trim,.26,.03,-.36);tail.rotation.z=-.3;
+      const battery=add(torso,.24,.48,.2,rust,.26,.03,-.36);battery.rotation.z=-.12;
     }else{ // Boiler brute: heavy square jaw, rivets and twin exhausts.
       add(hd,.69,.5,.58,body,0,0,0,true);
       add(hd,.76,.15,.62,iron,0,.215,0,true);
-      add(hd,.64,.18,.64,bone,0,-.19,.025,true);
+      add(hd,.64,.18,.64,iron,0,-.19,.025,true);
+      add(hd,.56,.13,.05,ink,0,.02,.31,true);
       for(const s of[-1,1]){
-        add(hd,.16,.08,.035,bone,s*.16,.025,.30);
-        add(hd,.047,.065,.03,ink,s*.16,.02,.325);
+        add(hd,.15,.055,.035,lens,s*.15,.025,.345);
         mesh(hd,new T.CylinderGeometry(.065,.065,.08,6),trim,s*.37,.2,0,hit,true).rotation.z=Math.PI/2;
         mesh(torso,new T.CylinderGeometry(.1,.1,.65,6),iron,s*.31,.52,-.38,hit);
         mesh(torso,new T.CylinderGeometry(.14,.14,.09,6),trim,s*.31,.88,-.38,hit);
       }
-      add(hd,.42,.065,.035,ink,0,-.145,.353);
-      add(hd,.08,.075,.035,bone,-.09,-.12,.375);
+      add(hd,.42,.09,.035,ink,0,-.16,.353);
+      for(let n=-2;n<=2;n++)add(hd,.025,.09,.03,bone,n*.08,-.16,.38);
       add(torso,.82,.48,.07,iron,0,.10,.36);
       for(let i=-1;i<=1;i++){const stripe=add(torso,.1,.35,.025,trim,i*.18,.1,.41);stripe.rotation.z=-.3;}
     }
     legs.forEach((l,i)=>{
-      replaceGeometry(l.children[0],bevel(.29,.7,.3));
+      replaceGeometry(l.children[0],bevel(.15,.7,.16));l.children[0].material=iron;
+      mesh(l,new T.CylinderGeometry(.13,.13,.34,8),ink,0,-.31,0,hit).rotation.z=Math.PI/2;
+      add(l,.25,.24,.11,i?rust:body,0,-.44,.12);
       add(l,.36,.16,.47,body,0,-.61,.09);
       add(l,.37,.05,.48,ink,0,-.68,.09);
     });
     arms.forEach((a,i)=>{
-      replaceGeometry(a.children[0],bevel(.22,1.1,.23));
-      add(a,k===2?.34:.28,.28,.3,i?iron:trim,0,-.91,0);
-      for(const s of[-1,1]){const claw=mesh(a,new T.ConeGeometry(.055,.2,4),bone,s*.075,-1.13,.065,hit);claw.rotation.x=Math.PI;}
+      replaceGeometry(a.children[0],bevel(.12,1.1,.14));a.children[0].material=iron;
+      mesh(a,new T.CylinderGeometry(.14,.14,.24,8),ink,0,-.02,0,hit).rotation.z=Math.PI/2;
+      mesh(a,new T.CylinderGeometry(.11,.11,.24,8),bone,0,-.55,0,hit).rotation.z=Math.PI/2;
+      const plate=add(a,.28,.28,.31,i?rust:body,0,-.24,.04);plate.rotation.z=i?.13:-.11;
+      add(a,k===2?.34:.28,.25,.3,i?iron:trim,0,-.91,0);
+      for(const s of[-1,1]){const claw=add(a,.065,.19,.11,bone,s*.105,-1.1,.065);claw.rotation.z=-s*.2;add(a,.065,.06,.16,iron,s*.075,-1.19,.1);}
     });
+    // Bolted mismatched repairs, a spare wheel, and two exposed insulated cables.
+    const repair=add(torso,.3,.28,.055,rust,-.26,-.18,.345);repair.rotation.z=-.12;
+    for(const x of[-.37,-.15])for(const y of[-.27,-.09])mesh(torso,new T.CylinderGeometry(.026,.026,.025,6),bone,x,y,.38).rotation.x=Math.PI/2;
+    mesh(torso,new T.TorusGeometry(.23,.075,4,8),ink,-.17,0,-.4);
+    mesh(torso,new T.CylinderGeometry(.12,.12,.14,6),iron,-.17,0,-.4).rotation.x=Math.PI/2;
+    for(const s of[-1,1]){const curve=new T.CatmullRomCurve3([new T.Vector3(s*.34,.35,-.3),new T.Vector3(s*.48,.09,-.43),new T.Vector3(s*.3,-.28,-.35)]);mesh(torso,new T.TubeGeometry(curve,5,.035,4,false),s<0?trim:rust);}
     hurtBox(g,1.05,1.5,.75,0,.82,0,false,hit);hurtBox(hd,.78,.68,.66,0,0,0,true,hit);
     g.userData={legs,arms,torso,head:hd,hit,mats,ph:rnd()*6,sp:1,kick:0,artStyle:"scrapyard",family:k};
     batchBones(g);
@@ -173,7 +187,7 @@ const YardArt = (() => {
     }
   }
   const palettes={
-    meadow:{sky:[0x7aadaf,0xb5cbc0,0xf3e4c2],fog:[0xd9dfc3,65,210],ground:["#a0ad73","#a4b078","#99a56d","#abb67f"],leaf:[0x507d65,0x688f69,0xbdad65,0x84a178],house:[0xefdbaf,0xdec594,0xb7cec0,0xd49c75],roof:[0xb85c40,0x468582,0x455d58,0xd39c53]},
+    meadow:{sky:[0x7aadaf,0xb5cbc0,0xe1e3cb],fog:[0xd1d9c7,65,210],ground:["#828976","#89907a","#7b826e","#969780"],leaf:[0x507d65,0x688f69,0xb19e69,0x84a178],house:[0xc8cbb5,0xb8aa88,0x9cb6ac,0xbd8d70],roof:[0xb85c40,0x468582,0x455d58,0xb28c53]},
     sunset:{sky:[0x657d91,0xd6a08a,0xf4d4a4],fog:[0xe4c6a1,55,200],ground:["#a39d66","#a8a16d","#9c955f","#b0a674"],leaf:[0x6a8160,0xa09b58,0xc17f4b,0x72865c],house:[0xf0d3a3,0xd6b294,0xc1b4a1],roof:[0xaf5843,0x517875,0x74584d]},
     frost:{sky:[0x83a3b0,0xc3d5d4,0xf1e9cf],fog:[0xd8e3da,60,200],ground:["#e0e8d9","#e5ebdf","#dbe3d6","#e9eddf"],leaf:[0x477b77,0x60958b,0x426761],house:[0xe7d8b5,0xaac9c1,0xd1b294],roof:[0xb7664a,0x527d7b,0x6d8481]},
     desert:{sky:[0x79a3a8,0xc2ceba,0xf3d9ad],fog:[0xe9d6b3,65,210],ground:["#dcb783","#e1bd89","#d4ad7b","#e4c18f"],leaf:[0x75916b,0x99a36c,0x578171],house:[0xf0d3a4,0xdfb582,0xb2c3ab],roof:[0xb35d40,0x488682,0x856448]},
@@ -209,6 +223,40 @@ const YardArt = (() => {
     put("box",0,Math.min(h-.3,2.65),d/2+.13,.36,.36,.06,C.brass,Math.PI/4);
     put("box",0,Math.min(h-.3,2.65),d/2+.17,.16,.16,.035,C.ink,Math.PI/4);
     put("box",w/2+.09,h*.42,0,.12,h*.78,.14,C.iron);
+    // Salvaged sheet metal siding, with mismatched repairs and corrugations.
+    for(let n=-2;n<=2;n++)put("box",-w*.35,h*.3,n*d*.13,.13,h*.4,.055,n%2?C.rust:C.iron);
+    put("box",-w*.35,h*.3,-d*.27,.14,.08,d*.6,C.brass);
+    put("box",-w*.35,h*.12,-d*.27,.14,.08,d*.6,C.iron);
+  }
+  function junkyard(group,{extent=40,seed=1,height=()=>0,platforms=false}={}){
+    // Large scrap sits outside the playable boundary. No new invisible obstacles.
+    const rng=mkRng((seed^0x6bda2189)>>>0),batch=new Batch();
+    const p=(geo,x,y,z,w,h,d,c,ry=0,rx=0,rz=0)=>batch.add(typeof geo==='string'?U[geo]:geo,mt(x,y,z,w,h,d,ry,rx,rz),c,.8,1);
+    const tire=new T.TorusGeometry(.5,.18,4,10).toNonIndexed(),pipe=new T.CylinderGeometry(.5,.5,1,8,1,true).toNonIndexed();
+    const count=platforms?12:10;
+    for(let i=0;i<count;i++){
+      const side=i%4,along=(rng()-.5)*extent*1.55,out=extent+(platforms?29:8)+rng()*5;
+      const x=side<2?(side===0?-out:out):along,z=side<2?along:(side===2?-out:out),y=height(x,z);
+      if(platforms)p('box',x,(y-13)/2,z,11,y+13,9,0x5d6455);
+      // Crushed appliance shells and containers, stacked at untidy angles.
+      for(let n=0;n<5;n++){
+        const xx=x+(rng()-.5)*5,zz=z+(rng()-.5)*4,h=1.1+rng()*1.7,yy=y+h/2+(n>2?1.2:0),a=(rng()-.5)*.6;
+        const col=[C.rust,C.teal,0xa2916d,0x798577,0x665c4b][n];
+        p('box',xx,yy,zz,2.2,h,1.7,col,a,.04,(rng()-.5)*.13);
+        p('box',xx,yy,zz+.86,1.6,h*.55,.08,0x324649,a);
+        for(let rib=-1;rib<=1;rib++)p('box',xx+rib*.48,yy,zz+.92,.055,h*.7,.055,0xa7a78e,a);
+      }
+      for(let n=0;n<5;n++){const xx=x+3+(n%2)*.35,zz=z+(n%3)*.7;p(tire,xx,y+.3+Math.floor(n/2)*.35,zz,1.15,1.15,1.15,0x263536,rng(),Math.PI/2);}
+      for(let n=0;n<3;n++){p(pipe,x-3,y+.45+n*.65,z+n*.2,1.1,3,1.1,n%2?0x8e674a:0x76847b,0,Math.PI/2);}
+      if(i%3===0){
+        // Bent salvage gantries and a hanging electromagnet silhouette.
+        p('box',x-3,y+5,z,.55,10,.55,C.iron);p('box',x,y+9.8,z,6.5,.5,.6,C.rust,0,0,-.14);
+        p('cyl',x+2,y+7,z,.06,4.6,.06,C.iron);p('cyl',x+2,y+4.5,z,1.5,.45,1.5,C.iron);
+        p('box',x-3,y+.4,z,2,.8,2,C.brass);
+      }
+    }
+    tire.dispose();pipe.dispose();
+    const m=batch.mesh(new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));m.name='salvage-yard';m.castShadow=true;m.receiveShadow=true;group.add(m);
   }
   function scatter(group,{extent=40,seed=1,theme="meadow",height=()=>0,clear=()=>true}={}){
     // A separate seed and two batched meshes: decoration never changes spawn RNG,
@@ -217,7 +265,7 @@ const YardArt = (() => {
     const snow=theme==="frost",indoor=theme==="ruin",sand=theme==="desert";
     const earth=snow?[0xb6c6b8,0xc2cdbb]:sand?[0xbe9e73,0xc6a77d]:indoor?[0x606f5d,0x6e7761]:[0x8c9062,0x9c996d,0xb1a77b];
     const sheets=[0xe9e5cf,0xd9dfcc,0xd4bd91,0xa8c7ba];
-    const density=Math.max(.25,LOD.props),clusters=Math.round(Math.min(1800,extent*extent*.11)*density);
+    const density=Math.max(.25,LOD.props),clusters=Math.round(Math.min(2100,extent*extent*.16)*density);
     // Batch consumes triangle vertices, so indexed shapes must be expanded first.
     const color=new T.Color(),ring=new T.RingGeometry(.05,.105,6).toNonIndexed();ring.rotateX(-Math.PI/2);
     function triangle(a,b,c,col){color.setHex(col);for(const v of[a,b,c]){positions.push(...v);colors.push(color.r,color.g,color.b);}}
@@ -248,8 +296,9 @@ const YardArt = (() => {
         }else if(kind<.85){ // Offcuts of the same wood used in crates and station platforms.
           parts.add(U.box,mt(px,y+.025,pz,.06+rand()*.04,.045,.25+rand()*.3,a),i%2?0xa68c60:0x8a7855,.9,1);
         }else if(kind<.94){parts.add(ring,mt(px,y+.025,pz,1,1,1,a),C.iron,1,1);}
-        else{ // Flattened enamel offcuts.
-          parts.add(U.box,mt(px,y+.018,pz,.14,.028,.2,a),i%2?0x819f89:0xb78b60,.9,1);
+        else{ // Rusted corrugated offcuts, kept below step height.
+          parts.add(U.box,mt(px,y+.025,pz,.36,.035,.5,a),i%2?0x819f89:0xa66845,.9,1);
+          for(let r=-1;r<=1;r++){const off=r*.1;parts.add(U.box,mt(px+Math.cos(a)*off,y+.052,pz-Math.sin(a)*off,.025,.025,.48,a),C.iron,.9,1);}
         }
       }
     }
@@ -303,8 +352,8 @@ const YardArt = (() => {
       }
     }
     if(batch.p.length){const m=batch.mesh(material(0xffffff));m.material.vertexColors=true;m.castShadow=true;m.receiveShadow=true;group.add(m);}
-    if(!opt.custom&&!opt.parkour)scatter(group,{seed,theme:key,clear:(x,z)=>!blocked(x,z,.1,.2)});
+    if(!opt.custom&&!opt.parkour){scatter(group,{seed,theme:key,clear:(x,z)=>!blocked(x,z,.1,.2)});if(key!=="ruin")junkyard(group,{seed});}
   }
   function frame(dt){const y=WORLD.group?.userData.yard;if(y&&!reducedMotion.matches)for(const rotor of y.anim)rotor.rotation.z-=dt*.34;}
-  return {C,bevel,human,monster,gun,house,world,scatter,frame};
+  return {C,bevel,human,monster,gun,house,world,scatter,junkyard,frame};
 })();

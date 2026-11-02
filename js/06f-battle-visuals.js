@@ -2,7 +2,7 @@
 // Original, procedural low-poly scenery. No downloaded art or extra runtime dependencies.
 const BattleVisuals=(()=>{
 const maps=[
-  {id:"vale",n:"Meadow Railway",theme:"meadow",grass:[0xa0ad73,0xa4b078,0x99a56d],rock:0xb39b74,leaf:[0x507d65,0x84a178,0xbdad65],water:0x6daba4,sky:0xd9dfc3,sun:0xffe0a5},
+  {id:"vale",n:"Meadow Railway",theme:"meadow",grass:[0x8b947a,0x90987f,0x828c74],rock:0xa08e73,leaf:[0x507d65,0x84a178,0xb19e69],water:0x6daba4,sky:0xd1d9c7,sun:0xffe0a5},
   {id:"mesa",n:"Canyon Express",theme:"desert",grass:[0xdcb783,0xe1bd89,0xd4ad7b],rock:0xb77852,leaf:[0x75916b,0x99a36c,0x578171],water:0x6daba4,sky:0xe9d6b3,sun:0xffe0a5},
   {id:"frost",n:"Frostfall Valley",theme:"frost",grass:[0xe0e8d9,0xe5ebdf,0xdbe3d6],rock:0x879e94,leaf:[0x477b77,0x60958b,0xc7d7c7],water:0x83bdb7,sky:0xd8e3da,sun:0xffe0a5}
 ];
@@ -188,6 +188,7 @@ function create(campaign,mapIndex=0,freePlacement=false){
     ray.set(new T.Vector3(ox,oy,oz),new T.Vector3(dx,dy,dz));ray.far=max;surface.updateMatrixWorld();return ray.intersectObject(surface,false)[0]?.distance??max;
   }
   YardArt.scatter(group,{extent,seed:9107+mapIndex*619,theme:spec.theme,height});
+  YardArt.junkyard(group,{extent,seed:9107+mapIndex*619,height,platforms:true});
   frame(0,true);
   for(const puff of smoke){puff.m.position.copy(trainCars[0].position);puff.m.position.y+=3.3+puff.age*1.6}
   return{group,surface,height,frame,rayDistance,spec,planning,extent};
@@ -252,7 +253,7 @@ function portrait(id,color="#68c8e8"){
   if(id==="runner")detail='<path d="m21 29-7-13 14 7M59 29l7-13-14 7" fill="#eee1c0"/>';
   if(id==="spitter"||id==="bomber")detail=`<rect x="14" y="38" width="10" height="23" rx="4" fill="${id==="spitter"?"#c5e985":"#ffb45f"}"/><rect x="56" y="38" width="10" height="23" rx="4" fill="${id==="spitter"?"#c5e985":"#ffb45f"}"/>`;
   if(id==="ghost")detail='<ellipse cx="40" cy="11" rx="17" ry="4" fill="none" stroke="#f3e6c5" stroke-width="3"/><path d="m22 54-5 15 13-5 10 9 10-9 13 5-5-15" fill="currentColor" opacity=".65"/>';
-  const face=human?'<path d="M28 21h24v14H28Z" fill="#e7b482"/><path d="M24 19 29 12h22l5 9H25Z" fill="#e9e7d4"/><path d="M38 12h5v9h-5Z" fill="#478f8b"/><path d="M31 25h6v5h-6ZM44 25h6v5h-6Z" fill="#f4e5be"/><path d="M34 26h3v4h-3ZM44 26h3v4h-3ZM39 33h6v2h-6Z" fill="#263d3c"/>':heavy?'<path d="M25 17h30v6H25Z" fill="#425d5b"/><path d="M30 25h7v4h-7ZM44 25h7v4h-7ZM29 33h24v6H29Z" fill="#f4e5be"/><path d="M37 32h10v3H37Z" fill="#263d3c"/>':id==='runner'||id==='ghost'?'<path d="m29 24 9 3-1 3-8-2ZM51 24l-9 3 1 3 8-2ZM40 30l8 5-8 6-8-6Z" fill="#f4e5be"/><path d="M37 32h6v4h-6Z" fill="#263d3c"/>':'<path d="M25 18h30v5H25Z" fill="#425d5b"/><circle cx="33" cy="27" r="7" fill="#263d3c"/><circle cx="33" cy="27" r="4" fill="#e9e7d4"/><path d="M32 25h3v4h-3Z" fill="#263d3c"/><path d="M45 25h7v5h-7ZM28 34h25v5H28Z" fill="#e9e7d4"/>';
+  const face=human?'<path d="M28 21h24v14H28Z" fill="#e7b482"/><path d="M24 19 29 12h22l5 9H25Z" fill="#e9e7d4"/><path d="M38 12h5v9h-5Z" fill="#478f8b"/><path d="M31 25h6v5h-6ZM44 25h6v5h-6Z" fill="#f4e5be"/><path d="M34 26h3v4h-3ZM44 26h3v4h-3ZM39 33h6v2h-6Z" fill="#263d3c"/>':heavy?'<path d="M25 17h30v6H25Z" fill="#425d5b"/><path d="M28 24h25v8H28Z" fill="#202d32"/><path d="M30 26h7v3h-7ZM44 26h7v3h-7Z" fill="#ffd174"/><path d="M29 34h24v7H29Z" fill="#202d32"/><path d="M33 34v7M40 34v7M47 34v7" stroke="#b6c4be" stroke-width="2"/>':id==='runner'||id==='ghost'?'<path d="m29 19-6-13M49 19l5-9" stroke="#425d5b" stroke-width="3"/><path d="M28 23h24v12H28Z" fill="#202d32"/><circle cx="40" cy="29" r="6" fill="#425d5b"/><circle cx="40" cy="29" r="4" fill="#7edbd5"/><path d="M29 36h12v3H29Z" fill="#a95737"/>':'<path d="M25 18h30v5H25Z" fill="#425d5b"/><path d="m29 18-3-9M49 18l2-6" stroke="#425d5b" stroke-width="2"/><circle cx="33" cy="28" r="7" fill="#202d32"/><circle cx="33" cy="28" r="4" fill="#ffd174"/><path d="M44 24h10v10H44ZM28 35h25v5H28Z" fill="#a95737"/><path d="M47 27h4v4h-4Z" fill="#b6c4be"/>';
   return`<svg class="cb-portrait" viewBox="0 0 80 80" aria-hidden="true" style="color:${color}"><ellipse cx="40" cy="73" rx="26" ry="3" fill="#122d29" opacity=".28"/><g fill="currentColor">${body}<path d="M26 20 31 16H50L54 20 52 35 40 39 28 35Z"/></g>${face}${detail}</svg>`;
 }
 return{maps,profile,create,light,decorate,portrait};
