@@ -1,4 +1,4 @@
-Arena Strike 3D - Beta 1.6
+Arena Strike 3D - Beta 1.6.5
 
 Open index.html in a browser (a local server such as `python3 -m http.server` is the safest way; double-clicking also works in most browsers).
 
