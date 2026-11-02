@@ -17,7 +17,7 @@ const Aim=(()=>{
 let dx=0,dy=0,lock=false,free=false,armed=false,nx=0,ny=0,lx=null,ly=null,hot=false,hinted=false,tm=0,cx=-1,cy=-1,sp=-1,edge=false;
 const cr=()=>$("cross"),B=()=>document.body;
 function fall(){if(lock||free)return;free=true;lx=ly=null;if(!hinted){hinted=true;toast("This page cannot lock the mouse. Move the mouse to look and use Q and E to turn. Open it in a full browser tab for true mouse look")}B().classList.add("freeaim")}
-function request(){const c=rd.domElement;if(lock||!c.requestPointerLock)return fall();
+function request(){if(typeof MobileLayout!=="undefined"&&MobileLayout.active){free=true;hinted=true;return}const c=rd.domElement;if(lock||!c.requestPointerLock)return fall();
 // raw input skips the Windows and Linux desktop mouse acceleration; browsers or systems that cannot do it fall back to the normal lock
 try{let p;try{p=c.requestPointerLock({unadjustedMovement:true})}catch(e){p=c.requestPointerLock()}
 if(p&&p.catch)p.catch(()=>{if(lock)return;try{const q=c.requestPointerLock();if(q&&q.catch)q.catch(()=>fall())}catch(e){fall()}})}catch(e){fall()}
@@ -28,6 +28,7 @@ document.addEventListener("pointerlockchange",()=>{lock=document.pointerLockElem
 if(lock){free=false;setEdge(false);B().classList.remove("freeaim")}else if(state==="play"&&!menuOpen&&!free&&!(typeof CustomBattle!=="undefined"&&CustomBattle.active&&!CustomBattle.joined))pauseGame()});
 document.addEventListener("pointerlockerror",fall);
 addEventListener("mousemove",e=>{
+if(typeof MobileLayout!=="undefined"&&MobileLayout.active)return;
 // a button released outside the page never sends mouseup, so trust the live button state to stop stuck fire
 if(e.buttons!==undefined&&!(e.buttons&1))firing=false;
 if(lock){dx+=clamp(e.movementX||0,-220,220);dy+=clamp(e.movementY||0,-220,220);return}
@@ -330,4 +331,5 @@ clearKeys();clearGrenPrev();knifeCharging=false;knifeCharge=0;
 Aim.release();menuOpen=false;document.body.classList.remove("playing");
 try{if(typeof PK!=="undefined"&&PK.st&&PK.st.ghost){sc.remove(PK.st.ghost);disposeGeo(PK.st.ghost);PK.st.ghost=null}}catch(e){}
 flash("Restarting…",600);setTimeout(()=>{pkPicked=true;startGame0("parkour")},60)}
+
 

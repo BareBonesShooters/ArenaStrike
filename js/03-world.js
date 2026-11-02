@@ -121,7 +121,7 @@ let GROADS=[];
 function paintGround(key,th,rng){GROADS=[];
 const N=LOD.tex,qs=N/2048,c=document.createElement("canvas");c.width=c.height=N;const g=c.getContext("2d"),k=N/(2*H),gr=th.gr;
 g.fillStyle=gr.base;g.fillRect(0,0,N,N);
-for(let i=0;i<110;i++){const x=rng()*N,y=rng()*N,r=(70+rng()*220)*qs,col=gr.v[Math.floor(rng()*gr.v.length)],q=g.createRadialGradient(x,y,0,x,y,r);q.addColorStop(0,col+"d0");q.addColorStop(1,col+"00");g.fillStyle=q;g.fillRect(x-r,y-r,2*r,2*r)}
+for(let i=0;i<110;i++){const x=rng()*N,y=rng()*N,r=(70+rng()*220)*qs,col=gr.v[Math.floor(rng()*gr.v.length)];if(i<18){g.fillStyle=col;g.beginPath();g.moveTo(x-r,y+r*.3);g.lineTo(x-r*.5,y-r*.6);g.lineTo(x+r*.6,y-r*.5);g.lineTo(x+r,y+r*.5);g.lineTo(x,y+r);g.closePath();g.fill()}}
 const ruin=key==="ruin",neon=key==="neon";
 if(!ruin&&!neon){ // roads
 g.lineCap="round";const cx=N/2,roads=[];const base=rng()*6.283;for(let i=0;i<3;i++){const a=base+i*2.094+rng()*.5,ex=cx+Math.cos(a)*N*.8,ey=cx+Math.sin(a)*N*.8,mx=cx+Math.cos(a+.4)*N*.3,my=cx+Math.sin(a+.4)*N*.3;roads.push([cx,cx,mx,my,ex,ey])}GROADS=roads.map(r=>r.map(v=>v/N));
@@ -137,11 +137,6 @@ g.shadowBlur=18;g.strokeStyle="#ff2fd0";g.lineWidth=5;g.beginPath();g.arc(N/2,N/
 if(ruin){g.strokeStyle="rgba(0,0,0,.35)";g.lineWidth=3;for(let u=-H;u<=H;u+=5){const p=(u+H)*k;g.beginPath();g.moveTo(p,0);g.lineTo(p,N);g.stroke();g.beginPath();g.moveTo(0,p);g.lineTo(N,p);g.stroke()}
 g.lineWidth=2;for(let i=0;i<60;i++){let x=rng()*N,y=rng()*N;g.beginPath();g.moveTo(x,y);for(let j=0;j<7;j++){x+=(rng()-.5)*90;y+=(rng()-.5)*90;g.lineTo(x,y)}g.stroke()}
 for(let i=0;i<14;i++){const x=rng()*N,y=rng()*N,r=40+rng()*90,q=g.createRadialGradient(x,y,0,x,y,r);q.addColorStop(0,"rgba(120,150,190,.28)");q.addColorStop(1,"rgba(120,150,190,0)");g.fillStyle=q;g.fillRect(x-r,y-r,2*r,2*r)}}
-for(let i=0,n=70000*qs*qs|0;i<n;i++){g.fillStyle=rng()<.5?"rgba(255,255,255,.06)":"rgba(0,0,0,.07)";g.fillRect(rng()*N,rng()*N,1+rng()*3*qs,1+rng()*3*qs)}
-if(!ruin&&!neon&&key!=="frost"&&key!=="desert"&&key!=="toxic"){ // blades in four tones, plus dry and lush patches so the lawn is not one flat green
-const tone=th.night?["rgba(20,40,30,.2)","rgba(60,110,70,.18)"]:["rgba(22,78,28,.24)","rgba(200,236,120,.2)","rgba(120,170,60,.2)","rgba(214,196,110,.14)"];
-g.lineWidth=1.4*Math.max(.6,qs);for(let i=0,n=26000*qs*qs|0;i<n;i++){const x=rng()*N,y=rng()*N;g.strokeStyle=tone[(rng()*tone.length)|0];g.beginPath();g.moveTo(x,y);g.lineTo(x+(rng()-.5)*6*qs,y-(3+rng()*6)*qs);g.stroke()}
-for(let i=0;i<26;i++){const x=rng()*N,y=rng()*N,r=(60+rng()*130)*qs,col=rng()<.5?"rgba(190,170,90,.16)":"rgba(30,120,50,.16)",gg2=g.createRadialGradient(x,y,0,x,y,r);gg2.addColorStop(0,col);gg2.addColorStop(1,"rgba(0,0,0,0)");g.fillStyle=gg2;g.fillRect(x-r,y-r,2*r,2*r)}}
 const t=new T.CanvasTexture(c);t.anisotropy=Math.min(SOFT?1:8,rd.capabilities.getMaxAnisotropy());
 // the GPU keeps its own copy, so the canvas backing store (up to 9 MB) can go as soon as the upload is done
 t.onUpdate=()=>{t.onUpdate=null;c.width=c.height=1};return t}
@@ -223,8 +218,6 @@ if(key==="neon")sun.position.set(-40,70,-50);
 sun.target.position.set(0,0,0);Sky.set(th);
 // ground
 const gt=paintGround(key,th,crng),gmat=new T.MeshLambertMaterial({map:gt});
-if(LOD.tex>=1024&&!ruin&&key!=="neon"){const dt=grassDetail();gmat.onBeforeCompile=sh=>{sh.uniforms.dtex={value:dt};
-sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nuniform sampler2D dtex;").replace("#include <map_fragment>","#include <map_fragment>\ndiffuseColor.rgb*=.6+texture2D(dtex,vUv*36.).r*.8;")};gmat.customProgramCacheKey=()=>"gdet"}
 const fxOn=LOD.cloud>0;if(fxOn)fogFx(gmat,LOD.tex>=1024&&!ruin&&key!=="neon"?"gd":"g");
 // the roads are in the ground texture: sample them so houses, lamps and cars can line up with them instead of landing at random
 RDP=[];GROADS.forEach((r,ri)=>{const f=v=>v*2*H-H;for(let i=0;i<=60;i++){const t=i/60,u=1-t,X=f(u*u*r[0]+2*u*t*r[2]+t*t*r[4]),Z=f(u*u*r[1]+2*u*t*r[3]+t*t*r[5]),dx=2*u*(r[2]-r[0])+2*t*(r[4]-r[2]),dz=2*u*(r[3]-r[1])+2*t*(r[5]-r[3]),dl=Math.hypot(dx,dz)||1;
@@ -240,10 +233,10 @@ if(key==="neon"){for(const [x,z,w,d] of[[0,-H+.1,2*H,.15],[0,H-.1,2*H,.15],[-H+.
 }
 // distant mountains
 if(!ruin&&!opt.custom)for(let i=0,nm=Math.max(10,Math.round(26*LOD.props));i<nm;i++){const a=i/nm*PI*2+crng()*.2,d=100+crng()*40,r=cr(14,28),h=cr(18,44),x=Math.cos(a)*d,z=Math.sin(a)*d,mc=cpick(th.mount);
-P("cone",x,h/2-2,z,r*2,h,r*2,mc,crng()*3,.55);if(th.snow&&crng()<th.snow)P("cone",x,h-h*.14-2,z,r*.75,h*.3,r*.75,0xf4f8ff,0,.95)}
+P("ico",x,h/2-6,z,r*2.3,h*1.2,r*1.9,mc,crng()*3,.75);if(th.snow&&crng()<th.snow)P("ico",x,h-h*.14-2,z,r*.75,h*.3,r*.75,0xe3e9d8,0,.95)}
 // interior shell for the ruin
-if(ruin){WORLD.ceil=7;P("box",0,7.25,0,2*H+6,.5,2*H+6,0x1b1d24,0,.9);
-for(let u=-35;u<=35;u+=10){P("box",u,6.6,0,.7,.7,2*H,0x2a2c34,0,.8);P("box",0,6.6,u,2*H,.7,.7,0x2a2c34,0,.8)}
+if(ruin){WORLD.ceil=7;P("box",0,7.25,0,2*H+6,.5,2*H+6,0x3b5347,0,.9);
+for(let u=-35;u<=35;u+=10){P("box",u,6.6,0,.7,.7,2*H,0x2c4c42,0,.8);P("box",0,6.6,u,2*H,.7,.7,0x2c4c42,0,.8)}
 for(let i=0;i<10;i++){const [x,z]=P2(8);P("box",x,6.85,z,1.6,.12,.7,0xffd9a0,0,1,glow);if(i<3){const l=new T.PointLight(0xffc477,1.1,30,1.6);l.position.set(x,5.5,z);l.userData.base=1.1;l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l)}}
 for(let u=-34;u<=34;u+=12){[[u,-H+.15],[u,H-.15]].forEach(([x,z])=>P("box",x,4.6,z,5,1.1,.1,th.win,0,1,glow));[[-H+.15,u],[H-.15,u]].forEach(([x,z])=>P("box",x,4.6,z,.1,1.1,5,th.win,0,1,glow))}}
 // props
@@ -281,6 +274,7 @@ p=L(0,d/2+.05);P("box",p[0],1,p[1],1.1,2,.12,0x5b3a21,ry,.9);p=L(0,d/2+.5);P("bo
 const wcol=th.night?th.win:th.win;
 for(const sx of[-1,1]){p=L(sx*w/4,d/2+.05);P("box",p[0],h*.62,p[1],1.05,.95,.1,0x3a3a40,ry,1);P("box",p[0],h*.62,p[1],.88,.78,.14,wcol,ry,1,glow);
 p=L(sx*(w/2+.05),sx*d*.12);P("box",p[0],h*.62,p[1],.1,.95,1.05,0x3a3a40,ry,1);P("box",p[0],h*.62,p[1],.14,.78,.88,wcol,ry,1,glow)}
+YardArt.house({P,L,w,d,h,th,ry});
 return true};
 const tree=(x,z)=>{
 if(!free(x,z,1.5))return false;reg(x,z,.7,.7,3.2);const t=rr(.85,1.25),pine=rng()<th.pine,leaf=pick(th.leaf);
@@ -292,12 +286,12 @@ return true};
 const crateAt=(x,z,s,stack)=>{const h=s*stack,col=pick([0x8b6b3d,0x9a7a48,0x7a5c34]);reg(x,z,s,s,h);
 for(let i=0;i<stack;i++){P("box",x,s*(i+.5),z,s,s,s,col,0,.62);P("box",x,s*(i+.5),z,s+.06,s*.14,s+.06,0x4e3a20,0,.9);P("box",x,s*(i+.5),z,s*.14,s+.06,s+.06,0x4e3a20,0,.9)}return true};
 const crate=(x,z,s,stack)=>{if(!free(x,z,s*.8+.3))return false;crateAt(x,z,s,stack);return true};
-const barrel=(x,z)=>{if(!free(x,z,.9))return false;reg(x,z,.9,.9,1.1);const c=pick([0xd1342f,0x2f6fd1,0x3fa34d,0xe0a020]);P("cyl",x,.55,z,.9,1.1,.9,c,0,.6);P("cyl",x,.55,z,.93,.16,.93,lerpC(c,0xffffff,.5),0,.9);P("cyl",x,.25,z,.95,.1,.95,0x333333,0,1);P("cyl",x,.85,z,.95,.1,.95,0x333333,0,1);P("cyl",x,1.1,z,.8,.04,.8,0x222222,0,1);P("cyl",x,1.14,z,.22,.05,.22,0x555555,0,1);return true};
+const barrel=(x,z)=>{if(!free(x,z,.9))return false;reg(x,z,.9,.9,1.1);const c=pick([0xbb6043,0x4c8f89,0x83966b,0xd1ad5c]);P("cyl",x,.55,z,.9,1.1,.9,c,0,.6);P("cyl",x,.55,z,.93,.16,.93,lerpC(c,0xffffff,.5),0,.9);P("cyl",x,.25,z,.95,.1,.95,0x333333,0,1);P("cyl",x,.85,z,.95,.1,.95,0x333333,0,1);P("cyl",x,1.1,z,.8,.04,.8,0x222222,0,1);P("cyl",x,1.14,z,.22,.05,.22,0x555555,0,1);return true};
 const barrelGroup=(x,z)=>{let n=0;for(const [a,b] of[[0,0],[.95,.25],[-.2,.98]])if(barrel(x+a,z+b))n++;return n>0};
 const barrier=(x,z,rot)=>{const w=rot&1?.7:3,d=rot&1?3:.7;if(!free(x,z,Math.max(w,d)/2+.4))return false;reg(x,z,w,d,1);const c=0xa7a9ad;P("box",x,.35,z,w*(rot&1?1.4:1),.7,d*(rot&1?1:1.4),c,0,.6);P("box",x,.85,z,w,.6,d,c,0,.65);P("box",x,.8,z,w+.02,.14,d+.02,0xff7a1a,0,1);return true};
 const sandbags=(x,z,rot)=>{const w=rot&1?.9:2.6,d=rot&1?2.6:.9;if(!free(x,z,Math.max(w,d)/2+.4))return false;reg(x,z,w,d,.9);const c=pick([0xb8a67a,0xa89a74]);P("box",x,.22,z,w,.44,d,c,0,.6);P("box",x,.62,z,w*(rot&1?.9:.82),.38,d*(rot&1?.82:.9),lerpC(c,0x000000,.08),0,.65);return true};
 const tires=(x,z)=>{if(!free(x,z,.9))return false;reg(x,z,.95,.95,1.2);for(let i=0;i<3;i++){P("cyl",x,.2+i*.4,z,.95-i*.04,.4,.95-i*.04,0x1b1c20,0,.6);P("cyl",x,.2+i*.4,z,.5,.42,.5,0x3a3b42,0,1)}return true};
-const car=(x,z,rot,ig)=>{const w=rot&1?1.8:3.6,d=rot&1?3.6:1.8;if(!free(x,z,2.3,ig))return false;reg(x,z,w,d,1.5);const ry=rot*PI/2,c=Math.cos(ry),s=Math.sin(ry),L=(lx,lz)=>[x+lx*c+lz*s,z-lx*s+lz*c],col=pick([0xd1342f,0x2f6fd1,0xe8c020,0xdddddd,0x3a3a42,0x2fa37a]);
+const car=(x,z,rot,ig)=>{const w=rot&1?1.8:3.6,d=rot&1?3.6:1.8;if(!free(x,z,2.3,ig))return false;reg(x,z,w,d,1.5);const ry=rot*PI/2,c=Math.cos(ry),s=Math.sin(ry),L=(lx,lz)=>[x+lx*c+lz*s,z-lx*s+lz*c],col=pick([0xb65d40,0x4c8988,0xd5b15e,0xe7d6af,0x4b6053,0x77916a]);
 P("box",x,.55,z,3.6,.7,1.8,col,ry,.6);let p=L(-.1,0);P("box",p[0],1.2,p[1],1.9,.62,1.6,lerpC(col,0x000000,.15),ry,.7);
 p=L(-.1,0);P("box",p[0],1.2,p[1],1.94,.4,1.64,th.night?0x203050:0xbfe6ff,ry,1,glow);
 for(const lx of[-1.2,1.2])for(const lz of[-.9,.9]){p=L(lx,lz);P("cyl",p[0],.34,p[1],.68,.3,.68,0x151515,ry,1,null,0,PI/2);}
@@ -378,7 +372,7 @@ else{P("cone",x,sz/2,z,.22,sz,.22,f?cpick(fl):lerpC(cpick(th.leaf),0xffffff,.1),
 }else{
 // ruined hall
 place(7,(x,z,r)=>wall(x,z,r&1,rr(4,11),rr(3,6.5)),10);
-place(13,(x,z)=>{if(!free(x,z,1.2))return false;blk(x,z,1.1,7,1.1,0x4b5563,.55);P("box",x,.3,z,1.5,.6,1.5,0x3a3f4a,0,.8);P("box",x,6.6,z,1.5,.5,1.5,0x3a3f4a,0,.8);return true},8);
+place(13,(x,z)=>{if(!free(x,z,1.2))return false;blk(x,z,1.1,7,1.1,0x668272,.55);P("box",x,.3,z,1.5,.6,1.5,0x3c5d4d,0,.8);P("box",x,6.6,z,1.5,.5,1.5,0x3c5d4d,0,.8);return true},8);
 place(3,tower,16);
 place(pc(22),(x,z)=>{const s=rr(.7,1.6),h=rr(.4,1.1);if(!free(x,z,s));else{blk(x,z,s,h,s*rr(.8,1.4),pick([0x7c6f64,0x6b6258,0x8a7e72]),.6);return true}return false},6);
 place(pc(10),(x,z)=>crate(x,z,1.2,1+(rng()<.35?1:0)),6);place(pc(6),barrel,6);place(pc(3),barrelGroup,7);place(pc(4),barrier,6);place(pc(3),sandbags,6);place(pc(2),tires,6);place(3,car,8);
@@ -410,6 +404,7 @@ const cand=[];for(let i=0;i<400&&cand.length<60;i++){const [x,z]=P2(8);if(free(x
 const sp=[];if(cand.length){sp.push(cand[0]);while(sp.length<14&&sp.length<cand.length){let bi=-1,bd=-1;cand.forEach((c,i)=>{let m=1e9;for(const s of sp)m=Math.min(m,Math.hypot(c[0]-s[0],c[1]-s[1]));if(m>bd){bd=m;bi=i}});sp.push(cand[bi]);cand.splice(bi,1)}}
 if(!sp.length)sp.push([0,H-8]);WORLD.spawns=sp.map(s=>({x:s[0],z:s[1]}));
 if(WORLD.course)WORLD.spawns=[{x:WORLD.course.cps[0].x,z:WORLD.course.cps[0].z}];
+YardArt.world(grp,key,seed,opt);
 return WORLD}
 
 function mkMotes(grp,n,col,size,op,top){const dp=new Float32Array(n*3);for(let i=0;i<n;i++){dp[i*3]=(Math.random()-.5)*H*2;dp[i*3+1]=Math.random()*top;dp[i*3+2]=(Math.random()-.5)*H*2}
@@ -420,8 +415,10 @@ for(let r=0;r<60;r++){const x=(rnd()-.5)*(H*2-8),z=(rnd()-.5)*(H*2-8);if(Math.hy
 
 // per-frame world animation (sky follows camera, lamp flicker, dust drift)
 function worldFrame(dt,t){
+YardArt.frame(dt);
 Sky.m.position.copy(cam.position);Sky.u.time.value=t;
 for(const l of WORLD.lights)l.intensity=l.userData.base*(.82+.18*Math.sin(t*7+l.userData.ph)*Math.sin(t*2.3+l.userData.ph*2)+(Math.sin(t*31+l.userData.ph)>.97?-.4:0));
 if(WORLD.dust){const dv=WORLD.dv||{vy:.15,top:6.8},a=WORLD.dust.geometry.attributes.position,up=dv.vy>0;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*dv.vy*(1+i%3*.4);if(up){if(y>dv.top)y=.2}else if(y<0)y=dv.top;a.setY(i,y);a.setX(i,a.getX(i)+Math.sin(t*.3+i)*dt*.1)}a.needsUpdate=true}
 if(WORLD.flames)for(const c of WORLD.flames){const f=.9+.1*Math.sin(t*9+c.ph)+.06*Math.sin(t*23+c.ph*3);c.fl.scale.set(f,.8+.4*f,f);c.halo.material.opacity=.5+.3*f;if(!c.fixed){c.g.position.y=c.y+Math.sin(t*.8+c.ph)*.12;c.g.rotation.y=t*.2+c.ph}}}
+
 

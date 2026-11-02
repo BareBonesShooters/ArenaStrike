@@ -2,9 +2,9 @@
 // Original, procedural low-poly scenery. No downloaded art or extra runtime dependencies.
 const BattleVisuals=(()=>{
 const maps=[
-  {id:"vale",n:"Meadow Railway",theme:"meadow",grass:[0x79ab69,0x88b977,0x9ac486],rock:0xb5a18a,leaf:[0x398369,0x63a57c,0xe6b88b],water:0x62bac5,sky:0xc7dfdf,sun:0xffe5b3},
-  {id:"mesa",n:"Canyon Express",theme:"desert",grass:[0xd7ad72,0xe4bd86,0xeacb98],rock:0xb9694c,leaf:[0x638b64,0x94a16b,0xd0a568],water:0x63bfbb,sky:0xf1d7b2,sun:0xffd1a0},
-  {id:"frost",n:"Frostfall Valley",theme:"frost",grass:[0xcddfe4,0xe0eaeb,0xf0f1e9],rock:0x788d9f,leaf:[0x356f78,0x609692,0xd9e5df],water:0x83c9dd,sky:0xd0dfeb,sun:0xffead0}
+  {id:"vale",n:"Meadow Railway",theme:"meadow",grass:[0x8b947a,0x90987f,0x828c74],rock:0xa08e73,leaf:[0x507d65,0x84a178,0xb19e69],water:0x6daba4,sky:0xd1d9c7,sun:0xffe0a5},
+  {id:"mesa",n:"Canyon Express",theme:"desert",grass:[0xdcb783,0xe1bd89,0xd4ad7b],rock:0xb77852,leaf:[0x75916b,0x99a36c,0x578171],water:0x6daba4,sky:0xe9d6b3,sun:0xffe0a5},
+  {id:"frost",n:"Frostfall Valley",theme:"frost",grass:[0xe0e8d9,0xe5ebdf,0xdbe3d6],rock:0x879e94,leaf:[0x477b77,0x60958b,0xc7d7c7],water:0x83bdb7,sky:0xd8e3da,sun:0xffe0a5}
 ];
 const sat=v=>Math.max(0,Math.min(1,v));
 function profile(campaign,map,x,z){
@@ -31,7 +31,9 @@ function create(campaign,mapIndex=0,freePlacement=false){
   }
   const tri=(a,b,c)=>{
     const rise=Math.max(a[1],b[1],c[1])-Math.min(a[1],b[1],c[1]);
-    const col=palette[Math.floor(random()*palette.length)].clone().multiplyScalar(range(.96,1.04));
+    const cx=(a[0]+b[0]+c[0])/3,cz=(a[2]+b[2]+c[2])/3;
+    const band=Math.sin(cx*.045)+Math.cos(cz*.052)+Math.sin((cx+cz)*.027);
+    const col=palette[band>.7?1:band<-.6?2:0].clone();
     if(rise>.75)col.lerp(cliff,.34);
     for(const p of[a,b,c]){verts.push(...p);colors.push(col.r,col.g,col.b)}
   };
@@ -50,7 +52,7 @@ function create(campaign,mapIndex=0,freePlacement=false){
     box(x,(h-13)/2,z,edge<2?8.1:3,h+13,edge<2?3:8.1,spec.rock);
     box(x,-9,z,edge<2?8.2:3.3,2.5,edge<2?3.3:8.2,new T.Color(spec.rock).multiplyScalar(.78));
   }
-  const water=new T.Mesh(new T.PlaneGeometry(1000,1000),new T.MeshPhongMaterial({color:spec.water,shininess:65,transparent:true,opacity:.88}));water.rotation.x=-Math.PI/2;water.position.y=-13.7;group.add(water);
+  const water=new T.Mesh(new T.PlaneGeometry(1000,1000),new T.MeshLambertMaterial({color:spec.water}));water.rotation.x=-Math.PI/2;water.position.y=-13.7;group.add(water);
   // Trees, boulders and flowers stay outside the usable placement square.
   const bound=freePlacement?extent:campaign?37:119,trees=Math.round((freePlacement?24:110)*Math.max(.3,LOD.props));
   // Put tall scenery on rock supports off the main island when its entire surface is playable.
@@ -84,8 +86,8 @@ function create(campaign,mapIndex=0,freePlacement=false){
   // Chunky distant mesas and mountain silhouettes, clear of all troops.
   for(let i=0;i<20;i++){
     const a=i/20*Math.PI*2,d=extent+range(30,65),x=Math.cos(a)*d,z=Math.sin(a)*d,h=range(22,57);
-    part(mapIndex===1?"cyl":"cone",x,h/2-9,z,range(32,56),h,range(32,56),spec.rock,range(0,6));
-    if(mapIndex===2)part("cone",x,h*.84-9,z,16,h*.32,16,0xe6edf0);
+    part(mapIndex===1?"cyl":"ico",x,h/2-9,z,range(32,56),h,range(32,56),mapIndex===1?spec.rock:mapIndex===2?0x97b7b2:0x8faa92,range(0,6));
+    if(mapIndex===2)part("ico",x,h*.84-9,z,16,h*.32,16,0xe6edf0);
   }
   // An elevated railway circles the field. Its bridges and train are scenery,
   // deliberately beyond placement/player bounds so no invisible collision is needed.
@@ -112,9 +114,9 @@ function create(campaign,mapIndex=0,freePlacement=false){
       const hub=mesh(new T.CylinderGeometry(.25,.25,.28,8),0xd7af70,x,.55,z);hub.rotation.z=Math.PI/2;w.add(hub);hub.position.set(0,0,0);hub.rotation.set(0,0,0);
     }
     if(!i){
-      const boiler=mesh(new T.CylinderGeometry(.85,.85,2.9,10),0x274555,0,1.65,.8);boiler.rotation.x=Math.PI/2;
-      mesh(new T.BoxGeometry(2,2.2,1.5),0xc56e51,0,1.9,-1.45);mesh(new T.BoxGeometry(2.5,.25,2),0x354653,0,3.1,-1.45);
-      mesh(new T.BoxGeometry(1.45,.75,1.55),0xbedddd,0,2.2,-1.44);
+      const boiler=mesh(new T.CylinderGeometry(.85,.85,2.9,10),0x478f8b,0,1.65,.8);boiler.rotation.x=Math.PI/2;
+      mesh(new T.BoxGeometry(2,2.2,1.5),0xcb613f,0,1.9,-1.45);mesh(new T.BoxGeometry(2.04,.22,1.54),0xf4e5be,0,1.38,-1.45);mesh(new T.BoxGeometry(2.5,.25,2),0x263d3c,0,3.1,-1.45);
+      mesh(new T.BoxGeometry(1.45,.75,1.55),0xe6cf8e,0,2.2,-1.44);
       mesh(new T.CylinderGeometry(.32,.22,1.25,8),0x32414d,0,2.65,1.5);
       mesh(new T.CylinderGeometry(.38,.38,.2,8),0xffdc89,0,1.65,2.28).rotation.x=Math.PI/2;
     }else{
@@ -185,6 +187,8 @@ function create(campaign,mapIndex=0,freePlacement=false){
   function rayDistance(ox,oy,oz,dx,dy,dz,max){
     ray.set(new T.Vector3(ox,oy,oz),new T.Vector3(dx,dy,dz));ray.far=max;surface.updateMatrixWorld();return ray.intersectObject(surface,false)[0]?.distance??max;
   }
+  YardArt.scatter(group,{extent,seed:9107+mapIndex*619,theme:spec.theme,height});
+  YardArt.junkyard(group,{extent,seed:9107+mapIndex*619,height,platforms:true});
   frame(0,true);
   for(const puff of smoke){puff.m.position.copy(trainCars[0].position);puff.m.position.y+=3.3+puff.age*1.6}
   return{group,surface,height,frame,rayDistance,spec,planning,extent};
@@ -192,8 +196,8 @@ function create(campaign,mapIndex=0,freePlacement=false){
 function light(mapIndex){
   const spec=maps[mapIndex],th=THEMES[spec.theme];Sky.set(th);
   sc.background=new T.Color(spec.sky);sc.fog=new T.Fog(spec.sky,160,390);
-  hemi.color.setHex(0xe6f2ff);hemi.groundColor.setHex(spec.rock);hemi.intensity=.83;
-  sun.color.setHex(spec.sun);sun.intensity=.95;sun.position.set(-45,75,35);
+  hemi.color.setHex(0xa9d2ce);hemi.groundColor.setHex(0x7c7054);hemi.intensity=.77;
+  sun.color.setHex(spec.sun);sun.intensity=.92;sun.position.set(-45,75,35);
   Sky.u.sunDir.value.copy(sun.position).normalize();Sky.u.sunCol.value.setHex(spec.sun);
 }
 function decorate(g,t,col){
@@ -239,7 +243,7 @@ function decorate(g,t,col){
 }
 function portrait(id,color="#68c8e8"){
   const human=["brawler","shield","rifle"].includes(id),heavy=["brute","titan"].includes(id);
-  const body=human?'<path d="M29 38 40 33 51 38 54 66H26Z"/>':'<path d="M22 36 40 30 58 36 64 66H16Z"/>';
+  const body=human?'<path d="M29 38 40 34 51 38 53 61H27Z"/><path d="M24 39h5v21h-7ZM51 39h5l2 21h-7Z"/><path d="M30 60h8v11H28ZM42 60h8l2 11H42Z" fill="#425d5b"/><path d="m30 38 4-1 11 24h-4Z" fill="#263d3c"/>':'<path d="M24 36 40 32 56 36 59 61H21Z"/><path d="M15 39h7v21h-8ZM58 39h7l1 21h-8Z"/><path d="M27 60h10v11H25ZM43 60h10l2 11H43Z" fill="#425d5b"/>';
   let detail='';
   if(id==="brawler")detail='<path d="M61 26 65 17 69 26 66 57H62Z" fill="#f3e6c5"/><path d="M56 48H73" stroke="#d6ac6a" stroke-width="4"/>';
   if(id==="shield")detail='<path d="M42 39 67 35 66 58 55 69 43 58Z" fill="#334f65" stroke="#e9d9b4" stroke-width="2"/><path d="M54 40V60M46 48H63" stroke="#e9d9b4" stroke-width="3"/>';
@@ -249,7 +253,9 @@ function portrait(id,color="#68c8e8"){
   if(id==="runner")detail='<path d="m21 29-7-13 14 7M59 29l7-13-14 7" fill="#eee1c0"/>';
   if(id==="spitter"||id==="bomber")detail=`<rect x="14" y="38" width="10" height="23" rx="4" fill="${id==="spitter"?"#c5e985":"#ffb45f"}"/><rect x="56" y="38" width="10" height="23" rx="4" fill="${id==="spitter"?"#c5e985":"#ffb45f"}"/>`;
   if(id==="ghost")detail='<ellipse cx="40" cy="11" rx="17" ry="4" fill="none" stroke="#f3e6c5" stroke-width="3"/><path d="m22 54-5 15 13-5 10 9 10-9 13 5-5-15" fill="currentColor" opacity=".65"/>';
-  return`<svg class="cb-portrait" viewBox="0 0 80 80" aria-hidden="true" style="color:${color}"><ellipse cx="40" cy="71" rx="26" ry="5" fill="#122333" opacity=".28"/><g fill="currentColor">${body}<path d="M26 20 40 15 54 20 52 35 40 39 28 35Z"/></g><path d="M29 23H51V31H29Z" fill="#233b50"/><path d="M32 26H37M43 26H48" stroke="#f3e6c5" stroke-width="2"/>${human?'<path d="M25 21 29 13H51L55 21Z" fill="#d9d9ce"/>':""}${detail}</svg>`;
+  const face=human?'<path d="M28 21h24v14H28Z" fill="#e7b482"/><path d="M24 19 29 12h22l5 9H25Z" fill="#e9e7d4"/><path d="M38 12h5v9h-5Z" fill="#478f8b"/><path d="M31 25h6v5h-6ZM44 25h6v5h-6Z" fill="#f4e5be"/><path d="M34 26h3v4h-3ZM44 26h3v4h-3ZM39 33h6v2h-6Z" fill="#263d3c"/>':heavy?'<path d="M25 17h30v6H25Z" fill="#425d5b"/><path d="M28 24h25v8H28Z" fill="#202d32"/><path d="M30 26h7v3h-7ZM44 26h7v3h-7Z" fill="#ffd174"/><path d="M29 34h24v7H29Z" fill="#202d32"/><path d="M33 34v7M40 34v7M47 34v7" stroke="#b6c4be" stroke-width="2"/>':id==='runner'||id==='ghost'?'<path d="m29 19-6-13M49 19l5-9" stroke="#425d5b" stroke-width="3"/><path d="M28 23h24v12H28Z" fill="#202d32"/><circle cx="40" cy="29" r="6" fill="#425d5b"/><circle cx="40" cy="29" r="4" fill="#7edbd5"/><path d="M29 36h12v3H29Z" fill="#a95737"/>':'<path d="M25 18h30v5H25Z" fill="#425d5b"/><path d="m29 18-3-9M49 18l2-6" stroke="#425d5b" stroke-width="2"/><circle cx="33" cy="28" r="7" fill="#202d32"/><circle cx="33" cy="28" r="4" fill="#ffd174"/><path d="M44 24h10v10H44ZM28 35h25v5H28Z" fill="#a95737"/><path d="M47 27h4v4h-4Z" fill="#b6c4be"/>';
+  return`<svg class="cb-portrait" viewBox="0 0 80 80" aria-hidden="true" style="color:${color}"><ellipse cx="40" cy="73" rx="26" ry="3" fill="#122d29" opacity=".28"/><g fill="currentColor">${body}<path d="M26 20 31 16H50L54 20 52 35 40 39 28 35Z"/></g>${face}${detail}</svg>`;
 }
 return{maps,profile,create,light,decorate,portrait};
 })();
+

@@ -2,7 +2,7 @@
 // ---------- lobby backdrop, adaptive quality and main loop ----------
 function backdrop(){
 bkReady=true;clearEnts();Fx.clear();endEmote();
-buildWorld(pk(OUTDOOR),(rnd()*2147483647)|0,{});
+buildWorld("meadow",918273,{});
 cam.fov=58;cam.updateProjectionMatrix()}
 
 // Four quality levels plus a render scale. Auto first shrinks the render resolution (down to half) whenever play averages under ~38 fps, drops a whole level once that is not enough, and
@@ -41,9 +41,9 @@ fit();
 sun.castShadow=q.sh>0;
 if(q.sh&&sun.shadow.mapSize.x!==q.sh){sun.shadow.mapSize.set(q.sh,q.sh);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}
 if(!q.sh&&sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
-Bloom.set(l===0);Flare.set(l<=1);document.body.classList.toggle("grade",l===0);document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
+Bloom.set(false);Flare.set(false);document.body.classList.remove("grade");document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
 // filmic tone mapping (High and Medium) rolls bright skies and muzzle glare off smoothly instead of clipping them
-const tmWas=rd.toneMapping;rd.toneMapping=q.tm?T.ACESFilmicToneMapping:T.NoToneMapping;rd.toneMappingExposure=q.tm||1;
+const tmWas=rd.toneMapping;rd.toneMapping=T.NoToneMapping;rd.toneMappingExposure=1;
 if(q.mz&&!mzL.parent)sc.add(mzL);else if(!q.mz&&mzL.parent)sc.remove(mzL);
 sc.traverse(o=>{if(o.userData&&o.userData.blob)o.visible=!q.sh});
 if(tmWas!==rd.toneMapping)sc.traverse(o=>{if(o.material){for(const m of[].concat(o.material))m.needsUpdate=true}});
@@ -82,9 +82,9 @@ if(paused&&fr%(S.gfx>1?4:2)){return}
 if(playing){update(dt*Death.frame(dt));Q.tick(raw)}
 else if(state==="title"){Title.frame(dt,clock)}
 else if(!paused){
-const a=clock*.11;
+const a=.72+Math.sin(clock*.035)*.075;
 if(cam.fov!==58){cam.fov=58;cam.updateProjectionMatrix()}
-cam.position.set(Math.sin(a)*30,14+Math.sin(clock*.2)*1.5,Math.cos(a)*30);cam.lookAt(0,2,0)}
+cam.position.set(Math.sin(a)*34,18,Math.cos(a)*34);cam.lookAt(-3,2,-5)}
 worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
 rd.shadowMap.needsUpdate=!(fr&1)||S.gfx>1;
@@ -331,27 +331,30 @@ const rot=document.createElement("div");rot.id="rot";rot.innerHTML='<svg viewBox
 const key=(c,dn)=>dispatchEvent(new KeyboardEvent(dn?"keydown":"keyup",{code:c,key:c,bubbles:true})),held={},set=(c,v)=>{if(!!held[c]!==v){held[c]=v;key(c,v)}};
 const buzz=n=>{try{if(S.opt&&S.opt.haptics===false)return;navigator.vibrate&&navigator.vibrate(n)}catch(e){}};
 let fsTried=false;const goFull=()=>{if(fsTried)return;fsTried=true;try{const de=document.documentElement,f=de.requestFullscreen||de.webkitRequestFullscreen;if(f&&!document.fullscreenElement){const p=f.call(de);p&&p.then&&p.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock("landscape").catch(()=>{})}catch(e){}}).catch(()=>{})}}catch(e){}};
-const tj=$("tj"),knob=tj.firstChild;let jid=null,j0=null,lid=null,lx=0,ly=0;
+const resets=[];const tj=$("tj"),knob=tj.firstChild;let jid=null,j0=null,lid=null,lx=0,ly=0,lookStart=null;
+const flight=()=>CustomBattle.active&&!CustomBattle.joined;
 const jmove=(x,y)=>{const dx=x-j0.x,dy=y-j0.y,l=Math.hypot(dx,dy)||1,m=Math.min(l,56),nx=dx/l*m,ny=dy/l*m;knob.style.transform=`translate(${nx}px,${ny}px)`;const dz=16;
 set("KeyW",ny<-dz);set("KeyS",ny>dz);set("KeyA",nx<-dz);set("KeyD",nx>dz);const sp=ny<-48&&Math.abs(nx)<40;set("ShiftLeft",sp);tj.classList.toggle("sp",sp)};
 const jend=()=>{jid=null;["KeyW","KeyS","KeyA","KeyD","ShiftLeft"].forEach(c=>set(c,false));knob.style.transform="";tj.classList.remove("on","sp");tj.style.left="";tj.style.top="";tj.style.bottom="";tj.style.marginLeft=""};
 const z=$("tz");
-z.addEventListener("pointerdown",e=>{if(jid!=null)return;e.preventDefault();goFull();try{z.setPointerCapture(e.pointerId)}catch(_){}jid=e.pointerId;j0={x:e.clientX,y:e.clientY};tj.classList.add("on");tj.style.left=(e.clientX-62)+"px";tj.style.top=(e.clientY-62)+"px";tj.style.bottom="auto";tj.style.marginLeft="0"});
+z.addEventListener("pointerdown",e=>{if(jid!=null)return;e.preventDefault();goFull();try{z.setPointerCapture(e.pointerId)}catch(_){}jid=e.pointerId;j0={x:e.clientX,y:e.clientY};tj.classList.add("on");tj.style.left=(e.clientX-tj.offsetWidth/2)+"px";tj.style.top=(e.clientY-tj.offsetHeight/2)+"px";tj.style.bottom="auto";tj.style.marginLeft="0"});
 z.addEventListener("pointermove",e=>{if(e.pointerId===jid)jmove(e.clientX,e.clientY)});z.addEventListener("pointerup",e=>{if(e.pointerId===jid)jend()});z.addEventListener("pointercancel",e=>{if(e.pointerId===jid)jend()});
-const look=(dx,dy)=>Aim.touchLook(dx*2.2,dy*2.2),l=$("tl");
-l.addEventListener("pointerdown",e=>{if(lid!=null)return;e.preventDefault();goFull();try{l.setPointerCapture(e.pointerId)}catch(_){}lid=e.pointerId;lx=e.clientX;ly=e.clientY});
-l.addEventListener("pointermove",e=>{if(e.pointerId!==lid)return;look(e.clientX-lx,e.clientY-ly);lx=e.clientX;ly=e.clientY});
-const lend=e=>{if(e.pointerId===lid)lid=null};l.addEventListener("pointerup",lend);l.addEventListener("pointercancel",lend);
+z.addEventListener("lostpointercapture",e=>{if(e.pointerId===jid)jend()});
+const look=(dx,dy)=>flight()?CustomBattle.touchLook(dx,dy):Aim.touchLook(dx*2.2,dy*2.2),l=$("tl");
+l.addEventListener("pointerdown",e=>{if(lid!=null)return;e.preventDefault();goFull();try{l.setPointerCapture(e.pointerId)}catch(_){}lid=e.pointerId;lx=e.clientX;ly=e.clientY;lookStart={x:lx,y:ly,t:performance.now(),moved:false}});
+l.addEventListener("pointermove",e=>{if(e.pointerId!==lid)return;if(Math.hypot(e.clientX-lookStart.x,e.clientY-lookStart.y)>8)lookStart.moved=true;look(e.clientX-lx,e.clientY-ly);lx=e.clientX;ly=e.clientY});
+const lend=e=>{if(e.pointerId!==lid)return;if(e.type==="pointerup"&&flight()&&lookStart&&!lookStart.moved&&performance.now()-lookStart.t<350)CustomBattle.touchPlace(e.clientX,e.clientY);lid=null;lookStart=null};l.addEventListener("pointerup",lend);l.addEventListener("pointercancel",lend);l.addEventListener("lostpointercapture",lend);
 // a button can also steer the view: fire buttons keep aiming while the thumb drags
 const bind=(id,dn,up,steer)=>{const b=$(id);let pid=null,px=0,py=0;
-b.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();goFull();try{b.setPointerCapture(e.pointerId)}catch(_){}pid=e.pointerId;px=e.clientX;py=e.clientY;b.classList.add("on");buzz(8);dn()});
+resets.push(()=>{pid=null;b.classList.remove("on","lk")});
+b.addEventListener("pointerdown",e=>{if(pid!==null)return;e.preventDefault();e.stopPropagation();goFull();try{b.setPointerCapture(e.pointerId)}catch(_){}pid=e.pointerId;px=e.clientX;py=e.clientY;b.classList.add("on");buzz(8);dn()});
 if(steer)b.addEventListener("pointermove",e=>{if(e.pointerId!==pid)return;look(e.clientX-px,e.clientY-py);px=e.clientX;py=e.clientY});
-const u=e=>{if(e.pointerId!==pid)return;pid=null;b.classList.remove("on");if(up)up()};b.addEventListener("pointerup",u);b.addEventListener("pointercancel",u)};
+const u=e=>{if(e.pointerId!==pid)return;pid=null;b.classList.remove("on");if(up)up()};b.addEventListener("pointerup",u);b.addEventListener("pointercancel",u);b.addEventListener("lostpointercapture",u)};
 const fireDn=()=>rd.domElement.dispatchEvent(new MouseEvent("mousedown",{button:0,bubbles:true})),fireUp=()=>dispatchEvent(new MouseEvent("mouseup",{button:0}));
 bind("tf",fireDn,fireUp,true);bind("tfl",fireDn,fireUp,true);
 bind("tjp",()=>key("Space",1),()=>key("Space",0));
 bind("trl",()=>{key("KeyR",1);key("KeyR",0)});
-bind("tcr",()=>{const v=!held.ControlLeft;set("ControlLeft",v);$("tcr").classList.toggle("lk",v)},null);
+bind("tcr",()=>{if(flight()){set("ControlLeft",true);return}const v=!held.ControlLeft;set("ControlLeft",v);$("tcr").classList.toggle("lk",v)},()=>{if(flight())set("ControlLeft",false)});
 bind("tsw",()=>{const kn=slot!==1,c=kn?"Digit2":"Digit1";key(c,1);key(c,0)});
 bind("tad",()=>rd.domElement.dispatchEvent(new MouseEvent("mousedown",{button:2,bubbles:true})),()=>dispatchEvent(new MouseEvent("mouseup",{button:2})));
 bind("tgr",()=>key("KeyG",1),()=>key("KeyG",0));
@@ -365,15 +368,23 @@ bind("tem",()=>{if(ep.classList.contains("open")){ep.classList.remove("open");re
 const e=eq().e;ep.innerHTML=e.map((id,i)=>{const it=id&&S.own[id]&&I(id);return it?`<button data-i="${i}">${esc(it.n)}</button>`:""}).join("")||'<button disabled>No emotes</button>';ep.classList.add("open")});
 ep.addEventListener("pointerdown",e=>{const b=e.target.closest("button[data-i]");if(!b)return;e.preventDefault();e.stopPropagation();ep.classList.remove("open");key("Digit"+(3+ +b.dataset.i),1);key("Digit"+(3+ +b.dataset.i),0)});
 // state that follows the game: mode specific buttons, knife label, portrait pause, and no stuck inputs when a menu opens
-let lastPlay=false;
-setInterval(()=>{const playing=document.body.classList.contains("playing");
+function resetTouch(){
+ clearKeys();jend();lid=null;lookStart=null;for(const k in held)held[k]=false;resets.forEach(f=>f());ep.classList.remove("open");Aim.reset();
+}
+addEventListener("blur",resetTouch);addEventListener("pagehide",resetTouch);addEventListener("orientationchange",resetTouch);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)resetTouch()});
+const controlsActive=()=>document.body.classList.contains("playing")||(CustomBattle.active&&state==="play"&&!menuOpen);
+new MutationObserver(()=>{if(!controlsActive())resetTouch()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
+let lastPlay=false,lastFlight=false;
+setInterval(()=>{const playing=controlsActive();d.classList.toggle("mobile-flight",flight()&&state==="play"&&!menuOpen);
 if(d.dataset.m!==mode)d.dataset.m=mode;
 const sw=$("tsw");const want=slot===1?"GUN":"KNIFE";if(sw.textContent!==want)sw.textContent=want;
 if(!(slot===0))$("tad").style.opacity=.35;else $("tad").style.opacity="";
 if(playing&&!lastPlay){ep.classList.remove("open");$("tcr").classList.remove("lk");set("ControlLeft",false)}
-if(!playing&&lastPlay){["KeyW","KeyS","KeyA","KeyD","ShiftLeft","ControlLeft"].forEach(c=>set(c,false));ep.classList.remove("open")}
+if(!playing&&lastPlay)resetTouch();
+const flying=flight();if(flying!==lastFlight){resetTouch();$("tjp").lastChild.textContent=flying?"UP":"JUMP";$("tcr").lastChild.textContent=flying?"DOWN":"CROUCH";lastFlight=flying}
 lastPlay=playing;
-if(playing&&state==="play"&&!menuOpen&&matchMedia("(orientation:portrait)").matches)pauseGame()},250);
+},150);
 document.addEventListener("contextmenu",e=>e.preventDefault());
 })();
 {const n=$("nm");
@@ -396,3 +407,4 @@ if(w<prev){tr.style.transition="none";tr.style.width=prev+"%";void tr.offsetWidt
 else{tr.style.transition="none";tr.style.width=w+"%"}
 prev=w}).observe(hp,{attributes:true,attributeFilter:["style"]})}
 document.addEventListener("pointermove",e=>{const b=e.target&&e.target.closest&&e.target.closest(".b");if(!b)return;const r=b.getBoundingClientRect();b.style.setProperty("--bx",(e.clientX-r.left)+"px");b.style.setProperty("--by",(e.clientY-r.top)+"px")},{passive:true})}
+

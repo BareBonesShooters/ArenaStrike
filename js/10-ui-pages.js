@@ -71,7 +71,7 @@ if(sel==="duel1"||sel==="coop")S.mp.mode=sel;
 const nm=$("nm");if(document.activeElement!==nm)nm.value=S.name;
 paintCoins();$("sk").textContent=S.streak;try{questDot()}catch(e){}
 const bg=I(S.bg),av=I(S.av);$("av").style.background=bg.css;$("av").innerHTML=gly(av.e);
-Thumb.req("out",I(eq().p),110,130,u=>{if(u){const i=$("pfo");if(i.getAttribute("src")!==u)i.src=u;i.hidden=false}});
+Thumb.req("out",I(eq().p),440,520,u=>{if(u){const i=$("pfo");if(i.getAttribute("src")!==u)i.src=u;i.hidden=false}});
 // the list is built once and only the highlight moves afterwards, so picking a mode does not replay every row's entrance
 {const mds=$("mds"),h=MD.map((m,i)=>`<button class="mode" data-a="mode" data-v="${m[0]}" style="--i:${i}"><span><b>${m[1]}</b></span>${PMS(m[0])?'<span class="tag">Online</span>':m[0]==="tut"&&!S.tut?'<span class="tag">New</span>':""}</button>`).join("");
 if(mds._h!==h){mds._h=h;mds.innerHTML=h}
@@ -353,9 +353,9 @@ const panel=host;
 try{
 item=I(host.dataset.preview);cat=host.dataset.category;
 if(!renderer){renderer=new T.WebGLRenderer({antialias:!SOFT,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x000000,0)}
-scene=new T.Scene();scene.add(new T.HemisphereLight(0xdfe9ff,0x303040,1));
-const key=new T.DirectionalLight(0xffffff,1.15);key.position.set(3,4,5);scene.add(key);
-const rim=new T.DirectionalLight(0x8ab4ff,.8);rim.position.set(-4,3,-3);scene.add(rim);
+scene=new T.Scene();scene.add(new T.HemisphereLight(0xa9d2ce,0x7c7054,.67));
+const key=new T.DirectionalLight(0xffe0a5,.85);key.position.set(3,4,5);scene.add(key);
+const rim=new T.DirectionalLight(0xa9d2ce,.3);rim.position.set(-4,3,-3);scene.add(rim);
 camera=new T.PerspectiveCamera(35,1,.05,100);pivot=new T.Group();scene.add(pivot);
 const outfit=cat==="p"?item:I(eq().p);
 if(cat==="g"||cat==="s"){model=buildGun(cat==="g"?item:GB(eq().g),cat==="s"?item:I(eq().s)).grp;model.rotation.y=Math.PI/2+.4}
@@ -1058,3 +1058,4 @@ document.addEventListener("pointermove",e=>{if(e.pointerType==="touch")return;co
 const r=it.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height,s=it.style;
 s.setProperty("--mx",(x*100).toFixed(0)+"%");s.setProperty("--my",(y*100).toFixed(0)+"%");s.setProperty("--tx",((x-.5)*16).toFixed(1)+"deg");s.setProperty("--ty",((.5-y)*12).toFixed(1)+"deg")});
 document.addEventListener("pointerout",e=>{const it=e.target.closest&&e.target.closest(".it");if(it&&!it.contains(e.relatedTarget)){it.style.removeProperty("--tx");it.style.removeProperty("--ty")}});
+
