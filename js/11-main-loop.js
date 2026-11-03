@@ -292,7 +292,7 @@ if(!on&&!objs.length)return;
 on=false;clearSeg();
 const el=$("title");if(el){el.classList.add("out");setTimeout(()=>el.remove(),600)}
 try{snd("ui")}catch(e){}
-bkReady=false;state="lobby";goLobby()}
+bkReady=false;state="lobby";goLobby();window.ArenaEntry?.open()}
 function frame(dt,t){
 if(!on)return;tt+=dt;segT+=dt;
 const k=SEGS[seg];

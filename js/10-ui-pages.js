@@ -83,7 +83,7 @@ $("sg-rg").innerHTML=seg("rg",[[3,"3"],[5,"5"],[10,"10"]],rgv);
 hide("o-df",!(sel==="duel"||sel==="gg"||sel==="parkour"||sel==="waves"));$("o-dft").textContent=sel==="parkour"?"Course difficulty":sel==="waves"?"Monster difficulty":"Bot difficulty";hide("o-rd",sel!=="duel");hide("o-party",!PMS(sel));
 const hasGhost=Object.keys(S.pkt||{}).some(k=>k.indexOf((S.opt.df||"easy")+"_")===0&&S.pkg&&S.pkg[k]&&S.pkg[k].length>2);
 hide("o-gr",false);{const access=DevAccess.unlocked;
-$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="page" data-v="developer">Developer panel</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
+$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
 $("grinfo").textContent=access?"Developer modes available on your signed-in account.":"Input code for a dev-only gamemode."}
 hide("o-gl",sel!=="waves");{const gl=!!S.opt.ghostLvl;$("sg-gl").innerHTML=seg("gl",[["0","Classic"],["1","Ghost level"]],gl?1:0);$("glinfo").textContent=gl?"Every monster is a ghost: they hover, keep their distance and shoot when they see you. Every 5th wave brings the Ghost boss.":"Classic Monster Rush. A ghost wave still haunts the arena every 7th wave."}
 hide("o-ghost",sel!=="parkour");hide("o-pkk",sel!=="parkour");$("sg-pk").innerHTML=seg("pkknife",[["0","Off"],["1","On"]],pkKnifeOn()?1:0);
