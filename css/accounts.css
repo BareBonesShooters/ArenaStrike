@@ -11,3 +11,21 @@ html.mobile-ui .mobile-settings{display:grid;gap:14px}html.mobile-ui .account-pa
 html.mobile-ui #tc button{scale:var(--touch-scale,1);opacity:var(--touch-opacity,.8)}
 #custom-battle-ui .cb-fight{background:linear-gradient(135deg,#ffb477,#ff8a3d)!important;color:#28180d!important;border-color:#ffbf8d!important}
 #custom-battle-ui .cb-selected b,#custom-battle-ui .cb-budget>b{color:#ffae69}
+#developer-invite {
+  font-size: 26px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  line-height: 1.6;
+  padding: 20px;
+  margin-top: 14px;
+  color: #ffe2bf;
+  background: #081327;
+  border: 2px solid #ffae69;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+#developer-invite:empty {
+  display: none;
+}
