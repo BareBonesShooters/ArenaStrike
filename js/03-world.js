@@ -305,7 +305,15 @@ const bench=(x,z,rot)=>{const w=rot&1?.7:2,d=rot&1?2:.7;if(!free(x,z,1.3))return
 const tower=(x,z,rot)=>{if(!free(x,z,7))return false;
 lb(x,z,rot,0,0,4,2.2,4,pick(th.house),.6);
 for(let i=0;i<5;i++)lb(x,z,rot,0,2.6+i*.9,2.4,.44*(5-i),.9,lerpC(th.trim,0xffffff,.15),.7);
-lb(x,z,rot,0,0,4.2,.16,4.2,th.trim,1);
+// The tread surface sits on the tower, not at ground level.
+P("box",x,2.22,z,4.2,.04,4.2,th.trim,rot*PI/2,1);reg(x,z,4.2,4.2,2.24);
+// Raised panels and corner caps stay separated to prevent coplanar flicker.
+if(LOD.props>=.8){const c=Math.cos(rot*PI/2),s=Math.sin(rot*PI/2),part=(a,y,b,w,h,d,col)=>P("box",x+a*c+b*s,y,z-a*s+b*c,w,h,d,col,rot*PI/2,.9);
+ for(const side of[-1,1]){part(side*1.92,1.05,-1.92,.22,2.1,.22,0x27394b);part(side*1.92,1.05,1.92,.22,2.1,.22,0x27394b);part(side*1.94,1.36,0,.14,.14,3.55,th.trim);part(side*1.94,.68,0,.14,.12,3.55,th.trim);part(side*1.42,2.27,0,.09,.015,3.7,0xe8b54d);part(side*1.95,3.32,0,.16,.12,3.6,th.trim);part(side*1.95,2.67,0,.12,.12,3.6,th.trim);}
+ part(0,3.32,-1.95,3.6,.12,.16,th.trim);part(0,2.67,-1.95,3.6,.12,.12,th.trim);
+ part(0,1.28,-2.025,1.5,.65,.045,0x263846);part(0,1.28,-2.053,.8,.12,.012,0xe8b54d);
+ for(let i=0;i<5;i++)part(0,.44*(5-i)+.012,2.6+i*.9,2.3,.024,.06,0xe8b54d);
+}
 // guard rail posts (decorative)
 for(const [a,b] of[[-1.9,-1.9],[1.9,-1.9],[-1.9,1.9],[1.9,1.9]]){const c=Math.cos(rot*PI/2),s=Math.sin(rot*PI/2);P("box",x+a*c+b*s,2.2+1.1,z-a*s+b*c,.14,2.2,.14,th.trim,0,1)}
 const tc=th.night?glow:null;P("box",x,4.55,z,4.7,.22,4.7,pick(th.roof),rot*PI/2,.8);P("box",x,4.78,z,.3,.5,.3,th.trim,0,1);P("ico",x,5.15,z,.5,.5,.5,th.lamp,0,1,glow);return true};
