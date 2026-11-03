@@ -33,7 +33,7 @@ Keep a comma after each entry. Use each code name once; case and surrounding spa
 
 To disable a code, delete its line or put `//` at the start of the line. Already earned rewards remain. Each code is once per browser save, including claims from the previous versions. Use a new code name to give previous claimants another reward.
 
-The list is visible in the game's source. Use game-only reward codes. Custom mode still uses its separate developer password.
+The list is visible in the game's source. Use game-only reward codes. With Supabase configured, developer modes require a developer account role or a one-use invitation from an owner. Reward codes do not grant developer permissions. See SETUP-ACCOUNTS.md.
 
 ## Installing this simpler version
 
@@ -49,3 +49,4 @@ The old `js/reward-codes.js` file is ignored by the game, so leaving it or its s
 The full update bundle also includes refreshed documentation, tests and an optional local preview builder. These files help development; the two replacements above are sufficient for the game and deployment.
 
 For local checks: `node --test tests/rewards.test.cjs tests/build-pages.test.cjs`. Run `node scripts/build-pages.cjs` only if you want a separate `_site` preview folder. Codes work on HTTPS sites such as GitHub Pages and on localhost. Hashed saved claim IDs remain compatible with the previous version.
+
