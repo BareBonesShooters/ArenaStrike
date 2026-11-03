@@ -83,8 +83,8 @@ $("sg-rg").innerHTML=seg("rg",[[3,"3"],[5,"5"],[10,"10"]],rgv);
 hide("o-df",!(sel==="duel"||sel==="gg"||sel==="parkour"||sel==="waves"));$("o-dft").textContent=sel==="parkour"?"Course difficulty":sel==="waves"?"Monster difficulty":"Bot difficulty";hide("o-rd",sel!=="duel");hide("o-party",!PMS(sel));
 const hasGhost=Object.keys(S.pkt||{}).some(k=>k.indexOf((S.opt.df||"easy")+"_")===0&&S.pkg&&S.pkg[k]&&S.pkg[k].length>2);
 hide("o-gr",false);{const access=DevAccess.unlocked;
-$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
-$("grinfo").textContent=access?"Developer modes unlocked for this session.":"Input code for a dev-only gamemode."}
+$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
+$("grinfo").textContent=access?"Developer modes available on your signed-in account.":"Input code for a dev-only gamemode."}
 hide("o-gl",sel!=="waves");{const gl=!!S.opt.ghostLvl;$("sg-gl").innerHTML=seg("gl",[["0","Classic"],["1","Ghost level"]],gl?1:0);$("glinfo").textContent=gl?"Every monster is a ghost: they hover, keep their distance and shoot when they see you. Every 5th wave brings the Ghost boss.":"Classic Monster Rush. A ghost wave still haunts the arena every 7th wave."}
 hide("o-ghost",sel!=="parkour");hide("o-pkk",sel!=="parkour");$("sg-pk").innerHTML=seg("pkknife",[["0","Off"],["1","On"]],pkKnifeOn()?1:0);
 if(sel==="parkour"){
@@ -155,7 +155,7 @@ LoadoutPreview.stop();
 const b=$("pgb"),st=b.scrollTop,sl=[...b.querySelectorAll(".strip")].map(s=>s.scrollLeft);
 if(still!==false)b.classList.add("still");
 b.innerHTML=PG[PAGE].f();b.querySelectorAll(".strip").forEach((s,i)=>{s.scrollLeft=sl[i]||0});b.scrollTop=st;
-paintCoins();fillThumbs(b);Cine.scan(b);paintRanges();Glide.sync();LoadoutPreview.mount(b)}
+paintCoins();fillThumbs(b);Cine.scan(b);paintRanges();Glide.sync();LoadoutPreview.mount(b);window.AccountUI?.mount(b)}
 
 // shop
 function roll(c){
@@ -764,7 +764,7 @@ return`<div class="codes-layout">
 <div id="code-rewards" class="code-rewards"></div>
 <button class="b" data-a="page" data-v="load">${ico("pack",16)}Open Loadout</button><small class="code-note">Rewards save on this browser, just like your other items.</small></section>
 <section class="code-panel developer-panel"><span class="eyebrow">Developer exclusive</span><h3>Custom Gamemodes</h3><p>Input code for a dev-only gamemode.</p>
-${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Access lasts until you reload or lock it. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
+${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Developer access is saved on your account. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="page" data-v="account">Manage account</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Sign in first. Ask an owner for a one-use developer invite.</small></form>`}
 <p id="developer-status" class="code-status" role="status" aria-live="polite"></p></section></div>`
 }
 function codeStatus(id,message,ok){const el=$(id);if(el){el.textContent=message;el.classList.toggle("success",!!ok);el.classList.toggle("error",!ok)}}

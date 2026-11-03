@@ -1,4 +1,4 @@
-Arena Strike 3D - Beta 1.6.5
+Arena Strike 3D - Beta 1.6.6
 
 Open index.html in a browser (a local server such as `python3 -m http.server` is the safest way; double-clicking also works in most browsers).
 
@@ -8,28 +8,34 @@ js/01..11-*.js    game code in load order (core, render+audio, world, models, pl
 
 The scripts are classic scripts sharing one global scope, so keep the load order in index.html.
 
-Reward codes and developer access
-- Open Redeem codes from the lobby. `DEV` grants the exclusive Dev gun skin and Dev outfit. Equip them in Loadout; neither item drops from cases or is sold in the Shop.
-- Reward codes ignore letter case and surrounding spaces. Each code can be claimed once per browser save; inventory and redemption history persist with the existing local save.
-- Add or remove codes in `REDEEM_CODES` at the very top of `js/01-core.js`. Copy an entry for coins, items, or both, then commit. Commented examples are included. See [SETUP-CODES.md](SETUP-CODES.md) for copy-and-paste examples.
-- Codes use 1–64 letters, numbers, hyphens or underscores, starting with a letter or number. The browser hashes the entered code and stores only the hash for new claims. Existing claims from the previous version still prevent duplicate rewards.
-- The game reads the code list directly; `js/reward-codes.js` and `GAME_CODES` are no longer used. The Deploy game workflow publishes static files without a secret or build dependency. Reward checks require HTTPS or localhost to preserve hashed claim history.
-- Custom mode requires the separate, case-sensitive developer code on the Redeem codes page. Unlock it to open Battle Simulator or Sandbox, or return to Monster Rush and switch Custom mode On. Access lasts until page reload or Lock access; old saved Grind settings no longer enable it automatically. Online co-op cannot use Custom mode.
-- The shipped password is a SHA-256 digest in `DevAccess`. To change it, hash a new game-only password with SHA-256 and replace `passwordHash`. Password checks require HTTPS or localhost. This is a client-side convenience lock, not secure authorization; a server would be needed to enforce developer privileges against modified clients.
-- Run regression checks with `node --test tests/rewards.test.cjs tests/build-pages.test.cjs` (Node 24). Set `ARENA_TEST_DEV_PASSWORD` to the configured game-only password to also run the successful-unlock checks without publishing that password in the test file.
-- Reward codes are public in the game's source, and saves are local to each browser. Custom mode keeps its separate password. Secure account-based rewards would require a server.
+Accounts, reports and developer tools
+- See [SETUP-ACCOUNTS.md](SETUP-ACCOUNTS.md) for deployment, email delivery and disabled paid-plan placeholders.
+- Sign in to sync progress and restore your developer role. Guest play remains available.
+- The sidebar includes Account, Settings and (for authorized accounts) Developer panel.
+- Report a problem is at the bottom right. Reports require sign-in and can be reviewed in the developer panel.
+- Public rankings use client-reported results and basic validation; they are not cheat-proof.
+- Owners manage developer roles or issue one-use invitations. Database roles protect shared developer actions.
+- Signed-in developers publish Battle Sim Maker levels directly through Supabase; players refresh levels to load them.
+- Device settings stay on the device. Account progress and guest progress are stored separately.
+- Public email delivery is still required before public registrations can work. Stripe purchases remain disabled.
+
+Reward codes
+- Open Redeem codes in the lobby. DEV grants the Dev gun skin and outfit; it does not grant developer permissions.
+- Add codes to REDEEM_CODES at the top of js/01-core.js. Each code can be claimed once per save.
+- Code definitions are public in the browser source. No GitHub secret or build step is required.
+- The legacy shared developer password is used only if Supabase is unconfigured; it cannot grant backend access.
 
 Custom battles and previews
-- Battle Simulator has seven preset enemy armies, budgets, and nine troop types. Place your troops on the blue side, start the battle, and advance after winning. Edit / reset restores your formation and budget.
+- Battle Simulator has seven preset enemy armies, budgets, and nine troop types. Place your troops anywhere on the battlefield, start the battle, and advance after winning. Edit / reset restores your formation and budget.
 - Sandbox has an open center, connected raised terraces, free flight, two placement teams, a nine-slot hotbar, sample armies, pause/speed controls, and up to 60 living units. Start a battle and use Join Blue / Join Red to fight; F returns to flight. Edit / reset restores the formation from the start of the battle.
 - Both custom modes have three original low-poly landscapes: Meadow Railway, Canyon Express, and Frostfall Valley. Choose a landscape before starting; campaign challenges also cycle through them. Terrain height is shared by placement, troops, player movement, and weapon collision.
 - The scenery includes an elevated circulating train with freight cars and smoke, railway bridges, a station, a spinning windmill, waving pennants, and flowing water. Trains are decorative and stay outside the playable area. Scenery animation respects the system's reduced-motion preference.
 - Troops have distinct armor, weapons and silhouettes. The editor includes illustrated troop cards, a translucent placement preview with attack range, a live minimap, army counts, budget indicators, battle results, and a Hide tools button for a clearer view. Use the mouse wheel to change flight height.
-- Flight controls: WASD to move, Space up, C or Ctrl down, Shift faster, right-drag to look, Q/E or arrow keys to turn, mouse wheel for altitude, 1–9 to choose units. Click the ground to place; the Remove tool refunds campaign units. These modes currently use mouse and keyboard.
+- Flight controls: WASD to move, Space up, C or Ctrl down, Shift faster, right-drag to look, Q/E or arrow keys to turn, mouse wheel for altitude, 1–9 to choose units. Click the ground to place; the Remove tool refunds campaign units. On touch devices, use the left stick to fly, drag to look, tap the ground to place, and use the troop hotbar.
 - Custom battles do not grant coins, XP, or quest progress. Existing game saves are preserved.
 - Loadout has live previews for finishers, emotes, equipment, profile items, and music, including locked items without unlocking them.
 
-New in Beta 1.6 (and Beta 1.5)
+Historical release notes (Beta 1.6 and Beta 1.5; account access now follows the section above)
 - Battle Pass: 150 tiers in six chapters (hero header, next-exclusive card, chapter tabs, Claim all, Skip tier); tiers 1-30 unchanged
 - Quests: Daily, Weekly (6 goals, reset every Monday) and Season (12 long-term goals) with Battle Pass XP and coin rewards (WQ/SQ in js/01-core.js)
 - Shop: Items tab with rarity pricing, ~19 new cases, 16 more finishers, many more backgrounds and items; coin totals are synced everywhere (paintCoins in js/10-ui-pages.js)
@@ -83,3 +89,4 @@ Libraries and credits
 If the Howler CDN is blocked the game falls back to its built-in synth, so it still has sound.
 - Parkour specials (js/08-parkour-radar.js mk/slab/dynFrame): mv sliding platforms, cr crumbling slabs, bo launch pads (aim the jump at the next ledge), va vault walls; per-difficulty chances in SPD, per-map multipliers in MSS.sp; scenery ring built after bnd; S.pkLay=3
 - Monster Rush arenas (js/03-world.js arenaPack, opt.waves): four layouts picked by seed (fortress, crossing, colosseum, lanes), built before scatter props
+
