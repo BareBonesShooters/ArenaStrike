@@ -1,5 +1,11 @@
 Arena Strike 3D - Beta 1.6.5
 
+## Trailer
+
+[![Monster Rush, the 30-second Arena Strike 3D trailer](trailer/poster.jpg)](trailer/monster-rush.mp4)
+
+**Monster Rush** (30 s, 1080p): click the image to watch [trailer/monster-rush.mp4](trailer/monster-rush.mp4). Every shot is drawn in the game's own world, with its models, poses, recoil and death motion. The sound effects come from the game's own synthesizer, and the gunfire is timed to real gameplay footage.
+
 Open index.html in a browser (a local server such as `python3 -m http.server` is the safest way; double-clicking also works in most browsers).
 
 index.html        page shell, icon sprite, CDN libraries (Three.js r128, Howler.js 2.2.4, PeerJS 1.5.4)
