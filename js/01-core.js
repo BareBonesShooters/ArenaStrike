@@ -348,10 +348,14 @@ return Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,"0")).join(
 }
 
 // This is a browser-only convenience gate, not server-side authorization.
-// Only a hash is shipped; developer access is never restored from a saved flag.
+// Only a hash is shipped. Unlock is remembered per device (localStorage) until the user locks it.
+// Temporary: once accounts exist, this is replaced by a server-enforced developer role.
 const DevAccess=(()=>{
 const passwordHash="aa158f59d8050ea52f231cf6a9e63a18fa907847a01ff76aeb2ff1c92208a8ed";
-let unlocked=false,attempt=0;
+const DEV_KEY="arena3d_dev_device";
+const remembered=()=>{try{return localStorage.getItem(DEV_KEY)===passwordHash}catch(e){return false}};
+const remember=on=>{try{on?localStorage.setItem(DEV_KEY,passwordHash):localStorage.removeItem(DEV_KEY)}catch(e){}};
+let unlocked=remembered(),attempt=0;
 return{
 get unlocked(){return unlocked},
 async unlock(password){
@@ -361,9 +365,9 @@ const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String
 const hash=Array.from(new Uint8Array(bytes),x=>x.toString(16).padStart(2,"0")).join("");
 if(current!==attempt)return false;
 if(hash!==passwordHash)return false;
-unlocked=true;return true
+unlocked=true;remember(true);return true
 },
-lock(){attempt++;unlocked=false;if(S.opt)S.opt.grind=false;sv()},
+lock(){attempt++;unlocked=false;remember(false);if(S.opt)S.opt.grind=false;sv()},
 canGrind(gameMode,online){return unlocked&&gameMode==="waves"&&!online&&!!(S.opt&&S.opt.grind)}
 }})();
 

@@ -30,7 +30,7 @@ html.mobile-ui #lobby .modes{grid-template-columns:repeat(2,minmax(0,1fr));gap:6
 html.mobile-ui #lobby .mode{min-width:0;min-height:54px;padding:9px;gap:7px}
 html.mobile-ui #lobby .mode b{font-size:14px}
 html.mobile-ui #lobby .seg{display:flex;flex-wrap:wrap;gap:3px}
-html.mobile-ui #lobby .seg .b{flex:1 1 58px;min-height:44px;padding:5px}
+html.mobile-ui #lobby .seg .b{flex:1 0 auto;min-width:58px;min-height:44px;padding:5px 8px}
 html.mobile-ui #lobby #go{position:static;min-height:50px;flex:none}
 html.mobile-ui .joinbox{max-width:100%;padding:14px}
 html.mobile-ui .joinrow{display:flex;min-width:0;gap:8px}
@@ -89,7 +89,7 @@ html.mobile-ui #ammo{right:calc(var(--mr) + 218px);bottom:calc(var(--mb) + 6px);
 html.mobile-ui #ammo #am{font-size:32px}html.mobile-ui #ammo #amx{font-size:16px}html.mobile-ui #ammo #gn{font-size:11px;max-width:130px;white-space:normal}
 html.mobile-ui #boosts{left:calc(var(--ml) + 80px);top:calc(var(--mt) + 52px);max-width:150px;padding:4px;gap:4px}
 html.mobile-ui #xpbar{bottom:calc(var(--mb) + 2px);width:24vw;max-width:180px;height:8px}
-html.mobile-ui #xptxt{font-size:8px}
+html.mobile-ui #xptxt{font-size:10px}
 html.mobile-ui #bossbar{top:calc(var(--mt) + 58px);width:36%;max-width:400px}
 html.mobile-ui #rgun{top:calc(var(--mt) + 58px);bottom:auto;max-width:50%;padding:6px;gap:6px}
 html.mobile-ui #rgun button{min-width:44px;min-height:44px}
@@ -100,7 +100,7 @@ html.mobile-ui #tut{max-width:calc(100% - 170px);font-size:12px;bottom:calc(var(
 html.mobile-ui #custom-battle-ui{--cb-top:60px;--cb-bottom:101px}
 html.mobile-ui .cb-top{top:var(--mt);left:var(--ml);right:var(--mr);min-height:0;height:50px;padding:6px 8px;gap:8px;flex-wrap:nowrap}
 html.mobile-ui .cb-brand{min-width:0;flex:1;gap:0}
-html.mobile-ui .cb-brand small{font-size:8px!important;letter-spacing:.03em}
+html.mobile-ui .cb-brand small{font-size:10px!important;letter-spacing:.03em}
 html.mobile-ui .cb-top h2{font-size:14px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
 html.mobile-ui .cb-score{gap:5px;min-width:0;flex:none}html.mobile-ui .cb-score>span{font-size:0}html.mobile-ui .cb-score>span b{font-size:20px}html.mobile-ui .cb-score>div{min-width:62px}html.mobile-ui .cb-score i{display:none}
 html.mobile-ui .cb-top>nav{flex-basis:auto;flex-wrap:nowrap;gap:4px}
@@ -194,3 +194,17 @@ html.mobile-ui #pkmap .back{min-height:44px;padding:10px 24px;flex:none}
 html.mobile-ui #pkmap .sub{margin:0;text-align:center;font-size:13px}
 html.mobile-ui #inspw{top:calc(var(--mobile-top) + var(--mt));right:var(--mr);transform:none;max-height:calc(var(--mobile-height) - var(--mt) - var(--mb));overflow:auto;touch-action:pan-y pinch-zoom}
 html.mobile-ui #sbd{max-height:calc(var(--mobile-height) - var(--mt) - var(--mb) - 110px);overflow:auto;font-size:12px}
+
+/* Audit pass: phone fixes found by measuring every page at 375px.
+   Shop tabs and Battle Pass buttons no longer clip, filter chips reach 44px,
+   and inline links get a full-size tap area. */
+html.mobile-ui .shtabs .b{padding:0 12px}
+html.mobile-ui .bpa .b{padding:0 12px;min-width:max-content}
+html.mobile-ui .tabs .b{min-width:44px}
+html.mobile-ui #lobby small a{display:inline-block;padding:11px 4px;margin:-11px -4px}
+/* Tutorial step card: anchored by bottom only, sized to its text. Before, top and
+   bottom were both set so it stretched into a tall slab over the match. */
+html.mobile-ui #tut{top:auto;width:max-content}
+/* Battle HUD buttons: the #id rule in style.css outranks the class rule above, so
+   restate the 40px touch size at matching specificity. */
+html.mobile-ui #custom-battle-ui .cb-top>nav .b{min-height:40px;min-width:40px}

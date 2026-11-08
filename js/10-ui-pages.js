@@ -84,7 +84,7 @@ hide("o-df",!(sel==="duel"||sel==="gg"||sel==="parkour"||sel==="waves"));$("o-df
 const hasGhost=Object.keys(S.pkt||{}).some(k=>k.indexOf((S.opt.df||"easy")+"_")===0&&S.pkg&&S.pkg[k]&&S.pkg[k].length>2);
 hide("o-gr",false);{const access=DevAccess.unlocked;
 $("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
-$("grinfo").textContent=access?"Developer modes unlocked for this session.":"Input code for a dev-only gamemode."}
+$("grinfo").textContent=access?"Developer modes unlocked on this device.":"Input code for a dev-only gamemode."}
 hide("o-gl",sel!=="waves");{const gl=!!S.opt.ghostLvl;$("sg-gl").innerHTML=seg("gl",[["0","Classic"],["1","Ghost level"]],gl?1:0);$("glinfo").textContent=gl?"Every monster is a ghost: they hover, keep their distance and shoot when they see you. Every 5th wave brings the Ghost boss.":"Classic Monster Rush. A ghost wave still haunts the arena every 7th wave."}
 hide("o-ghost",sel!=="parkour");hide("o-pkk",sel!=="parkour");$("sg-pk").innerHTML=seg("pkknife",[["0","Off"],["1","On"]],pkKnifeOn()?1:0);
 if(sel==="parkour"){
@@ -714,6 +714,17 @@ return h+`</div><div class="sec"><h3>How to earn XP</h3><div class="keys">
 function pBoard(){
 const rows=Object.entries(S.board).sort((a,b)=>b[1].w-a[1].w||b[1].k-a[1].k);
 return"<table><tr><th>#</th><th>Player</th><th>Wins</th><th>Kills</th></tr>"+rows.map(([n,v],i)=>`<tr class="${n===S.name?"me":""}"><td>${i+1}</td><td>${esc(n)}</td><td>${v.w|0}</td><td>${v.k|0}</td></tr>`).join("")+"</table>"}
+function settingsHTML(){return`<div class="sec"><h3>Settings</h3>
+<div class="row"><span>Mouse sensitivity</span><span class="sm" data-sv="sens">${S.sens.toFixed(2)}</span></div><input type="range" min=".3" max="2.5" step=".05" value="${S.sens}" data-i="sens" aria-label="Mouse sensitivity">
+<div class="row"><span>Scoped sensitivity</span><span class="sm" data-sv="ssens">${S.ssens.toFixed(2)}</span></div><input type="range" min=".4" max="1.6" step=".05" value="${S.ssens}" data-i="ssens" aria-label="Scoped sensitivity">
+<div class="row"><span>Volume</span></div><input type="range" min="0" max="1" step=".05" value="${S.vol}" data-i="vol" aria-label="Volume"><div class="row"><span>Music</span></div><input type="range" min="0" max="1" step=".05" value="${S.mvol}" data-i="mvol" aria-label="Music volume"><div class="row" style="opacity:.8;font-size:12px"><span>Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</span></div>
+${gfxSel()}
+<div class="row"><span>Aim down sights</span></div><select data-i="scope" aria-label="Aim down sights mode"><option value="toggle"${(S.opt&&S.opt.scopeToggle!==false)?" selected":""}>Toggle (click on / off)</option><option value="hold"${(S.opt&&S.opt.scopeToggle===false)?" selected":""}>Hold (must hold right-click)</option></select>
+</div>`}
+function pSettings(){
+return`<div class="sec"><h3>This device</h3><div class="row"><div class="l"><b>${esc(S.name)}</b><small>Display name for multiplayer. Everything below saves on this device.</small></div><button class="b" data-a="page" data-v="load">${ico("pack",16)}Loadout</button></div>
+<div class="row"><div class="l"><b>Developer access</b><small>${DevAccess.unlocked?"Unlocked on this device.":"Locked. Enter a code under Redeem codes."}</small></div>${DevAccess.unlocked?`<button class="b" data-a="devlock">Lock access</button>`:`<button class="b" data-a="devaccess">${ico("lock",16)}Input code</button>`}</div></div>
+${settingsHTML()}`}
 function pHelp(){
 const K2=[["Move","W A S D"],["Look and aim","Mouse"],["Jump, climb ledges","Space"],["Sprint","Shift"],["Slide","Control / Option"],["Grenade (hold to aim)","Hold G"],["Shoot / charge knife throw","Left click"],["Aim down sights","Right click to toggle"],["Reload","R"],["Gun or knife","1, 2 or scroll"],["Emotes","3 to 7"],["Scoreboard","Hold Tab"],["Map (shows where everyone is)","M"],["Pause (shows your quests)","P or Esc"],["Restart (parkour only)","T"]];
 const TCH=document.body.classList.contains("touch")?[["Move","Left thumb: drag anywhere on the left"],["Sprint","Push the stick all the way forward"],["Look and aim","Drag on the right side of the screen"],["Shoot","FIRE (left or right). Drag from it to keep aiming"],["Aim down sights","AIM"],["Jump, double jump","JUMP"],["Slide / crouch","CROUCH"],["Grenade","Hold NADE, release to throw"],["Gun or knife","KNIFE / GUN"],["Emotes","EMOTE"],["Scoreboard","Hold TAB"],["Map","MAP"],["Pause","II"]]:null;
@@ -722,13 +733,7 @@ return`<div class="sec"><h3>Watch how it works</h3>${Cine.clips([["move","Move a
 <div class="sec"><h3>Controls</h3><div class="keys">${K2.map(k=>`<div><span>${k[0]}</span><kbd>${k[1]}</kbd></div>`).join("")}</div></div>
 <div class="sec"><h3>Aiming</h3><p class="sm" style="line-height:1.55">Click the game to lock your mouse. The crosshair always stays in the centre and the view moves under it. If your browser blocks mouse lock, the mouse still turns the view, Q and E turn too, and the cursor appears when you reach a window edge so you know to bring it back. Right-click aims down sights. In Settings you can choose toggle (click on / off) or hold (keep right-click held to stay aimed). The crosshair turns red when it is over an enemy.</p></div>
 <div class="sec"><h3>Movement</h3><p class="sm" style="line-height:1.55">Run into a ledge while jumping and you climb up smoothly. Hold Space for a higher jump, tap it for a short hop, and press Space again in the air for a double jump. Stairs and low steps need no jump.</p></div>
-<div class="sec"><h3>Settings</h3>
-<div class="row"><span>Mouse sensitivity</span><span class="sm" data-sv="sens">${S.sens.toFixed(2)}</span></div><input type="range" min=".3" max="2.5" step=".05" value="${S.sens}" data-i="sens" aria-label="Mouse sensitivity">
-<div class="row"><span>Scoped sensitivity</span><span class="sm" data-sv="ssens">${S.ssens.toFixed(2)}</span></div><input type="range" min=".4" max="1.6" step=".05" value="${S.ssens}" data-i="ssens" aria-label="Scoped sensitivity">
-<div class="row"><span>Volume</span></div><input type="range" min="0" max="1" step=".05" value="${S.vol}" data-i="vol" aria-label="Volume"><div class="row"><span>Music</span></div><input type="range" min="0" max="1" step=".05" value="${S.mvol}" data-i="mvol" aria-label="Music volume"><div class="row" style="opacity:.8;font-size:12px"><span>Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</span></div>
-${gfxSel()}
-<div class="row"><span>Aim down sights</span></div><select data-i="scope" aria-label="Aim down sights mode"><option value="toggle"${(S.opt&&S.opt.scopeToggle!==false)?" selected":""}>Toggle (click on / off)</option><option value="hold"${(S.opt&&S.opt.scopeToggle===false)?" selected":""}>Hold (must hold right-click)</option></select>
-</div>
+${settingsHTML()}
 <div class="row"><div class="l"><b>New here?</b><small>A short guided match against an easy bot.</small></div><button class="b p" data-a="tut">Start tutorial</button></div>`}
 
 // servers
@@ -764,7 +769,7 @@ return`<div class="codes-layout">
 <div id="code-rewards" class="code-rewards"></div>
 <button class="b" data-a="page" data-v="load">${ico("pack",16)}Open Loadout</button><small class="code-note">Rewards save on this browser, just like your other items.</small></section>
 <section class="code-panel developer-panel"><span class="eyebrow">Developer exclusive</span><h3>Custom Gamemodes</h3><p>Input code for a dev-only gamemode.</p>
-${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Access lasts until you reload or lock it. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
+${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Access stays on this device until you lock it. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
 <p id="developer-status" class="code-status" role="status" aria-live="polite"></p></section></div>`
 }
 function codeStatus(id,message,ok){const el=$(id);if(el){el.textContent=message;el.classList.toggle("success",!!ok);el.classList.toggle("error",!ok)}}
@@ -793,7 +798,7 @@ document.addEventListener("submit",event=>{
 if(event.target.id==="redeem-form"){event.preventDefault();submitReward(event.target)}
 else if(event.target.id==="developer-form"){event.preventDefault();submitDeveloper(event.target)}
 });
-const PG={shop:{t:"Shop",f:pShop},load:{t:"Loadout",f:pLoad},codes:{t:"Redeem codes",f:pCodes},bp:{t:"Battle Pass",f:pBP},index:{t:"Index",f:pIndex},quests:{t:"Quests",f:pQuests},board:{t:"Leaderboard",f:pBoard},updates:{t:"Update Log",f:pUpdates},help:{t:"How to play",f:pHelp},servers:{t:"Servers",f:pServers}};
+const PG={shop:{t:"Shop",f:pShop},load:{t:"Loadout",f:pLoad},codes:{t:"Redeem codes",f:pCodes},bp:{t:"Battle Pass",f:pBP},index:{t:"Index",f:pIndex},quests:{t:"Quests",f:pQuests},board:{t:"Leaderboard",f:pBoard},updates:{t:"Update Log",f:pUpdates},help:{t:"How to play",f:pHelp},servers:{t:"Servers",f:pServers},settings:{t:"Settings",f:pSettings}};
 
 // ---------- cinematics: prize reveals, banners and looping tutorial clips. Everything is drawn in code, so there are no video files and it stays one page ----------
 const Cine=(()=>{

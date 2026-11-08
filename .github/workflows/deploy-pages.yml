@@ -27,8 +27,13 @@ jobs:
       - name: Copy game files
         run: |
           mkdir -p _site
-          cp index.html _site/
-          cp -r css js _site/
+          cp index.html site.webmanifest arena-logo.svg preview-image.png _site/
+          cp -r css js icons _site/
+          # Cache-bust: stamp every local css/js URL with this commit's short SHA
+          # so browsers and the Pages CDN never serve stale copies after a deploy.
+          V="${GITHUB_SHA::7}"
+          sed -i -E "s#(href|src)=\"((css|js)/[^\"?]+\.(css|js))\"#\1=\"\2?v=${V}\"#g" _site/index.html
+          grep -c "?v=${V}" _site/index.html
       - name: Upload game
         uses: actions/upload-pages-artifact@v4
         with:
