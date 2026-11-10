@@ -79,7 +79,7 @@ P.x=nx;P.z=nz;P.y=ny;
 if(k>=1){P.y=m.ty;P.mantle=null;P.vy=0;P.gr=true;P.vx=m.dx*3.2;P.vz=m.dz*3.2;P.mcd=.35;P.landDip=.07;snd("land",.5)}return}
 P.mcd=Math.max(0,P.mcd-dt);
 const sn=Math.sin(P.yaw),cs=Math.cos(P.yaw);let mx=-sn*inp.f+cs*inp.s,mz=-cs*inp.f-sn*inp.s;const l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l}
-const base=scoped?MV.scope:inp.sprint&&inp.f>0&&P.crouch<.3?MV.sprint:MV.walk,sp=base*(1-.35*P.crouch)*(P.spd>0||P.rush>0||P.slide>0?1.4:1)*PU.spd*(P.slide>0?1.35:1)*(slot===0?(cg().mv||1):1.05);
+const base=scoped?MV.scope:inp.sprint&&inp.f>0&&P.crouch<.3?MV.sprint:MV.walk,sp=base*(1-.35*P.crouch)*(P.spd>0||P.rush>0||P.slide>0?1.4:1)*PU.spd*(P.slide>0?1.35:1)*(slot===0?(cg().mv||1):1.05)*(typeof LV!=="undefined"?LV.moveMul():1);
 const ac=1-Math.exp(-(P.gr?MV.accG:MV.accA*(mode==="parkour"&&pkKnifeOn()?2.2:1))*dt*(l>0?1:.85));
 P.vx+=(mx*sp-P.vx)*ac;P.vz+=(mz*sp-P.vz)*ac;
 // collision with sub-steps so fast movement never tunnels

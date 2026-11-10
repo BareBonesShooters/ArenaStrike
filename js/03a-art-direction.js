@@ -323,7 +323,7 @@ const YardArt = (() => {
       ctx.fillStyle='#cd764e';for(let i=0;i<7;i++)ctx.fillRect(25+i*31,132,21,9);
       const map=new T.CanvasTexture(cv),sign=new T.MeshBasicMaterial({map});
       for(const side of[-1,1]){const m=new T.Mesh(new T.PlaneGeometry(4.6,2.875),sign);m.position.set(side*39.85,3.3,-6);m.rotation.y=-side*Math.PI/2;group.add(m);}
-    }else{
+    }else if(!opt.level){
       // Broad polygon cloud silhouettes are batched into one draw call with the scenery.
       for(let i=0;i<9;i++){
         const a=i/9*Math.PI*2,x=Math.cos(a)*145,z=Math.sin(a)*145,y=44+rand()*18;
@@ -352,7 +352,7 @@ const YardArt = (() => {
       }
     }
     if(batch.p.length){const m=batch.mesh(material(0xffffff));m.material.vertexColors=true;m.castShadow=true;m.receiveShadow=true;group.add(m);}
-    if(!opt.custom&&!opt.parkour){scatter(group,{seed,theme:key,clear:(x,z)=>!blocked(x,z,.1,.2)});if(key!=="ruin")junkyard(group,{seed});}
+    if(!opt.custom&&!opt.parkour&&!opt.level){scatter(group,{seed,theme:key,clear:(x,z)=>!blocked(x,z,.1,.2)});if(key!=="ruin")junkyard(group,{seed});}
   }
   function frame(dt){const y=WORLD.group?.userData.yard;if(y&&!reducedMotion.matches)for(const rotor of y.anim)rotor.rotation.z-=dt*.34;}
   return {C,bevel,human,monster,gun,house,world,scatter,junkyard,frame};

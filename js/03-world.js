@@ -123,7 +123,7 @@ const N=LOD.tex,qs=N/2048,c=document.createElement("canvas");c.width=c.height=N;
 g.fillStyle=gr.base;g.fillRect(0,0,N,N);
 for(let i=0;i<110;i++){const x=rng()*N,y=rng()*N,r=(70+rng()*220)*qs,col=gr.v[Math.floor(rng()*gr.v.length)];if(i<18){g.fillStyle=col;g.beginPath();g.moveTo(x-r,y+r*.3);g.lineTo(x-r*.5,y-r*.6);g.lineTo(x+r*.6,y-r*.5);g.lineTo(x+r,y+r*.5);g.lineTo(x,y+r);g.closePath();g.fill()}}
 const ruin=key==="ruin",neon=key==="neon";
-if(!ruin&&!neon){ // roads
+if(!ruin&&!neon&&th.roads!==false){ // roads
 g.lineCap="round";const cx=N/2,roads=[];const base=rng()*6.283;for(let i=0;i<3;i++){const a=base+i*2.094+rng()*.5,ex=cx+Math.cos(a)*N*.8,ey=cx+Math.sin(a)*N*.8,mx=cx+Math.cos(a+.4)*N*.3,my=cx+Math.sin(a+.4)*N*.3;roads.push([cx,cx,mx,my,ex,ey])}GROADS=roads.map(r=>r.map(v=>v/N));
 for(const [w,col] of[[7.4*k,gr.edge],[6.2*k,gr.path]]){g.strokeStyle=col;g.lineWidth=w;for(const r of roads){g.beginPath();g.moveTo(r[0],r[1]);g.quadraticCurveTo(r[2],r[3],r[4],r[5]);g.stroke()}}
 g.strokeStyle="rgba(255,255,255,.35)";g.lineWidth=.14*k;g.setLineDash([1.4*k,1.2*k]);for(const r of roads){g.beginPath();g.moveTo(r[0],r[1]);g.quadraticCurveTo(r[2],r[3],r[4],r[5]);g.stroke()}g.setLineDash([]);
@@ -137,6 +137,7 @@ g.shadowBlur=18;g.strokeStyle="#ff2fd0";g.lineWidth=5;g.beginPath();g.arc(N/2,N/
 if(ruin){g.strokeStyle="rgba(0,0,0,.35)";g.lineWidth=3;for(let u=-H;u<=H;u+=5){const p=(u+H)*k;g.beginPath();g.moveTo(p,0);g.lineTo(p,N);g.stroke();g.beginPath();g.moveTo(0,p);g.lineTo(N,p);g.stroke()}
 g.lineWidth=2;for(let i=0;i<60;i++){let x=rng()*N,y=rng()*N;g.beginPath();g.moveTo(x,y);for(let j=0;j<7;j++){x+=(rng()-.5)*90;y+=(rng()-.5)*90;g.lineTo(x,y)}g.stroke()}
 for(let i=0;i<14;i++){const x=rng()*N,y=rng()*N,r=40+rng()*90,q=g.createRadialGradient(x,y,0,x,y,r);q.addColorStop(0,"rgba(120,150,190,.28)");q.addColorStop(1,"rgba(120,150,190,0)");g.fillStyle=q;g.fillRect(x-r,y-r,2*r,2*r)}}
+if(th.paint)try{th.paint(g,N,k,rng)}catch(e){console.warn("level paint",e)}
 const t=new T.CanvasTexture(c);t.anisotropy=Math.min(SOFT?1:8,rd.capabilities.getMaxAnisotropy());
 // the GPU keeps its own copy, so the canvas backing store (up to 9 MB) can go as soon as the upload is done
 t.onUpdate=()=>{t.onUpdate=null;c.width=c.height=1};return t}
@@ -153,7 +154,7 @@ GDET=new T.CanvasTexture(c);GDET.wrapS=GDET.wrapT=T.RepeatWrapping;GDET.anisotro
 // ---------- world: build ----------
 function disposeWorld(){
 const grp=WORLD.group;if(grp){sc.remove(grp);grp.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}})}
-WORLD.group=null;WORLD.lights=[];WORLD.dust=null;WORLD.dv=null;WORLD.flames=null;WORLD.zone=null;WORLD.course=null;WORLD.spawns=[];WORLD.ceil=0;boxes=[]}
+WORLD.group=null;WORLD.lights=[];WORLD.dust=null;WORLD.dv=null;WORLD.flames=null;WORLD.zone=null;WORLD.course=null;WORLD.lvAnim=null;WORLD.spawns=[];WORLD.ceil=0;boxes=[]}
 
 // Low and Potato have no shadow map, so the shadows every wall, house and crate would cast are painted into the ground texture instead, along the same sun direction the real ones use.
 // Drawn once per match into a small canvas (solid, so overlaps never double up) and then softened and laid over the ground at a fixed strength.
@@ -232,7 +233,7 @@ for(let i=-4;i<=4;i++){[[i*10,-H-.2],[i*10,H+.2],[-H-.2,i*10],[H+.2,i*10]].forEa
 if(key==="neon"){for(const [x,z,w,d] of[[0,-H+.1,2*H,.15],[0,H-.1,2*H,.15],[-H+.1,0,.15,2*H],[H-.1,0,.15,2*H]])P("box",x,1.2,z,w,.12,d,0x00f0ff,0,1,glow)}
 }
 // distant mountains
-if(!ruin&&!opt.custom)for(let i=0,nm=Math.max(10,Math.round(26*LOD.props));i<nm;i++){const a=i/nm*PI*2+crng()*.2,d=100+crng()*40,r=cr(14,28),h=cr(18,44),x=Math.cos(a)*d,z=Math.sin(a)*d,mc=cpick(th.mount);
+if(!ruin&&!opt.custom&&!th.noMount)for(let i=0,nm=Math.max(10,Math.round(26*LOD.props));i<nm;i++){const a=i/nm*PI*2+crng()*.2,d=100+crng()*40,r=cr(14,28),h=cr(18,44),x=Math.cos(a)*d,z=Math.sin(a)*d,mc=cpick(th.mount);
 P("ico",x,h/2-6,z,r*2.3,h*1.2,r*1.9,mc,crng()*3,.75);if(th.snow&&crng()<th.snow)P("ico",x,h-h*.14-2,z,r*.75,h*.3,r*.75,0xe3e9d8,0,.95)}
 // interior shell for the ruin
 if(ruin){WORLD.ceil=7;P("box",0,7.25,0,2*H+6,.5,2*H+6,0x3b5347,0,.9);
@@ -348,8 +349,17 @@ for(const [z,gx] of[[-22,-10],[-11,10],[0,-10],[11,10],[22,-10]]){const l=gx<0?[
 deck(-30,-30,7,7,3.2);stairs(-26.5,-30,-1,0,0,3.2,3);deck(30,-6,7,7,3.2);stairs(30,-9.5,0,1,0,3.2,3);deck(-30,28,7,7,3.2);stairs(-26.5,28,-1,0,0,3.2,3)}
 };
 if(!opt.empty){
-if(opt.waves)arenaPack(((seed>>>0)>>3)%4);
-if(!ruin){
+const LVD=opt.level&&typeof LV_REG!=="undefined"&&LV_REG[opt.level];
+if(opt.waves&&!(LVD&&LVD.pack===-1))arenaPack(LVD&&LVD.pack!=null?LVD.pack:((seed>>>0)>>3)%4);
+if(LVD){ // a Monster Rush level builds all of its own scenery (js/06h-lv-*.js)
+let nl=0;WORLD.lvAnim=[];
+const c={blk,reg,P,glow,solid,grp,rng,crng,rr,cr,pick,cpick,free,place,pc,crateAt,crate,barrel,rock,lerpC,th,key,H,PI,U,LOD,
+light:(x,y,z,col,int,dist)=>{if(nl>=4||SOFT)return null;nl++;const l=new T.PointLight(col,int||1.2,dist||24,1.6);l.position.set(x,y,z);l.userData.base=int||1.2;l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l);return l},
+halo:(x,y,z,col,s,op)=>{const h=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:col,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:op==null?.7:op,fog:false}));h.scale.setScalar(s||2);h.position.set(x,y,z);h.raycast=()=>{};grp.add(h);return h},
+add:o=>{o.traverse(m=>{m.raycast=()=>{}});grp.add(o);return o},
+anim:fn=>{WORLD.lvAnim.push(fn)}};
+try{LVD.props(c)}catch(e){console.warn("level props",opt.level,e)}}
+else if(!ruin){
 // central plaza
 if(!opt.waves){const tiers=[[14,.45],[10,.9],[6,1.35]];tiers.forEach(([s,h],i)=>{blk(0,0,s,h,s,i==2?lerpC(th.trim,0xffffff,.25):lerpC(th.trim,0xffffff,.1+i*.05),.7);P("box",0,h+.03,0,s+.12,.08,s+.12,key==="neon"?(i%2?0xff2fd0:0x00f0ff):0xffffff,0,1,key==="neon"?glow:null)});
 P("ico",0,2.7,0,1.1,1.1,1.1,key==="neon"?0xff2fd0:0xfff3a0,0,1,glow);P("box",0,1.9,0,.3,1.1,.3,th.trim,0,1);
@@ -393,7 +403,7 @@ grp.add(g);WORLD.flames.push({g,fl,halo,y:pedH+ch/2,ph,fixed:1})}
 WORLD.dv={vy:.15,top:6.8};
 mkMotes(grp,Math.max(8,Math.round(320*LOD.dust)),0xd8e4ff,.1,.5,6.5)}
 }
-if(!WORLD.dust&&!opt.parkour){const M={meadow:[0xfff0a8,.13,.75,10,.06],sunset:[0xffa24a,.15,.85,12,.45],frost:[0xffffff,.14,.9,12,-1.1],neon:[0x4ffff0,.12,.85,12,.55],desert:[0xffe6b0,.14,.8,12,.08],autumn:[0xffa84a,.15,.8,12,-.25],toxic:[0x9aff5a,.13,.85,12,.5]}[key];
+if(!WORLD.dust&&!opt.parkour){const M=th.motes||{meadow:[0xfff0a8,.13,.75,10,.06],sunset:[0xffa24a,.15,.85,12,.45],frost:[0xffffff,.14,.9,12,-1.1],neon:[0x4ffff0,.12,.85,12,.55],desert:[0xffe6b0,.14,.8,12,.08],autumn:[0xffa84a,.15,.8,12,-.25],toxic:[0x9aff5a,.13,.85,12,.5]}[key];
 if(M){mkMotes(grp,Math.max(10,Math.round(220*LOD.dust)),M[0],M[1],M[2],M[3]);WORLD.dv={vy:M[4],top:M[3]}}}
 if(opt.parkour)WORLD.course=PK.build({blk,reg,P,glow,rng,th,key,lerpC,grp,diff:opt.parkour,map:opt.pkmap});
 // finish geometry
@@ -419,6 +429,7 @@ for(let r=0;r<60;r++){const x=(rnd()-.5)*(H*2-8),z=(rnd()-.5)*(H*2-8);if(Math.hy
 // per-frame world animation (sky follows camera, lamp flicker, dust drift)
 function worldFrame(dt,t){
 YardArt.frame(dt);
+if(WORLD.lvAnim)for(const f of WORLD.lvAnim)try{f(dt,t)}catch(e){}
 Sky.m.position.copy(cam.position);Sky.u.time.value=t;
 for(const l of WORLD.lights)l.intensity=l.userData.base*(.82+.18*Math.sin(t*7+l.userData.ph)*Math.sin(t*2.3+l.userData.ph*2)+(Math.sin(t*31+l.userData.ph)>.97?-.4:0));
 if(WORLD.dust){const dv=WORLD.dv||{vy:.15,top:6.8},a=WORLD.dust.geometry.attributes.position,up=dv.vy>0;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*dv.vy*(1+i%3*.4);if(up){if(y>dv.top)y=.2}else if(y<0)y=dv.top;a.setY(i,y);a.setX(i,a.getX(i)+Math.sin(t*.3+i)*dt*.1)}a.needsUpdate=true}

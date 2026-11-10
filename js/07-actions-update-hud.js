@@ -174,15 +174,15 @@ puStep(dt);if(!menuOpen)projStep(dt);
 if(PT.on)Party.frame(dt);
 if(!PT.on||PT.coop){
 if(mode==="parkour"){PK.frame(dt);pkBodyFrame(dt)}
-if(mode==="waves"){bossHud();corrFrame(dt);Phase.frame(dt);
+if(mode==="waves"){bossHud();corrFrame(dt);Phase.frame(dt);LV.frame(dt);
 if(!menuOpen){
 if(wq>0){wt-=dt;if(wt<=0&&E.length<16+(wmod==="swarm"?6:0)+(coopN()-1)*3){wt=wmod==="swarm"?.4:wmod==="ambush"?.25:.6;wq--;spawnMon()}}
-else if(!E.length&&!wn&&P.dead<=0){const b=Math.round(2*wave*PU.coin*(corrupted?1.5:1));S.coins+=b;addBP(15+Math.floor(wave*2.6)+(corrupted?20:0));sv();qAdd("wave",wave,1);qAdd("wc",1);if(PT.coop)PT.cw=wave;
-if(corrupted){flash("CORRUPTED WAVE CLEARED: pick 3 power-ups",2800);snd("win");wn=1e9;setTimeout(()=>offerCorruptedPU(3),600)}
+else if(!E.length&&!wn&&P.dead<=0){const b=Math.round(2*wave*PU.coin*(corrupted?1.5:1)*LV.coinMul()),lvC=LV.on()&&LV.cur()&&LV.cur().corrupt;LV.endWave();S.coins+=b;addBP(Math.round((15+Math.floor(wave*2.6)+(corrupted?20:0))*LV.bpMul()));sv();qAdd("wave",wave,1);qAdd("wc",1);if(PT.coop)PT.cw=wave;
+if(corrupted&&(!lvC||wave%5===0)){flash("CORRUPTED WAVE CLEARED: pick 3 power-ups",2800);snd("win");wn=1e9;setTimeout(()=>offerCorruptedPU(3),600)}
 else if(Phase.on&&Phase.clear(b)){}
 else{flash("Wave "+wave+" cleared  +"+b+" coins"+(PT.coop?"  \u00b7  waiting for the squad":""),2500);snd("clear");wn=PT.coop?1e9:1.6}
 // restore normal lighting after corrupted
-try{corrTgt=0}catch(e){}}
+try{if(!lvC||wave%5===0)corrTgt=0}catch(e){}}
 if(wn>0&&wn<1e8){wn-=dt;if(wn<=0){wn=0;nextWave()}}
 if(PU.regen&&P.dead<=0&&P.hp<P.max)P.hp=Math.min(P.max,P.hp+PU.regen*dt);
 if(P.dead<=0&&P.fz<=0){P.sinceHit+=dt;if(P.sinceHit>=10&&P.hp<P.max){P.hp=Math.min(P.max,P.hp+10*dt)}}}

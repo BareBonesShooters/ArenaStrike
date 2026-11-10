@@ -5,7 +5,7 @@
 // Firestorm: embers and a red sky, meteors rain on the arena, cinder monsters explode and chain into their friends
 const Phase=(()=>{
 const DEF={
-frost:{name:"WHITEOUT",sub:"a blizzard rolls in. Some monsters are frozen solid until you get close",rew:"Whiteout",col:"#cfe8ff",
+frost:{name:"BLIZZARD",sub:"a blizzard rolls in. Some monsters are frozen solid until you get close",rew:"Whiteout",col:"#cfe8ff",
 sky:[0xa9c4d8,0xc4d8e8,0xe6f1f8],fog:0xcbdceb,hemiC:0xdcedff,hemiG:0x5c7084,sun:0xe2f1ff,cloud:0xffffff,fogN:.5,fogF:.5,sunK:.75,
 vig:"radial-gradient(ellipse at center,rgba(255,255,255,0) 38%,rgba(185,222,255,.3) 72%,rgba(236,247,255,.78) 100%)",
 pt:{col:0xffffff,size:.3,vy:-3.2,vx:1.7,n:170,top:20},tint:0xcfeaff,em:0x1b3a52},

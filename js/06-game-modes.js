@@ -162,13 +162,14 @@ if(m==="coop"){toast("Co-op needs friends. Host a server and share the code");re
 beginPlay();newRound()}
 function newRound(){
 clearEnts();VM.swap();
-let th=mode==="waves"?"ruin":pk(OUTDOOR),seed=(rnd()*2147483647)|0;
+const lv0=mode==="waves"&&!PT.on&&LV_REG[LV.idAt(0)]?LV.idAt(0):null;
+let th=lv0?LV.key(0):mode==="waves"?"ruin":pk(OUTDOOR),seed=(rnd()*2147483647)|0;
 if(mode==="parkour"&&pkMap){th=pkMap.th;seed=pkMap.seed}
 // ghost race must rebuild the exact course the best run was recorded on
 if(mode==="parkour"&&S.opt&&S.opt.ghostRace&&S.pks&&S.pks[pkK()]&&S.pkg&&S.pkg[pkK()]&&S.pkg[pkK()].length>2){
 const m=S.pks[pkK()];if(m&&m.seed!=null){seed=m.seed>>>0;if(m.theme&&THEMES[m.theme])th=m.theme}
 }
-buildWorld(th,seed,{waves:mode==="waves",empty:mode==="range"||mode==="parkour",parkour:mode==="parkour"?diff:null,pkmap:mode==="parkour"?pkMap:null});
+buildWorld(th,seed,{waves:mode==="waves",level:lv0,empty:mode==="range"||mode==="parkour",parkour:mode==="parkour"?diff:null,pkmap:mode==="parkour"?pkMap:null});
 if(mode==="range"){placePlayer(freeSpot(0,H-6),0,1.2);rt=0;rs=RANGE_SHOTS;rHit=rCur=rBest=0;rangeG=Math.max(0,G.findIndex(x=>x.id===eq().g));rangeK=-1;A.mag=cg().m;buildRange()}
 else if(mode==="parkour"){rt=0;pT=1e9;PK.start();pkBodyMake();slot=pkKnifeOn()?1:0;VM.swap()}
 else{const s=freeSpot(0,H-8);placePlayer(s,Math.atan2(s.x,s.z),2);rt=0;pT=3;
@@ -194,7 +195,7 @@ b=Math.round((c.base*(f===0?1.5:f<=3?1.2:1)+PK.st.gems*8)*.25);if(bs[pkK()]==nul
 sub=f===0?"Flawless run, no falls":"You reached the golden beacon";st.push(["Falls",f],["Gems",PK.st.gems+" / "+c.gems.length],["Checkpoints",c.cps.length-1],["Best falls",bs[pkK()]],["Height",Math.round(PK.st.maxY)+" m"])}
 else if(mode==="waves"){sub="You reached wave "+wave+(grind?" (Grinding Mode)":"");st.push(["Wave",wave],["Kills",kills]);b=0}
 else{const used=RANGE_SHOTS-Math.max(0,rs),acc=used?rHit/used:0,fin=Math.round(myS*(.75+acc*.5));b=Math.min(8,Math.floor(fin/16));qAdd("range",myS,1);sub=used>=RANGE_SHOTS?"Out of ammo. Final score "+fin:"Run ended early. Final score "+fin;st.push(["Final score",fin],["Target points",myS],["Accuracy",Math.round(acc*100)+"%"],["Shots hit",rHit+" / "+used],["Best streak",rBest],["Reward",b+" coins"])}
-S.coins+=b;if(b>0)qAdd("coin",b);const bx=bpDaily(((win?130:70)+(mode==="waves"?wave*10:0)+Math.min(150,kills*4))*(mode==="tut"?.3:1));st.push(["Battle Pass XP","+"+bx.xp+(bx.boost?" (daily boost)":"")]);addBP(bx.xp);sv();
+S.coins+=b;if(b>0)qAdd("coin",b);const bx=bpDaily(((win?130:70)+(mode==="waves"?wave*10:0)+Math.min(150,kills*4))*(mode==="tut"?.3:1)*(mode==="waves"?LV.bpMul():1));st.push(["Battle Pass XP","+"+bx.xp+(bx.boost?" (daily boost)":"")]);addBP(bx.xp);sv();
 endCard({title:mode==="waves"||mode==="range"?"Run complete":mode==="parkour"?"Course complete":win?"Victory":"Defeat",sub,stats:st,coins:b,win:mode==="waves"||mode==="range"?null:win,again:PT.on&&PT.online?"":grind?"grind":mode});
 snd(win||mode==="waves"||mode==="range"?"win":"lose")}
 
@@ -202,7 +203,7 @@ snd(win||mode==="waves"||mode==="range"?"win":"lose")}
 function hit(d,src){
 if(CustomBattle.active)return CustomBattle.playerHurt(d,src);
 if(state!=="play"||menuOpen||P.dead>0||rL>0||P.fz>0||P.prot>0)return;
-if(grind)d*=.12;snd("hurt");P.hp-=d*PU.arm;P.sinceHit=0;dmgFlash();P.rk+=.02;hurtDir(src);lastSrc=src||null;
+if(grind)d*=.12;d=LV.toYou(d);snd("hurt");P.hp-=d*PU.arm;P.sinceHit=0;dmgFlash();P.rk+=.02;hurtDir(src);lastSrc=src||null;
 if(P.hp<=0){P.hp=0;die()}}
 function hurtDir(src){
 if(!src)return;const a=Math.atan2(src.x-P.x,src.z-P.z)-(P.yaw+Math.PI),e=el("hdir");
@@ -233,6 +234,7 @@ let wasCrit=false;
 if(head){d*=2;qAdd("heads",1);flash("HEADSHOT",600)}
 if(PU.on&&e.t==="mon"){const critRoll=rnd()<PU.crit;if(critRoll){d*=2;wasCrit=true}d*=PU.dmg*(head?PU.hs:1)*(e.hp<(e.hpMax||1e9)*.3?PU.exe:1)*(P.hp<P.max*.3?PU.ls:1)}
 else if(PU.crit>0&&rnd()<PU.crit){d*=2;wasCrit=true}
+if(e.t==="mon")d=LV.toMon(e,d,head);
 if(!Number.isFinite(d))return;
 e.hp-=d;if(e.t==="mon")monBar(e);if(e.t==="bot")botBar(e);snd(head?"head":"hit");hitMark(head);hurtFlash(e.g,true);e.hf=.09;e.alert=1;
 if(wasCrit)critFx(pt||{x:e.g.position.x,y:e.g.position.y+1.2,z:e.g.position.z});
@@ -244,7 +246,7 @@ if(e.tag){e.g.remove(e.tag);dropModel(e.tag)}
 hurtFlash(e.g,false);dying.push(deathInit(e.g,P.x,P.z,head,e.t==="mon"));
 Fx.burst({x:e.g.position.x,y:e.g.position.y+1,z:e.g.position.z},e.t==="mon"?0x66ff44:0xff4444,18,6,.1,3,18);if(e.t==="mon"){monDeathFx(e);Phase.onKill(e)}
 snd("kill");streakSnd();kills++;qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
-if(e.t==="mon"){S.coins+=Math.max(1,Math.round((.6+wave*.1)*PU.coin*(e.elite?5:1)));if(PU.kh)P.hp=Math.min(P.max,P.hp+PU.kh);const gain=Math.round((8+wave*2+(e.boss?40:e.k===2?18:e.k===1?12:6))*(head?1.25:1)*(e.elite?3:1));addXP(gain)}
+if(e.t==="mon"){S.coins+=Math.max(1,Math.round((.6+wave*.1)*PU.coin*(e.elite?5:1)*(e.champion?8:1)*LV.coinMul()));if(PU.kh)P.hp=Math.min(P.max,P.hp+PU.kh);const gain=Math.round((8+wave*2+(e.boss?40:e.k===2?18:e.k===1?12:6))*(head?1.25:1)*(e.elite?3:1)*(e.champion?4:1)*LV.xpMul());addXP(gain);LV.onDeath(e)}
 else{S.coins+=1;
 if(mode==="gg"){myS++;ggL=myS;
 if(myS>=GOAL_GG){sv();return endGame(true)}
@@ -309,18 +311,26 @@ const MON_SPD=[1.0,1.5,0.5,1.35,0.4,1.1,0.85];
 let ghostW=false,wmod="",eliteN=0;const WMN={swarm:"SWARM",brute:"BRUTE SQUAD",ambush:"AMBUSH",elite:"ELITE HUNT"};
 function nextWave(){
 if(mode==="waves"&&!PT.on&&wave>0&&wave%5===0&&stageDone!==wave){stageDone=wave;stageChange();return}
-wave++;snd("horn",.8);if(wave%5===0)setTimeout(()=>snd("roar",.8),600);const bw=wave%5===0;wq=bw?0:Math.min(30,3+wave*2);if(coopN()>1&&wq)wq=Math.min(60,Math.round(wq*(1+.3*(coopN()-1))));wt=0;wn=0;P.hp=Math.min(P.max,P.hp+PU.sw);
+wave++;snd("horn",.8);if(wave%5===0)setTimeout(()=>snd("roar",.8),600);const bw=wave%5===0;wq=bw?0:Math.min(LV.countCap(),3+wave*2);if(coopN()>1&&wq)wq=Math.min(60,Math.round(wq*(1+.3*(coopN()-1))));wt=0;wn=0;P.hp=Math.min(P.max,P.hp+PU.sw);
 corrWas=corrupted;corrupted=false;
-ghostW=mode==="waves"&&!PT.on&&!!((S.opt&&S.opt.ghostLvl)||(wave>=7&&wave%7===0));
-wmod="";eliteN=0;if(!bw&&!ghostW&&wave>=3){const r=rnd();wmod=wave>=8&&r<.12?"elite":wave>=6&&r<.26?"brute":r<.42?"swarm":wave>=4&&r<.52?"ambush":""}
+const lw=LV.startWave(),lvd=lw?LV.cur():null;
+ghostW=mode==="waves"&&!PT.on&&!!((S.opt&&S.opt.ghostLvl)||(lw?lw.mod==="ghost":(wave>=7&&wave%7===0)));
+wmod="";eliteN=0;if(!lw&&!bw&&!ghostW&&wave>=3){const r=rnd();wmod=wave>=8&&r<.12?"elite":wave>=6&&r<.26?"brute":r<.42?"swarm":wave>=4&&r<.52?"ambush":""}
 if(wmod==="swarm")wq=Math.min(44,Math.round(wq*1.7));else if(wmod==="brute")wq=Math.round(wq*.7);
-const ph=!bw&&!ghostW&&mode==="waves"?Phase.pick():null;
-if(!bw&&!ghostW&&wave>10&&rnd()<.1){corrupted=true;wmod="";wq=0;flash("CORRUPTED WAVE "+wave+" · "+bossName(true),3200);snd("lose");
+if(lw&&wq)wq=Math.max(3,Math.round(wq*LV.countMul()));
+const lph=lw&&LV.MODS[lw.mod]?LV.MODS[lw.mod].phase:null;
+const ph=!bw&&!ghostW&&mode==="waves"?(lw?lph||null:Phase.pick()):null;
+// the Corrupted level (js/06h-lv-corrupt.js) keeps every one of its waves corrupted, on its own red map
+if(lw&&lw.corrupt){corrupted=true;try{corrStart()}catch(e){}}
+const lnm=lvd?lvd.n+" \u00b7 ":"";
+if(!lw&&!bw&&!ghostW&&wave>10&&rnd()<.1){corrupted=true;wmod="";wq=0;flash("CORRUPTED WAVE "+wave+" · "+bossName(true),3200);snd("lose");
 try{corrStart();flashScreen("#8b3dff")}catch(e){}spawnBoss(true)}
-else if(bw){flash("BOSS: "+bossName(false,ghostW),2800);spawnBoss(false,ghostW);if(ghostW){snd("ghost");flashScreen("#5ff5ff")}}
+else if(bw){flash("BOSS: "+(LV.bossName()||bossName(corrupted,ghostW)),2800);spawnBoss(corrupted,ghostW);if(ghostW){snd("ghost");flashScreen("#5ff5ff")}}
 else if(ghostW){flash("GHOST LEVEL \u00b7 wave "+wave+" \u00b7 the dead hover and shoot from range",3200);snd("ghost");try{flashScreen("#5ff5ff")}catch(e){}}
 else if(ph&&Phase.begin(ph)){wmod="";wq=Math.round(wq*1.1)}
-else{flash("Wave "+wave+(wmod?" · "+WMN[wmod]:""),2400);if(wmod)setTimeout(()=>snd(wmod==="elite"?"elite":"roar",.7),500)}
+else if(lw&&lw.mod&&LV.MODS[lw.mod]){const m=LV.MODS[lw.mod];flash(lnm+"Wave "+wave+" \u00b7 "+m.n+(m.sub?" \u00b7 "+m.sub:""),3200);try{snd("phase",.7)}catch(e){}}
+else{flash(lnm+(corrupted?"Corrupted wave ":"Wave ")+wave+(wmod?" · "+WMN[wmod]:""),2400);if(wmod)setTimeout(()=>snd(wmod==="elite"?"elite":"roar",.7),500)}
+if(lw&&lw.champion)setTimeout(()=>{if(state==="play"&&mode==="waves")spawnMon({champion:1})},2200);
 try{Mus.set(corrupted?"corrupt":bw?"boss":"battle")}catch(e){}
 snd("go")}
 // ---------- stages: every boss you beat moves the fight to a new arena (fade out, rebuild, title card, fade in) ----------
@@ -328,27 +338,32 @@ const STAGES=["ruin","toxic","neon","frost","desert","sunset","autumn","meadow"]
 function stageFx(){if(!stageEl){stageEl=document.createElement("div");stageEl.id="stagefx";stageEl.innerHTML='<div class="sn"><small></small><b></b><em></em></div>';document.body.appendChild(stageEl)}return stageEl}
 function stageChange(){
 if(stageBusy)return;stageBusy=true;wn=1e9;P.prot=Math.max(P.prot,6);
-const n=Math.floor(wave/5),key=STAGES[n%STAGES.length],el=stageFx();
-el.querySelector("small").textContent="Stage "+(n+1);el.querySelector("b").textContent=(THEMES[key]||{}).n||key;el.querySelector("em").textContent="Wave "+(wave+1)+" begins";
+const n=Math.floor(wave/5),ld=LV.on()?LV.defAt(n):null,key=ld?LV.key(n):STAGES[n%STAGES.length],el=stageFx();
+el.querySelector("small").textContent=(ld?"Level ":"Stage ")+(n+1)+(ld&&LV.cycle(n)>0?" \u00b7 Cycle "+(LV.cycle(n)+1):"");el.querySelector("b").textContent=(THEMES[key]||{}).n||key;el.querySelector("em").textContent=(ld&&ld.tag?ld.tag+" \u00b7 ":"")+"Wave "+(wave+1)+" begins";
 try{snd("phase",.8)}catch(e){}
 el.classList.add("on");
 const live=()=>mode==="waves"&&(state==="play"||menuOpen);
 setTimeout(()=>{
 if(!live()){stageBusy=false;el.classList.remove("on");return}
 try{corrReset()}catch(e){}clearEnts();VM.swap();
-buildWorld(key,(rnd()*2147483647)|0,{waves:true});
+buildWorld(key,(rnd()*2147483647)|0,{waves:true,level:ld?ld.id:null});
 const s=freeSpot(0,H-8);placePlayer(s,Math.atan2(s.x,s.z),0);P.prot=4;
 setTimeout(()=>{el.classList.remove("on");stageBusy=false;if(live())wn=.6;},1200)},480)}
 function spawnMon(opt){
 opt=opt||{};
-const k=opt.minion?0:(opt.k!=null?opt.k:pickMonType());
+const k=opt.minion?(opt.k|0):(opt.k!=null?opt.k:LV.on()?LV.pickType(pickMonType):pickMonType()),champ=!!opt.champion,lvm=LV.cur();
 const elite=!opt.minion&&((wmod==="elite"&&eliteN<2)||(wave>=4&&rnd()<.05));if(elite)eliteN++;
 const near=wmod==="ambush"?WORLD.spawns.filter(s=>{const d=Math.hypot(s.x-P.x,s.z-P.z);return d>9&&d<24}):[];
-let o=opt.minion?{x:opt.x,z:opt.z}:near.length?pk(near):awaySpot(P.x,P.z,18);if(blocked(o.x,o.z,0,.6))o=freeSpot(o.x,o.z);
+let o=opt.minion||opt.rise?{x:opt.x,z:opt.z}:near.length?pk(near):awaySpot(P.x,P.z,18);
+// burrowing monsters (desert) dig up close to you instead of walking in from the edge
+if(!opt.minion&&!opt.rise&&!champ&&lvm&&lvm.mon&&lvm.mon.trait==="burrow"&&rnd()<.55){const a=rnd()*6.283,r=8+rnd()*7;o={x:clamp(P.x+Math.cos(a)*r,-H+3,H-3),z:clamp(P.z+Math.sin(a)*r,-H+3,H-3)}}if(blocked(o.x,o.z,0,.6))o=freeSpot(o.x,o.z);
 const typeMul=[1,.7,2.5,.65,3.2,.8,1.2][k]||1;
-const hp=(opt.minion?24+wave*4.5:34+wave*9.5)*typeMul*(corrupted?1.25:1)*coopHp()*(elite?2.6:1)*(wmod==="swarm"&&!opt.minion?.65:1)*(grind?.2:1);
+const hp=(opt.minion?24+wave*4.5:34+wave*9.5)*typeMul*(corrupted?1.25:1)*coopHp()*(elite?2.6:1)*(wmod==="swarm"&&!opt.minion?.65:1)*(grind?.2:1)*LV.hpMul()*(champ?7:1);
 const g=mkMon(Math.min(2,k)); // visual base 0-2, extras reuse with tint
-if(k>=3){g.traverse(o=>{if(o.isMesh&&o.material&&o.material.color){if(k===3)o.material.color.offsetHSL(.08,.2,-.05);if(k===4)o.material.color.offsetHSL(-.05,-.1,-.15);if(k===5)o.material.color.offsetHSL(.35,.15,.05);if(k===6)o.material.color.offsetHSL(-.15,.1,.1)}});g.scale.multiplyScalar(k===4?1.35:k===3?.8:1)}
+if(lvm)LV.skin(g,k,{champion:champ});
+else if(k>=3){g.traverse(o=>{if(o.isMesh&&o.material&&o.material.color){if(k===3)o.material.color.offsetHSL(.08,.2,-.05);if(k===4)o.material.color.offsetHSL(-.05,-.1,-.15);if(k===5)o.material.color.offsetHSL(.35,.15,.05);if(k===6)o.material.color.offsetHSL(-.15,.1,.1)}})}
+if(k>=3)g.scale.multiplyScalar(k===4?1.35:k===3?.8:1);
+if(champ){const au3=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:0xff5a1a,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:.6,fog:false}));au3.scale.set(5,5,1);au3.position.y=1.3;au3.raycast=()=>{};g.add(au3);g.scale.multiplyScalar(1.7);(g.userData.mats||[]).forEach(m=>{if(m.emissive){m.userData.em=0x4a1800;m.emissive.setHex(0x4a1800)}})}
 if(corrupted){const tc=new T.Color(0x1a0008);(g.userData.mats||[]).forEach(m=>{m.color.lerp(tc,.68);m.userData.em=0x4a0010;m.emissive.setHex(0x4a0010)});
 g.traverse(o=>{if(o.isMesh&&o.material&&o.material.isMeshBasicMaterial)o.material.color.setHex(0xff0018)});
 {const hd=g.userData.head,eb=new T.MeshBasicMaterial({color:0xff0018}),tb=new T.MeshBasicMaterial({color:0xf5f0e0}),sp=new T.MeshLambertMaterial({color:0x0a0004});
@@ -359,9 +374,9 @@ const rg=new T.Mesh(new T.RingGeometry(.8,1.25,32),new T.MeshBasicMaterial({colo
 const au=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:0xff1030,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:.5,fog:false}));au.scale.set(4.6,4.6,1);au.position.y=1.1;au.raycast=()=>{};g.add(au);g.scale.multiplyScalar(1.15);g.scale.y*=1.1}
 if(elite){const au2=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:0xffc233,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:.55,fog:false}));au2.scale.set(4,4,1);au2.position.y=1.2;au2.raycast=()=>{};g.add(au2);g.scale.multiplyScalar(1.22);(g.userData.mats||[]).forEach(m=>{if(m.emissive)m.emissive.setHex(0x5a3a00)})}
 const md=({easy:.85,medium:1,hard:1.15,impossible:1.3})[diff]||1;
-const baseSp=(grind?.7:1)*Math.min(5.4,(2.15+wave*.12)*md)*(MON_SPD[k]||1)*(corrupted?1.1:1)*(wmod==="swarm"?1.12:1);
-const e={g,hp,t:"mon",k,cd:1,sd:rnd()<.5?1:-1,spd:baseSp,dmg:(7+wave*1)*(k===2||k===4?1.5:k===3?.8:1)*(corrupted?1.2:1)*(elite?1.3:1),ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,corr:!!corrupted,minion:!!opt.minion,rad:clamp(.4*g.scale.x+.12,.5,.7),pt:.5,stk:0,px:o.x,pz:o.z,vt:0,hc:0,vis:false};
-e.hpMax=hp;e.bar=HB.make(g,2.6/(g.scale.x||1),()=>({hp:e.hp,max:e.hpMax,alive:e.hp>0&&!(e.em>0),far:70}),{base:e.corr?1.1:1,col:corrupted?(f=>f>.5?0xa78bfa:0xf43f5e):elite?(f=>0xfbbf24):null});e.elite=elite?1:0;e.em=opt.minion?(opt.em||1.4):1.4
+const baseSp=(grind?.7:1)*Math.min(LV.spdCap(),(2.15+wave*.12)*md*LV.spdMul())*(MON_SPD[k]||1)*(champ?.85:1)*(corrupted?1.1:1)*(wmod==="swarm"?1.12:1);
+const e={g,hp,t:"mon",k,cd:1,sd:rnd()<.5?1:-1,spd:baseSp,dmg:(7+wave*1)*(k===2||k===4?1.5:k===3?.8:1)*(corrupted?1.2:1)*(elite?1.3:1)*LV.dmgMul()*(champ?1.6:1),ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,corr:!!corrupted,minion:!!opt.minion,rad:clamp(.4*g.scale.x+.12,.5,.7),pt:.5,stk:0,px:o.x,pz:o.z,vt:0,hc:0,vis:false};
+e.hpMax=hp;e.bar=HB.make(g,2.6/(g.scale.x||1),()=>({hp:e.hp,max:e.hpMax,alive:e.hp>0&&!(e.em>0),far:70}),{base:e.corr?1.1:1,col:corrupted?(f=>f>.5?0xa78bfa:0xf43f5e):champ?(f=>0xff6a1a):elite?(f=>0xfbbf24):null});e.elite=elite?1:0;e.champion=champ?1:0;e.lvRisen=opt.rise?1:0;LV.onSpawn(e);if(champ){const nm=LV.monName(k)||"Monster";e.name="Champion "+nm;flash("CHAMPION: "+nm+" · a mini-boss joins the wave",2600);try{snd("elite",.8)}catch(x){}}e.em=opt.minion?(opt.em||1.4):1.4
 if(ghostW||opt.ghost){e.ghost=1;e.phz=1;e.hv=.55;Ghost.tint(g)}
 Phase.mod(e,g);
 bindOwner(g,e);g.position.set(o.x,e.ghost?.55:-1.9,o.z);sc.add(g);g.updateMatrixWorld(true);E.push(e)}
@@ -449,7 +464,7 @@ poseMon(g,dt)}
 const BN=["Gravemaw","Bonecrusher","The Hollow King","Rotlord","Voidmother"],CN=["Glitchwraith","Null Sovereign","The Unmade","Static Herald"],GN=["Wraith Queen","The Hollow Choir","Specter Prime","Banshee Monarch"],bossName=(c,gh)=>gh?GN[(Math.floor(wave/5)+GN.length*9)%GN.length]:c?"Corrupt "+CN[wave%CN.length]:BN[(Math.floor(wave/5)-1+BN.length*9)%BN.length];
 let bossEl=null,bossLag=1;
 function ringFx(x,z,r,col,life){const m=new T.Mesh(new T.RingGeometry(r*.9,r,48),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.6,side:T.DoubleSide,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(x,.12,z);sc.add(m);setTimeout(()=>{sc.remove(m);m.geometry.dispose();m.material.dispose()},life*1000)}
-function spawnMinions(x,z,n,rad,step){for(let i=0;i<n;i++){const a=rnd()*6.283,r=1.5+rnd()*rad;spawnMon({minion:1,x:clamp(x+Math.cos(a)*r,-H+3,H-3),z:clamp(z+Math.sin(a)*r,-H+3,H-3),em:1.4+i*step})}}
+function spawnMinions(x,z,n,rad,step,k){for(let i=0;i<n;i++){const a=rnd()*6.283,r=1.5+rnd()*rad;spawnMon({minion:1,k:k|0,x:clamp(x+Math.cos(a)*r,-H+3,H-3),z:clamp(z+Math.sin(a)*r,-H+3,H-3),em:1.4+i*step})}}
 function emergeStep(e,dt,ex,ez){if(e.ghost)return Ghost.emerge(e,dt,ex,ez);const g=e.g,p=g.position,u=g.userData;e.em-=dt;const f=clamp(e.em/1.4,0,1);if(e.em<1.4&&!e.fxd){e.fxd=1;spawnFx(p.x,p.z,!!e.corr)}
 p.y=-1.9*f;g.rotation.y=turnTo(g.rotation.y,Math.atan2(ex,ez),dt*6);
 u.torso.rotation.x=.1+1.1*f;u.arms[0].rotation.x=u.arms[1].rotation.x=-2.2+Math.sin(performance.now()/90+e.ph)*.5;u.legs[0].rotation.x=u.legs[1].rotation.x=0;
@@ -484,12 +499,14 @@ setTimeout(()=>{if(state!=="play"||!E.includes(e))return;Fx.burst({x,y:.4,z},0xf
 document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove("shk"),160)}
 function spawnBoss(corr,ghost){
 try{snd("roar",1);setTimeout(()=>snd("slam",.8),700)}catch(e){}
-let o=awaySpot(P.x,P.z,20);if(blocked(o.x,o.z,0,corr?1.45:1.2))o=freeSpot(o.x,o.z);const g=mkMon(2),sc_=bossScale(),lv=1+xpLevel*.035,hp=Math.round((4200+wave*620)*(1+sc_.tier*.03)*sc_.bf*lv*(corr?2.2:1)*coopHp()*bdf().hp);g.scale.multiplyScalar(corr?2.7:2.2);
-if(corr){const tc=new T.Color(0x1a0008);(g.userData.mats||[]).forEach(m=>{m.color.lerp(tc,.68);m.userData.em=0x4a0010;m.emissive.setHex(0x4a0010)})}
-const lt=new T.PointLight(ghost?0x40e0ff:corr?0xa020ff:0xff2030,2.5,30,1.5);lt.position.y=3;g.add(lt);
-for(let i=0;i<5;i++){const c=new T.Mesh(new T.ConeGeometry(.09,.55,5),new T.MeshLambertMaterial({color:0xe8e4d0}));c.position.set((i-2)*.14,2.35,.1);c.rotation.z=(i-2)*.18;g.add(c)}
+const lb=LV.on()&&!ghost?LV.bossDef():null;
+let o=awaySpot(P.x,P.z,20);if(blocked(o.x,o.z,0,corr?1.45:1.2))o=freeSpot(o.x,o.z);const g=mkMon(2),sc_=bossScale(),lv=1+xpLevel*.035,hp=Math.round((4200+wave*620)*(1+sc_.tier*.03)*sc_.bf*lv*(corr?2.2:1)*coopHp()*bdf().hp*(lb?(lb.hp||1)*LV.ramp():1));
+if(lb)LV.skin(g,2,{boss:true});g.scale.multiplyScalar(lb&&lb.scale?lb.scale:corr?2.7:2.2);
+if(corr&&!lb){const tc=new T.Color(0x1a0008);(g.userData.mats||[]).forEach(m=>{m.color.lerp(tc,.68);m.userData.em=0x4a0010;m.emissive.setHex(0x4a0010)})}
+const lt=new T.PointLight(lb&&lb.col?lb.col:ghost?0x40e0ff:corr?0xa020ff:0xff2030,2.5,30,1.5);lt.position.y=3;g.add(lt);
+if(!lb)for(let i=0;i<5;i++){const c=new T.Mesh(new T.ConeGeometry(.09,.55,5),new T.MeshLambertMaterial({color:0xe8e4d0}));c.position.set((i-2)*.14,2.35,.1);c.rotation.z=(i-2)*.18;g.add(c)}
 const ring=new T.Mesh(new T.TorusGeometry(1.1,.07,8,32),new T.MeshBasicMaterial({color:0xff3344}));ring.rotation.x=Math.PI/2;ring.position.y=.08;g.add(ring);
-const e={g,hp,hpMax:hp,t:"mon",k:2,boss:true,corr:!!corr,lt,sd:1,name:bossName(corr,ghost),ghostB:!!ghost,ghost:!!ghost,rad:corr?1.45:1.2,at:"volley",spd:Math.min(5.2,3.3+wave*.035)*bdf().sp,dmg:(36+wave*2.1)*(1+sc_.tier*.015)*(1+(sc_.bf-1)*.4)*(1+xpLevel*.02)*(corr?1.6:1)*bdf().dm,ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,stage:0,stun:0,wind:0,atkT:2.2,ring,cd:1,leapT:corr?4:6.5,lp:null,hb:0,addT:7};
+const e={g,hp,hpMax:hp,t:"mon",k:2,boss:true,corr:!!corr,lt,sd:1,name:(lb&&LV.bossName())||bossName(corr,ghost),lvDef:lb,ghostB:!!ghost,ghost:!!ghost,rad:corr?1.45:1.2,at:"volley",spd:Math.min(5.2,3.3+wave*.035)*bdf().sp,dmg:(36+wave*2.1)*(1+sc_.tier*.015)*(1+(sc_.bf-1)*.4)*(1+xpLevel*.02)*(corr?1.6:1)*bdf().dm*(lb?LV.dmgRamp():1),ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,stage:0,stun:0,wind:0,atkT:2.2,ring,cd:1,leapT:corr?4:6.5,lp:null,hb:0,addT:7};
 if(ghost)Ghost.tint(g,true);
 bindOwner(g,e);g.position.set(o.x,0,o.z);sc.add(g);g.updateMatrixWorld(true);E.push(e);bossLag=1;
 // the arena darkens and the ground trembles as it rises
@@ -507,7 +524,7 @@ e.phCD=(e.phCD||0)-dt;e.blCD=(e.blCD||0)-dt;
 e.hb-=dt;if(e.hb<=0){e.hb=e.hp<e.hpMax*.3?.55:1.1;try{tone(54,.24,"sine",.2,36)}catch(x){}}
 if(e.corr&&e.stun<=0&&!E.some(x=>x.minion&&x.hp>0)){e.addT-=dt;if(e.addT<=0&&E.length<11){e.addT=8;spawnMon();spawnMon()}}
 // quarter-health thresholds summon minions and fully stun the boss (no attack)
-if(e.stage<3&&e.hp>0&&e.hp<=e.hpMax*(1-.25*(e.stage+1))){e.stage++;e.stun=4.2;e.wind=0;e.atkT=2;u.kick=1;snd("kill",.9);flash(e.name+" is stunned. Horde incoming!",2000);ringFx(p.x,p.z,9,0xaefcff,2.5);Fx.burst({x:p.x,y:2.4,z:p.z},0xaefcff,24,6,.1,3,22);spawnMinions(p.x,p.z,5*e.stage,6,2.2/(5*e.stage))}
+if(e.stage<3&&e.hp>0&&e.hp<=e.hpMax*(1-.25*(e.stage+1))){e.stage++;e.stun=4.2;e.wind=0;e.atkT=2;u.kick=1;snd("kill",.9);flash(e.name+" is stunned. Horde incoming!",2000);ringFx(p.x,p.z,9,0xaefcff,2.5);Fx.burst({x:p.x,y:2.4,z:p.z},0xaefcff,24,6,.1,3,22);const mn_=(e.lvDef&&e.lvDef.minions||5)*e.stage;spawnMinions(p.x,p.z,mn_,6,2.2/mn_,e.lvDef?e.lvDef.minionK:0)}
 if(P.fz>0||rL>0||menuOpen){poseMon(g,dt);return}
 if(P.dead>0){poseMon(g,dt);return}
 const minionsLeft=E.filter(x=>x!==e&&x.t==="mon"&&x.minion&&x.hp>0).length;
@@ -538,7 +555,7 @@ let sp=0;
 if(e.wind>0){e.wind-=dt;if(e.wind<=0){
 if(e.at==="slam")bossSlam(e,8.2,1.3);
 else if(e.at==="meteor")bossMeteors(e);
-else if(e.at==="nova"){bossNova(e)}else if(e.at==="phase"){Ghost.phaseStart(e);return}else if(e.at==="blink"){Ghost.blink(e)}else if(e.at==="dash"){e.dash=1.1;e.dx=ex/dist;e.dz=ez/dist;snd("kill",.8)}else{for(let j=0;j<(3+e.stage)*(e.corr?2:1);j++)setTimeout(()=>{if(E.includes(e)&&state==="play"&&!menuOpen&&P.fz<=0)spit(p.x,3.2,p.z,e.dmg*.45,Math.hypot(P.x-p.x,P.z-p.z))},j*230)}
+else if(e.at==="nova"){bossNova(e)}else if(e.at==="special"){LV.bossSpecial(e)}else if(e.at==="phase"){Ghost.phaseStart(e);return}else if(e.at==="blink"){Ghost.blink(e)}else if(e.at==="dash"){e.dash=1.1;e.dx=ex/dist;e.dz=ez/dist;snd("kill",.8)}else{for(let j=0;j<(3+e.stage)*(e.corr?2:1);j++)setTimeout(()=>{if(E.includes(e)&&state==="play"&&!menuOpen&&P.fz<=0)spit(p.x,3.2,p.z,e.dmg*.45,Math.hypot(P.x-p.x,P.z-p.z))},j*230)}
 e.atkT=Math.max(.9,2.1-e.stage*.22-(e.hp<e.hpMax*.3?.5:0))*(e.corr?.7:1)*bdf().tm}}
 else{
 // it circles the player at a distance instead of walking straight in, and now and then leaps across the arena
@@ -549,7 +566,7 @@ e.leapT-=dt;if(e.leapT<=0&&dist>5){e.leapT=(e.corr?5:8)-e.stage*.8;let lx=clamp(
 const ldx=lx-p.x,ldz=lz-p.z,ld=Math.hypot(ldx,ldz);if(ld>LEAP_MAX){lx=p.x+ldx/ld*LEAP_MAX;lz=p.z+ldz/ld*LEAP_MAX}
 if(blocked(lx,lz,0,e.rad||1.5)){const f_=freeSpot(lx,lz);lx=f_.x;lz=f_.z}
 if(los(p.x,1.2,p.z,lx,1.2,lz)){e.lp={t:0,dur:clamp(Math.hypot(lx-p.x,lz-p.z)/LEAP_MAX,.55,1),sx:p.x,sz:p.z,tx:lx,tz:lz};ringFx(lx,lz,8.2,0xff2200,1);snd("jump",.9,.5);u.kick=1}else e.leapT=1.2}
-if(e.atkT<=0){const r_=rnd(),adv=e.corr||e.stage>=1||wave>=10;e.at=dist<9&&r_<.55?"slam":r_<.22?"dash":r_<.42?"nova":(r_<.64&&adv)?"meteor":"volley";e.wind=e.at==="slam"?.8:e.at==="dash"?.6:e.at==="nova"?.8:e.at==="meteor"?.7:.55;if(e.at==="slam")ringFx(p.x,p.z,8.2,0xff2200,.8);u.kick=1;
+if(e.atkT<=0){const r_=rnd(),adv=e.corr||e.stage>=1||wave>=10;e.at=(e.lvDef&&LV.bossPick(e,dist))||(dist<9&&r_<.55?"slam":r_<.22?"dash":r_<.42?"nova":(r_<.64&&adv)?"meteor":"volley");e.wind=LV.WIND[e.at]||.55;if(e.at==="slam")ringFx(p.x,p.z,8.2,0xff2200,.8);u.kick=1;
 if(e.ghostB&&e.phCD<=0&&(rnd()<.3||!los(p.x,1.2,p.z,P.x,P.y+1.2,P.z))){e.at="phase";e.wind=.9;Ghost.fade(g,.35);ringFx(p.x,p.z,5,0x6ff3ff,.9);snd("phase",.8)}
 else if(e.corr&&e.blCD<=0&&rnd()<.3){e.at="blink";e.wind=.7;ringFx(p.x,p.z,4,0xd070ff,.7);snd("lose",.5)}}}
 p.y=Math.abs(Math.sin(t*5))*.12*sp;poseMon(g,dt);if(e.wind>0)u.arms[0].rotation.x=u.arms[1].rotation.x=-2.6}
@@ -566,7 +583,7 @@ if(i%2===0)snd("kill",.7+.1*i);
 },i*140);
 setTimeout(()=>{document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove("shk"),700);flashScreen("#ffd24a")},200);
 setTimeout(()=>{Fx.burst({x:p.x,y:2.5,z:p.z},0xffffff,55,12,.16,4,40);ringFx(p.x,p.z,14,0xffd24a,2.2)},900);
-S.coins+=15+wave*2;addBP(e.corr?150+wave*3:80+Math.floor(wave*2.4));spawnMinions(p.x,p.z,12,2.2,.14)}
+S.coins+=Math.round((15+wave*2)*LV.coinMul());addBP(Math.round((e.corr?150+wave*3:80+Math.floor(wave*2.4))*LV.bpMul()));spawnMinions(p.x,p.z,12,2.2,.14,e.lvDef?e.lvDef.minionK:0)}
 function bossHud(){const b=E.find(x=>x.boss);if(!b){if(bossEl)bossEl.style.display="none";return}
 if(!bossEl){bossEl=document.createElement("div");bossEl.id="bossbar";bossEl.innerHTML='<div class="bn"></div><div class="bt"><i class="bl"></i><i class="bf"></i><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u></div><div class="bp"><s></s><s></s><s></s><s></s></div>';document.body.appendChild(bossEl)}
 const f=clamp(b.hp/b.hpMax,0,1),mins=E.filter(x=>x!==b&&x.t==="mon"&&x.minion&&x.hp>0).length;

@@ -490,7 +490,7 @@ function monStrike(e){const g=e.g,p=g.position,u=g.userData,d=Math.hypot(P.x-p.x
 Gfx.slash(p.x+fx*1.1,1.3,p.z+fz*1.1,g.rotation.y,col,big?1.5:1);snd(big?"mslam":"claw",.85);
 if(big){Gfx.ring(p.x+fx*1.6,.12,p.z+fz*1.6,col,.3,3.4,.45,.8);Fx.burst({x:p.x+fx*1.6,y:.2,z:p.z+fz*1.6},0x5a4632,10,4,.1,3,12);if(d<6){document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove("shk"),160)}}
 if(e.corr)Gfx.flare({x:p.x,y:1.3,z:p.z},0xc060ff,2.6,.2);
-if(d<(big?2.7:2.35)&&los(p.x,1.2,p.z,P.x,P.y+1.2,P.z)){hit(e.dmg,p);if(P.dead<=0)clawScreen(e.corr)}}
+if(d<(big?2.7:2.35)&&los(p.x,1.2,p.z,P.x,P.y+1.2,P.z)){hit(e.dmg,p);try{LV.onMelee(e)}catch(x){}if(P.dead<=0)clawScreen(e.corr)}}
 function monDeathFx(e){const q=e.g.position,c=e.corr?0xc060ff:0x9dff6a;Gfx.flare({x:q.x,y:q.y+1.1,z:q.z},c,e.boss?8:3.4,.3);Gfx.ring(q.x,.12,q.z,e.corr?0xb050ff:0x66ff44,.4,e.boss?7:2.6,.5,.7);
 if(e.corr)Fx.burst({x:q.x,y:q.y+1,z:q.z},0xb050ff,14,6,.1,3,16);snd(e.corr?"cdie":"mdie",clamp(1-Math.hypot(P.x-q.x,P.z-q.z)/45,.15,.7))}
 

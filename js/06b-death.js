@@ -13,9 +13,9 @@ let best=null,bd=1e9;const sx=src?src.x:P.x,sz=src?src.z:P.z;
 for(const e of E){if(e.hp<=0||!e.g)continue;const p=e.g.position,d=Math.hypot(p.x-sx,p.z-sz);if(d<bd){bd=d;best=e}}
 if(!best||bd>7)return{n:"The arena",tag:"HAZARD",d:0};
 const d=Math.hypot(best.g.position.x-P.x,best.g.position.z-P.z);
-if(best.boss)return{n:best.name||"Boss",tag:best.ghostB?"GHOST BOSS":best.corr?"CORRUPTED BOSS":"BOSS",d};
+if(best.champion)return{n:best.name||"Champion",tag:"CHAMPION",d};if(best.boss)return{n:best.name||"Boss",tag:best.ghostB?"GHOST BOSS":best.corr?"CORRUPTED BOSS":"BOSS",d};
 if(best.t==="bot")return{n:DF[diff].n,tag:"BOT",d};
-return{n:(best.ghost?"Ghost ":best.corr?"Corrupted ":"")+MN[(best.k|0)%MN.length],tag:best.ghost?"GHOST":"MONSTER",d}}
+return{n:(best.ghost?"Ghost ":best.corr?"Corrupted ":"")+((typeof LV!=="undefined"&&LV.monName(best.k))||MN[(best.k|0)%MN.length]),tag:best.ghost?"GHOST":"MONSTER",d}}
 
 function stats(){
 const st=[];
