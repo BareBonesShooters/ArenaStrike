@@ -119,7 +119,7 @@
 <label class="sf"><span>Volume<em data-sv="vol"></em></span><input type="range" min="0" max="1" step=".05" data-i="vol" aria-label="Volume"></label>
 <label class="sf"><span>Music<em data-sv="mvol"></em></span><input type="range" min="0" max="1" step=".05" data-i="mvol" aria-label="Music volume"></label></section>
 <section class="pgrp inl"><h4><svg class="ic"><use href="#i-bolt"/></svg>Display</h4>
-<label class="sf"><span>Graphics</span><select data-i="gfx" aria-label="Graphics quality"><option value="auto">Auto</option><option value="0">High</option><option value="1">Medium</option><option value="2">Low</option><option value="3">Potato</option></select></label></section>
+<label class="sf"><span>Graphics</span><select data-i="gfx" aria-label="Graphics quality"><option value="auto">Auto</option><option value="0">Ultra High</option><option value="1">High</option><option value="2">Medium</option><option value="3">Low</option><option value="4">Potato</option></select></label></section>
 </div>
 <button class="b pleave" id="pleave" data-a="pleave"><span>Leave match</span></button>
 </div><div class="gl card2 pq" id="pq"></div></div>
@@ -132,8 +132,22 @@
 
 <div id="toasts" aria-live="polite"></div>
 <script src="js/reward-codes.js"></script>
+<script src="vendor/three-r128/CopyShader.js"></script>
+<script src="vendor/three-r128/LuminosityHighPassShader.js"></script>
+<script src="vendor/three-r128/FXAAShader.js"></script>
+<script src="vendor/three-r128/SAOShader.js"></script>
+<script src="vendor/three-r128/DepthLimitedBlurShader.js"></script>
+<script src="vendor/three-r128/UnpackDepthRGBAShader.js"></script>
+<script src="vendor/three-r128/SMAAShader.js"></script>
+<script src="vendor/three-r128/EffectComposer.js"></script>
+<script src="vendor/three-r128/RenderPass.js"></script>
+<script src="vendor/three-r128/ShaderPass.js"></script>
+<script src="vendor/three-r128/UnrealBloomPass.js"></script>
+<script src="vendor/three-r128/SAOPass.js"></script>
+<script src="vendor/three-r128/SMAAPass.js"></script>
 <script src="js/01-core.js"></script>
 <script src="js/02-render-audio.js"></script>
+<script src="js/02b-post.js"></script>
 <script src="js/03-world.js"></script>
 <script src="js/03a-art-direction.js"></script>
 <script src="js/04-models.js"></script>

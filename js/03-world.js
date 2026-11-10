@@ -409,7 +409,7 @@ if(opt.parkour)WORLD.course=PK.build({blk,reg,P,glow,rng,th,key,lerpC,grp,diff:o
 // finish geometry
 const smat=new T.MeshLambertMaterial({vertexColors:true});if(fxOn)fogFx(smat,"s");
 const sm=solid.mesh(smat);sm.castShadow=true;sm.receiveShadow=true;grp.add(sm);
-if(glow.p.length){const gmesh=glow.mesh(new T.MeshBasicMaterial({vertexColors:true}));grp.add(gmesh)}
+if(glow.p.length){const gmesh=glow.mesh(WORLD.glowM=new T.MeshBasicMaterial({vertexColors:true}));grp.add(gmesh)}
 sc.add(grp);WORLD.group=grp;WORLD.theme=key;WORLD.seed=seed;
 if(!ruin)bakeGround(gt,th,!LOD.sh);else if(!LOD.sh)sun.intensity*=.35
 // spawn points (farthest-point sampling over free ground)

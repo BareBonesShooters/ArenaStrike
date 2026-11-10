@@ -198,7 +198,7 @@ for(const e of dyn)if(e.k==="mv"){const o=e.o,sw=e.ax==="x"?o.w+2*e.amp:o.w,sd2=
 let bx0=1e9,bx1=-1e9,bz0=1e9,bz1=-1e9;for(const p of plats){bx0=Math.min(bx0,p.x-p.w/2);bx1=Math.max(bx1,p.x+p.w/2);bz0=Math.min(bz0,p.z-p.d/2);bz1=Math.max(bz1,p.z+p.d/2)}
 const bnd={x0:bx0-10,x1:bx1+10,z0:bz0-10,z1:bz1+10};
 // scenery between the course and the walls so the void is never empty: each map gets its own landmarks
-{const bw=bnd.x1-bnd.x0,bd=bnd.z1-bnd.z0,N=S.gfx>1?34:70,K=c.key;let n=0;
+{const bw=bnd.x1-bnd.x0,bd=bnd.z1-bnd.z0,N=S.gfx>2?34:70,K=c.key;let n=0;
 for(let i=0;i<N*10&&n<N;i++){const x=bnd.x0+4+rng()*(bw-8),z=bnd.z0+4+rng()*(bd-8);if(overlaps(x,z,7,7))continue;n++;
 const hh=rr(9,34),a=rng()*3,pk2=rng();
 if(K==="neon"){const col=n%2?0xff2bd6:0x00f0ff;c.P("box",x,hh/2,z,1.4,hh,1.4,0x120a26,0,.8);for(let y=3;y<hh-1;y+=rr(4,7))c.P("box",x,y,z,1.9,.14,1.9,col,0,1,c.glow);c.P("box",x+.72,hh/2,z,.08,hh*.9,.08,col,0,1,c.glow)}
@@ -235,7 +235,7 @@ fragmentShader:"uniform sampler2D map;uniform float t;uniform vec3 c0,c1,c2;vary
 "gl_FragColor=vec4(col,1.);}"}));
 haz.rotation.x=-Math.PI/2;haz.position.set((bnd.x0+bnd.x1)/2,.06,(bnd.z0+bnd.z1)/2);c.grp.add(haz);
 // embers drift up out of the hazard
-const NE=S.gfx>1?36:90,ep=new Float32Array(NE*3),ev=new Float32Array(NE);
+const NE=S.gfx>2?36:90,ep=new Float32Array(NE*3),ev=new Float32Array(NE);
 for(let i=0;i<NE;i++){ep[i*3]=(Math.random()-.5)*H*1.6;ep[i*3+1]=Math.random()*14;ep[i*3+2]=(Math.random()-.5)*H*1.6;ev[i]=.7+Math.random()*1.6}
 const eg=new T.BufferGeometry();eg.setAttribute("position",new T.BufferAttribute(ep,3));
 const emb=new T.Points(eg,new T.PointsMaterial({map:SOFTDOT,color:new T.Color(...pal[2]),size:.34,transparent:true,opacity:.9,blending:T.AdditiveBlending,depthWrite:false}));
@@ -346,7 +346,7 @@ function dot(x,z,r,col){g.fillStyle=col;g.beginPath();g.arc(x,z,r,0,6.283);g.fil
 function frame(dt){
 if(!cv){cv=$("radar");if(!cv)return;g=cv.getContext("2d")}
 const off=!!WORLD.course;if(off!==hid){hid=off;cv.style.display=off?"none":""}if(off)return;
-acc+=dt;if(acc<(S.gfx>1?.066:.033))return;const prev=sweep;sweep=(sweep+acc*1.6)%6.283;acc=0;
+acc+=dt;if(acc<(S.gfx>2?.066:.033))return;const prev=sweep;sweep=(sweep+acc*1.6)%6.283;acc=0;
 size();if(baked!==WORLD.group&&WORLD.group)rebake();
 const k=R/RANGE,k0=k;
 g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,2*R,2*R);

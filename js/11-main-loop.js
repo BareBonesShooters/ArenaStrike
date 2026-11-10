@@ -25,14 +25,16 @@ const Bloom=(()=>{let cv=null,x=null,on=false,w=0,h=0;
 function size(){const nw=Math.max(64,Math.round(innerWidth/6)),nh=Math.max(48,Math.round(innerHeight/6));if(nw!==w||nh!==h){w=cv.width=nw;h=cv.height=nh}}
 return{set(v){v=!!v&&!SOFT;if(v===on)return;on=v;if(v&&!cv){cv=document.createElement("canvas");cv.id="bloom";cv.setAttribute("aria-hidden","true");rd.domElement.after(cv);x=cv.getContext("2d");size()}
 if(cv)cv.style.display=v?"":"none"},draw(){if(!on||!x)return;size();try{x.drawImage(rd.domElement,0,0,w,h)}catch(e){}}}})();
+// post: effect chain level in js/02b-post.js (3 bloom+AO+SMAA, 2 bloom+FXAA, 1 light bloom+FXAA, 0 none); rim: character rim light strength
 const QL=[
-{n:"High",pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:1536,dust:1,lite:0,tm:1.12,mz:1,vg:1},
-{n:"Medium",pr:1,sh:1024,cloud:2,props:.8,fx:.8,tex:1024,dust:.7,lite:0,tm:1.06,mz:0,vg:1},
-{n:"Low",pr:1,sh:0,cloud:1,props:.6,fx:.6,tex:1024,dust:.5,lite:1,tm:0,mz:0,vg:0},
-{n:"Potato",pr:.7,sh:0,cloud:0,props:.4,fx:.4,tex:512,dust:.25,lite:1,tm:0,mz:0,vg:0}];
+{n:"Ultra High",pr:2,sh:4096,cloud:2,props:1.2,fx:1.2,tex:2048,dust:1.3,lite:0,tm:1.12,mz:1,vg:0,post:3,rim:.5},
+{n:"High",pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:1536,dust:1,lite:0,tm:1.12,mz:1,vg:0,post:2,rim:.45},
+{n:"Medium",pr:1,sh:1024,cloud:2,props:.8,fx:.8,tex:1024,dust:.7,lite:0,tm:1.06,mz:0,vg:0,post:1,rim:.4},
+{n:"Low",pr:1,sh:0,cloud:1,props:.6,fx:.6,tex:1024,dust:.5,lite:1,tm:0,mz:0,vg:0,post:0,rim:.35},
+{n:"Potato",pr:.7,sh:0,cloud:0,props:.4,fx:.4,tex:512,dust:.25,lite:1,tm:0,mz:0,vg:0,post:0,rim:.3}];
 const Q=(()=>{
 let acc=0,n=0,skip=90,rs=1,cap=1,hold=0;
-function fit(){rd.setPixelRatio(Math.min(devicePixelRatio||1,QL[S.gfx].pr)*rs);rd.setSize(innerWidth,innerHeight)}
+function fit(){rd.setPixelRatio(Math.min(devicePixelRatio||1,QL[S.gfx].pr)*rs);rd.setSize(innerWidth,innerHeight);Post.size()}
 function set(l,keep){
 l=clamp(l|0,0,QL.length-1);S.gfx=l;const q=QL[l];
 for(const k in LOD)LOD[k]=q[k];
@@ -41,7 +43,7 @@ fit();
 sun.castShadow=q.sh>0;
 if(q.sh&&sun.shadow.mapSize.x!==q.sh){sun.shadow.mapSize.set(q.sh,q.sh);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}
 if(!q.sh&&sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
-Bloom.set(false);Flare.set(false);document.body.classList.remove("grade");document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
+Bloom.set(false);Flare.set(false);Post.set(q.post);Post.rimK(q.rim);document.body.classList.remove("grade");document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
 // filmic tone mapping (High and Medium) rolls bright skies and muzzle glare off smoothly instead of clipping them
 const tmWas=rd.toneMapping;rd.toneMapping=T.NoToneMapping;rd.toneMappingExposure=1;
 if(q.mz&&!mzL.parent)sc.add(mzL);else if(!q.mz&&mzL.parent)sc.remove(mzL);
@@ -64,7 +66,7 @@ else if(hold>0)hold--;
 else if(avg<19.5&&rs<cap){rs=Math.min(cap,rs+.06);fit()}}
 return{set,pick,tick,get scale(){return rs},reset(){acc=n=0;skip=90;cap=1}}})();
 rd.shadowMap.autoUpdate=false;
-Q.set(S.gfx==null?0:S.gfx);
+Q.set(S.gfx==null?1:S.gfx);
 // a GPU driver reset (common on Windows and Linux when a driver is pushed too hard) loses the WebGL context; three.js rebuilds it, and Auto drops a level so it does not happen again
 rd.domElement.addEventListener("webglcontextrestored",()=>{
 try{if(S.auto&&S.gfx<QL.length-1){Q.set(S.gfx+1);S.ac=S.gfx;sv();toast("Graphics driver reset. Lowered to "+QL[S.gfx].n)}else Q.set(S.gfx)}catch(e){}});
@@ -76,9 +78,9 @@ const raw=now-lastT,dt=Math.min(.05,Math.max(0,raw/1000));lastT=now;clock+=dt;fr
 try{
 const playing=state==="play",paused=state==="pause";
 // the lobby orbit is slow, so it renders at half rate (a third on weak settings) and leaves the GPU free for the blurred panels
-if(!playing&&!paused&&state!=="title"&&fr%(S.gfx>1?(SOFT?6:3):2)){return}
+if(!playing&&!paused&&state!=="title"&&fr%(S.gfx>2?(SOFT?6:3):2)){return}
 // a paused scene is static, so it only needs an occasional redraw
-if(paused&&fr%(S.gfx>1?4:2)){return}
+if(paused&&fr%(S.gfx>2?4:2)){return}
 if(playing){update(dt*Death.frame(dt));Q.tick(raw)}
 else if(state==="title"){Title.frame(dt,clock)}
 else if(!paused){
@@ -87,10 +89,14 @@ if(cam.fov!==58){cam.fov=58;cam.updateProjectionMatrix()}
 cam.position.set(Math.sin(a)*34,18,Math.cos(a)*34);cam.lookAt(-3,2,-5)}
 worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
-rd.shadowMap.needsUpdate=!(fr&1)||S.gfx>1;
+rd.shadowMap.needsUpdate=!(fr&1)||S.gfx>2;
+const vmOn=(playing||paused||(state==="title"&&Title.fp))&&!(CustomBattle.active&&!CustomBattle.joined);
+Post.frame();
+if(Post.on){if(playing&&!(CustomBattle.active&&!CustomBattle.joined))Scope.lens(cg());Post.render(vmOn)}
+else{
 rd.render(sc,cam);
 if(playing&&!(CustomBattle.active&&!CustomBattle.joined))Scope.lens(cg());
-if((playing||paused||(state==="title"&&Title.fp))&&!(CustomBattle.active&&!CustomBattle.joined)){rd.autoClear=false;rd.clearDepth();rd.render(VM.scene,VM.cam);rd.autoClear=true}
+if(vmOn){rd.autoClear=false;rd.clearDepth();rd.render(VM.scene,VM.cam);rd.autoClear=true}}
 if(!(fr&1))Bloom.draw();Flare.draw();
 }catch(e){
 rd.autoClear=true;

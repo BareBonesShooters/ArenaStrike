@@ -76,7 +76,7 @@ img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`<svg xmlns="http
 return t}
 function ensure(){
 if(rt)return;
-const n=S.gfx>=2?320:448;
+const n=S.gfx>=3?320:448;
 rt=new T.WebGLRenderTarget(n,n,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,depthBuffer:true});
 zc=new T.PerspectiveCamera(20,1,cam.near,cam.far);
 picM=new T.MeshBasicMaterial({map:rt.texture,color:0x06090e,toneMapped:false})}

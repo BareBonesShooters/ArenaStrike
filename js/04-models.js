@@ -229,7 +229,7 @@ tryPlace(bp[0],bp[1]);
 hold={rig,piv,tg:tg.clone(),tf:tf.clone()};
 gun.grp.traverse(m=>{if(m.isMesh)m.castShadow=false})}
 hurtBox(g,.62,1.52,.42,0,.88,0,false,hit);hurtBox(head,.44,.5,.44,0,.02,0,true,hit);
-g.userData={legs,arms,torso,head,hit,mats,gun,hold,body,ph:0,sp:0,kick:0,flashT:0};YardArt.human(g,o);g.scale.setScalar(.88);g.add(blobShadow(.55));if(hold)poseHuman(g,0,0,0);return g}
+g.userData={legs,arms,torso,head,hit,mats,gun,hold,body,ph:0,sp:0,kick:0,flashT:0};YardArt.human(g,o);g.scale.setScalar(.88);g.add(blobShadow(.55));if(hold)poseHuman(g,0,0,0);return Post.rim(g)}
 // invisible hurt boxes: forgiving, gap-free volumes around the body and the head so shots at the visible shape never slip between the thin limbs
 const HURT=new T.MeshBasicMaterial({visible:false});
 function hurtBox(par,w,h,d,x,y,z,head,hit){const m=new T.Mesh(new T.BoxGeometry(w,h,d),HURT);m.position.set(x,y,z);m.userData.head=!!head;par.add(m);hit.push(m);return m}
@@ -298,7 +298,7 @@ else{l[0].rotation.x=s*.6;l[1].rotation.x=-s*.6;a[0].rotation.z=-s*.9-.2;a[1].ro
 return dy}
 
 // ---------- monsters ----------
-function mkMon(k){return YardArt.monster(k)}
+function mkMon(k){return Post.rim(YardArt.monster(k))}
 function poseMon(m,dt,att){
 const u=m.userData,p=m.position,sc=m.scale.y||1;
 // the walk cycle is driven by the ground actually covered: one leg swing per step length, so the feet stay planted instead of skating

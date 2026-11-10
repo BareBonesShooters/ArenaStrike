@@ -493,7 +493,7 @@ if(o.tex<8192)o.score-=12;
 const dp=Math.min(devicePixelRatio||1,1.5);o.px=Math.round(screen.width*screen.height*dp*dp/2073600*100)/100;
 if(o.px>3.2&&o.score<92)o.score-=14;else if(o.px>1.9&&o.score<80)o.score-=8;
 o.score=Math.max(0,Math.min(100,o.score));
-o.tier=o.score>=72?0:o.score>=50?1:o.score>=28?2:3;
+o.tier=o.score>=90?0:o.score>=72?1:o.score>=50?2:o.score>=28?3:4;
 return o})();
 
 // ---------- save ----------
@@ -518,8 +518,10 @@ S.cur=clamp(S.cur|0,0,4);S.name=cleanName(S.name)||"Player";
 S.coins=Math.max(0,+S.coins||0);S.sens=clamp(+S.sens||1,.3,2.5);S.ssens=clamp(+S.ssens||1,.4,1.6);S.vol=clamp(S.vol==null?.7:+S.vol,0,1);S.mvol=clamp(S.mvol==null?.35:+S.mvol,0,1);
 if(!S.bg||!IDM[S.bg]||!own[S.bg])S.bg="b0";if(!S.av||!IDM[S.av]||!own[S.av])S.av="a0";for(const k of["mh","mm"])if(!S[k]||!IDM[S[k]]||PRE(S[k])!=="u"||!own[S[k]])S[k]="u0";
 if(!S.board||typeof S.board!=="object")S.board={};if(!S.q||typeof S.q!=="object")S.q={};try{questFill()}catch(e){}
-S.ac=clamp(+S.ac||0,0,3);S.auto=S.auto==null||S.auto?1:0;
-S.gfx=clamp(S.gfx==null?HW.tier:S.gfx|0,0,3);
+// saves from before Ultra High numbered High as 0; shift them up one so every old choice keeps its name
+if(S.gv!==2){if(S.gfx!=null)S.gfx=(S.gfx|0)+1;if(+S.ac)S.ac=(S.ac|0)+1;S.gv=2}
+S.ac=clamp(+S.ac||0,0,4);S.auto=S.auto==null||S.auto?1:0;
+S.gfx=clamp(S.gfx==null?HW.tier:S.gfx|0,0,4);
 // Auto starts from what this machine can do, and never above a level it already had to step down from in an earlier session
 if(S.auto)S.gfx=Math.max(HW.tier,S.ac);
 if(!S.mp||typeof S.mp!=="object")S.mp={};
