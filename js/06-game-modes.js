@@ -181,7 +181,7 @@ if(w===true){myS++;tf("kill")}if(w===false)opS++;
 flash(t||(w===true?"Round won":w===false?"Round lost":"Draw"),1500);
 if(myS>=GOAL||opS>=GOAL)return endGame(myS>=GOAL);rL=1.6}
 function endGame(win){
-if(state==="over")return;state="over";menuOpen=false;Aim.release();document.body.classList.remove("playing");clearKeys();
+if(state==="over")return;state="over";try{LV.reset()}catch(e){}menuOpen=false;Aim.release();document.body.classList.remove("playing");clearKeys();
 let b=0,sub="";const me=boardOf(S.name);me.k+=kills;if(win)me.w++;
 const st=[];qAdd("play",1);qAdd("m_"+mode,1);if(win)qAdd("w_"+mode,1);if(PT.on){qAdd("party",1);if(win)qAdd("pwin",1)}
 if(mode==="duel"||mode==="gg"){const bo=boardOf(DF[diff].n);bo.k+=opS;if(!win)bo.w++;
@@ -271,7 +271,7 @@ try{tone(52,3,"sawtooth",.22,34);tone(78,3,"square",.08,60,.15);snd("cstart",.9)
 if(!corrPts){const N=SOFT?60:150,pos=new Float32Array(N*3);for(let i=0;i<N;i++){pos[i*3]=P.x+(rnd()-.5)*70;pos[i*3+1]=rnd()*22;pos[i*3+2]=P.z+(rnd()-.5)*70}
 const geo=new T.BufferGeometry();geo.setAttribute("position",new T.BufferAttribute(pos,3));
 corrPts=new T.Points(geo,new T.PointsMaterial({map:SOFTDOT,color:0xff1f4d,size:.55,transparent:true,opacity:0,depthWrite:false,blending:T.AdditiveBlending,fog:false}));corrPts.frustumCulled=false;sc.add(corrPts)}}
-function corrReset(){try{Phase.reset()}catch(e){}corrTgt=0;corrK=0;if(corrOv){corrOv.remove();corrGl.remove();corrOv=corrGl=null}if(corrPts){sc.remove(corrPts);corrPts.geometry.dispose();corrPts.material.dispose();corrPts=null}corrSnap=null;corrupted=false;if(corrMoon){sc.remove(corrMoon);corrMoon.material.dispose();corrMoon=null}}
+function corrReset(){try{Phase.reset()}catch(e){}try{LV.reset()}catch(e){}corrTgt=0;corrK=0;if(corrOv){corrOv.remove();corrGl.remove();corrOv=corrGl=null}if(corrPts){sc.remove(corrPts);corrPts.geometry.dispose();corrPts.material.dispose();corrPts=null}corrSnap=null;corrupted=false;if(corrMoon){sc.remove(corrMoon);corrMoon.material.dispose();corrMoon=null}}
 function corrFrame(dt){
 if(!corrSnap&&!corrPts)return;
 corrK+=(corrTgt-corrK)*Math.min(1,dt*1.8);if(corrTgt===0&&corrK<.01)corrK=0;
@@ -343,12 +343,13 @@ el.querySelector("small").textContent=(ld?"Level ":"Stage ")+(n+1)+(ld&&LV.cycle
 try{snd("phase",.8)}catch(e){}
 el.classList.add("on");
 const live=()=>mode==="waves"&&(state==="play"||menuOpen);
-setTimeout(()=>{
+const go=()=>{
+if(mode==="waves"&&state==="pause"){setTimeout(go,300);return}
 if(!live()){stageBusy=false;el.classList.remove("on");return}
 try{corrReset()}catch(e){}clearEnts();VM.swap();
 buildWorld(key,(rnd()*2147483647)|0,{waves:true,level:ld?ld.id:null});
 const s=freeSpot(0,H-8);placePlayer(s,Math.atan2(s.x,s.z),0);P.prot=4;
-setTimeout(()=>{el.classList.remove("on");stageBusy=false;if(live())wn=.6;},1200)},480)}
+setTimeout(()=>{el.classList.remove("on");stageBusy=false;if(mode==="waves"&&(live()||state==="pause"))wn=.6;},1200)};setTimeout(go,480)}
 function spawnMon(opt){
 opt=opt||{};
 const k=opt.minion?(opt.k|0):(opt.k!=null?opt.k:LV.on()?LV.pickType(pickMonType):pickMonType()),champ=!!opt.champion,lvm=LV.cur();
@@ -608,6 +609,7 @@ ov.innerHTML=`<div class="puw"><div class="eyebrow">Level ${xpLevel} · Power-up
 document.body.appendChild(ov);
 ov.addEventListener("click",ev=>{const b=ev.target.closest(".puc");if(!b)return;const q=PUD.find(x=>x.id===b.dataset.p);q.f();PU.got[q.id]=(PU.got[q.id]||0)+1;ov.remove();menuOpen=false;document.body.classList.add("playing");snd("pick");flash(q.n,1200);Aim.request()})}
 function offerCorruptedPU(left,label){
+if(mode==="waves"&&state==="pause"){const w=wave;setTimeout(()=>{if(wave===w)offerCorruptedPU(left,label)},400);return}
 if(state!=="play"||mode!=="waves")return;menuOpen=true;Aim.release();document.body.classList.remove("playing");grenAim=false;clearGrenPrev();freezeCombat();
 const taken=new Set();const show=()=>{const pool=PUD.filter(q=>!taken.has(q.id)).sort(()=>rnd()-.5).slice(0,Math.min(6,PUD.length));
 const old=document.getElementById("puov");if(old)old.remove();

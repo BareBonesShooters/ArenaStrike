@@ -523,7 +523,7 @@ if(S.gv!==2){if(S.gfx!=null)S.gfx=(S.gfx|0)+1;if(+S.ac)S.ac=(S.ac|0)+1;S.gv=2}
 S.ac=clamp(+S.ac||0,0,4);S.auto=S.auto==null||S.auto?1:0;
 S.gfx=clamp(S.gfx==null?HW.tier:S.gfx|0,0,4);
 // Auto starts from what this machine can do, and never above a level it already had to step down from in an earlier session
-if(S.auto)S.gfx=Math.max(HW.tier,S.ac);
+if(S.auto){S.ac=Math.max(HW.tier,S.ac-1);S.gfx=S.ac} // a slow patch last time only holds Auto down one level less each launch, and play can win levels back
 if(!S.mp||typeof S.mp!=="object")S.mp={};
 if(!PM_MODES[S.mp.mode])S.mp.mode="ffa";S.mp.bots=clamp(S.mp.bots==null?5:S.mp.bots|0,0,9);if(!DF[S.mp.diff])S.mp.diff="medium";
 if(!S.cs||typeof S.cs!=="object")S.cs={};for(const k of["spent","opened","dups","ref","dry","best"])S.cs[k]=+S.cs[k]||0;if(!Array.isArray(S.cs.r))S.cs.r=[0,0,0,0,0,0];S.cs.r=S.cs.r.map(x=>+x||0);while(S.cs.r.length<6)S.cs.r.push(0);

@@ -27,13 +27,13 @@ return{set(v){v=!!v&&!SOFT;if(v===on)return;on=v;if(v&&!cv){cv=document.createEl
 if(cv)cv.style.display=v?"":"none"},draw(){if(!on||!x)return;size();try{x.drawImage(rd.domElement,0,0,w,h)}catch(e){}}}})();
 // post: effect chain level in js/02b-post.js (3 bloom+AO+SMAA, 2 bloom+FXAA, 1 light bloom+FXAA, 0 none); rim: character rim light strength
 const QL=[
-{n:"Ultra High",pr:2,sh:4096,cloud:2,props:1.2,fx:1.2,tex:2048,dust:1.3,lite:0,tm:1.12,mz:1,vg:0,post:3,rim:.5},
-{n:"High",pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:1536,dust:1,lite:0,tm:1.12,mz:1,vg:0,post:2,rim:.45},
-{n:"Medium",pr:1,sh:1024,cloud:2,props:.8,fx:.8,tex:1024,dust:.7,lite:0,tm:1.06,mz:0,vg:0,post:1,rim:.4},
-{n:"Low",pr:1,sh:0,cloud:1,props:.6,fx:.6,tex:1024,dust:.5,lite:1,tm:0,mz:0,vg:0,post:0,rim:.35},
-{n:"Potato",pr:.7,sh:0,cloud:0,props:.4,fx:.4,tex:512,dust:.25,lite:1,tm:0,mz:0,vg:0,post:0,rim:.3}];
+{n:"Ultra High",pr:2,sh:4096,cloud:2,props:1.2,fx:1.2,tex:2048,dust:1.3,lite:0,tm:1.12,mz:1,vg:0,post:3,rim:.5,ppl:2,shR:42},
+{n:"High",pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:1536,dust:1,lite:0,tm:1.12,mz:1,vg:0,post:2,rim:.45,ppl:1,shR:40},
+{n:"Medium",pr:1,sh:1024,cloud:2,props:.8,fx:.8,tex:1024,dust:.7,lite:0,tm:1.06,mz:0,vg:0,post:1,rim:.4,ppl:1,shR:40},
+{n:"Low",pr:1,sh:0,cloud:1,props:.6,fx:.6,tex:1024,dust:.5,lite:1,tm:0,mz:0,vg:0,post:0,rim:.35,ppl:0,shR:40},
+{n:"Potato",pr:.7,sh:0,cloud:0,props:.4,fx:.4,tex:512,dust:.25,lite:1,tm:0,mz:0,vg:0,post:0,rim:.3,ppl:0,shR:40}];
 const Q=(()=>{
-let acc=0,n=0,skip=90,rs=1,cap=1,hold=0;
+let acc=0,n=0,skip=90,rs=1,cap=1,hold=0,good=0,upAt=-1e9,noUp=false,secs=0;
 function fit(){rd.setPixelRatio(Math.min(devicePixelRatio||1,QL[S.gfx].pr)*rs);rd.setSize(innerWidth,innerHeight);Post.size()}
 function set(l,keep){
 l=clamp(l|0,0,QL.length-1);S.gfx=l;const q=QL[l];
@@ -53,17 +53,23 @@ const th=THEMES[WORLD.theme];if(th)Sky.u.cloud.value=q.cloud>0?th.cloud:0;Sky.u.
 if(WORLD.dust)WORLD.dust.visible=q.dust>0;
 acc=n=0;skip=90}
 function pick(v){if(v==="auto"){S.auto=1;S.ac=0;set(HW.tier)}else{S.auto=0;set(+v)}sv()}
+// every resize rebuilds the effect chain, so the next frames are skipped instead of being counted as slowness (that used to cascade into needless drops)
+function refit(){fit();skip=45}
 function tick(ms){
 if(skip>0){skip--;return}
 if(ms>250||!S.auto)return;acc+=ms;n++;
 if(acc<1000&&n<90)return;
-const avg=acc/n;acc=n=0;
+const avg=acc/n;acc=n=0;secs++;
 if(avg>26){
-hold=3;cap=Math.min(cap,rs-.04);
-if(rs>.55){rs=Math.max(.5,rs-.12);fit()}
-else if(S.gfx<QL.length-1){set(S.gfx+1,true);S.ac=S.gfx;rs=.8;cap=.8;fit();sv();toast("Graphics lowered to "+QL[S.gfx].n+" for smoother play")}}
+good=0;hold=3;cap=Math.min(cap,rs-.04);
+// dropping again soon after a step up means that level is too much for this device: stay below it for the rest of the session
+if(secs-upAt<25)noUp=true;
+if(rs>.7){rs=Math.max(.7,rs-.1);refit()}
+else if(S.gfx<QL.length-1){set(S.gfx+1,true);S.ac=S.gfx;rs=.9;cap=1;refit();sv();toast("Graphics lowered to "+QL[S.gfx].n+" for smoother play")}}
 else if(hold>0)hold--;
-else if(avg<19.5&&rs<cap){rs=Math.min(cap,rs+.06);fit()}}
+else if(avg<19.5&&rs<cap){rs=Math.min(cap,rs+.05);refit()}
+// smooth for 20 seconds at full resolution: win back a level that an earlier slow patch took away, up to what this device was picked for
+else if(avg<18.5&&rs>=1&&!noUp&&S.gfx>HW.tier&&++good>=20){good=0;upAt=secs;set(S.gfx-1,true);S.ac=Math.max(HW.tier,S.gfx);rs=cap=1;refit();sv();toast("Graphics raised to "+QL[S.gfx].n)}}
 return{set,pick,tick,get scale(){return rs},reset(){acc=n=0;skip=90;cap=1}}})();
 rd.shadowMap.autoUpdate=false;
 Q.set(S.gfx==null?1:S.gfx);
@@ -89,7 +95,8 @@ if(cam.fov!==58){cam.fov=58;cam.updateProjectionMatrix()}
 cam.position.set(Math.sin(a)*34,18,Math.cos(a)*34);cam.lookAt(-3,2,-5)}
 worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
-rd.shadowMap.needsUpdate=!(fr&1)||S.gfx>2;
+Light.frame(dt);
+rd.shadowMap.needsUpdate=S.gfx<2||!(fr&1);
 const vmOn=(playing||paused||(state==="title"&&Title.fp))&&!(CustomBattle.active&&!CustomBattle.joined);
 Post.frame();
 if(Post.on){if(playing&&!(CustomBattle.active&&!CustomBattle.joined))Scope.lens(cg());Post.render(vmOn)}

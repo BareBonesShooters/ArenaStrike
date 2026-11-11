@@ -216,9 +216,9 @@ sc.background=new T.Color(th.fog[0]);sc.fog=new T.Fog(th.fog[0],th.fog[1],th.fog
 hemi.color.setHex(th.hemi[0]);hemi.groundColor.setHex(th.hemi[1]);hemi.intensity=th.hemi[2];
 sun.color.setHex(key==="neon"?0x8aa8ff:th.sun.c);sun.intensity=key==="neon"?.5:th.sun.i;sun.position.set(th.sun.d[0]*100,Math.max(30,th.sun.d[1]*100),th.sun.d[2]*100);
 if(key==="neon")sun.position.set(-40,70,-50);
-sun.target.position.set(0,0,0);Sky.set(th);
+sun.target.position.set(0,0,0);Sky.set(th);Light.world();
 // ground
-const gt=paintGround(key,th,crng),gmat=new T.MeshLambertMaterial({map:gt});
+const gt=paintGround(key,th,crng),gmat=LOD.ppl?new T.MeshPhongMaterial({map:gt,specular:0,shininess:1}):new T.MeshLambertMaterial({map:gt}); // per-pixel lighting so lamp pools, muzzle flash and the Blackout flashlight show on the ground
 const fxOn=LOD.cloud>0;if(fxOn)fogFx(gmat,LOD.tex>=1024&&!ruin&&key!=="neon"?"gd":"g");
 // the roads are in the ground texture: sample them so houses, lamps and cars can line up with them instead of landing at random
 RDP=[];GROADS.forEach((r,ri)=>{const f=v=>v*2*H-H;for(let i=0;i<=60;i++){const t=i/60,u=1-t,X=f(u*u*r[0]+2*u*t*r[2]+t*t*r[4]),Z=f(u*u*r[1]+2*u*t*r[3]+t*t*r[5]),dx=2*u*(r[2]-r[0])+2*t*(r[4]-r[2]),dz=2*u*(r[3]-r[1])+2*t*(r[5]-r[3]),dl=Math.hypot(dx,dz)||1;
@@ -407,7 +407,7 @@ if(!WORLD.dust&&!opt.parkour){const M=th.motes||{meadow:[0xfff0a8,.13,.75,10,.06
 if(M){mkMotes(grp,Math.max(10,Math.round(220*LOD.dust)),M[0],M[1],M[2],M[3]);WORLD.dv={vy:M[4],top:M[3]}}}
 if(opt.parkour)WORLD.course=PK.build({blk,reg,P,glow,rng,th,key,lerpC,grp,diff:opt.parkour,map:opt.pkmap});
 // finish geometry
-const smat=new T.MeshLambertMaterial({vertexColors:true});if(fxOn)fogFx(smat,"s");
+const smat=LOD.ppl>1?new T.MeshPhongMaterial({vertexColors:true,specular:0,shininess:1}):new T.MeshLambertMaterial({vertexColors:true});if(fxOn)fogFx(smat,"s");
 const sm=solid.mesh(smat);sm.castShadow=true;sm.receiveShadow=true;grp.add(sm);
 if(glow.p.length){const gmesh=glow.mesh(WORLD.glowM=new T.MeshBasicMaterial({vertexColors:true}));grp.add(gmesh)}
 sc.add(grp);WORLD.group=grp;WORLD.theme=key;WORLD.seed=seed;

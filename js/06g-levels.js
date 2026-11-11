@@ -57,7 +57,8 @@ if(!on())return null;
 const s=slot(),i=idx(),d=cur();
 const out={slot:s,mod:"",champion:s===3,boss:s===5,corrupt:!!(d&&d.corrupt)};
 if(s!==5){mod=modFor(i,s);out.mod=mod}
-if(mod==="blackout")ov("radial-gradient(circle at 50% 50%,rgba(0,0,10,0) 16%,rgba(0,0,12,.82) 48%,rgba(0,0,8,.97) 80%)");
+// Blackout: the lights fade out (js/02c-light.js), your flashlight comes on, and the screen edges fall into darkness
+if(mod==="blackout"){try{Light.blackout(1)}catch(e){}ov("radial-gradient(ellipse 60% 55% at 50% 52%,rgba(0,0,10,0) 30%,rgba(0,0,12,.55) 70%,rgba(0,0,8,.9) 100%)")}
 if(mod==="heatwave")ov("linear-gradient(0deg,rgba(255,140,40,.22),rgba(255,200,120,.05) 50%,rgba(255,120,30,.18))","lvheat");
 if(mod==="goldrush")ov("radial-gradient(ellipse at center,rgba(0,0,0,0) 50%,rgba(255,200,40,.22) 100%)");
 if(mod==="frenzy")ov("radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(200,0,40,.25) 100%)");
@@ -65,7 +66,9 @@ surgeT=2;return out}
 let ovEl=null;
 function ov(bg,cls){clearOv();ovEl=document.createElement("div");ovEl.className="lvov"+(cls?" "+cls:"");ovEl.style.cssText="position:fixed;inset:0;z-index:7;pointer-events:none;background:"+bg;document.body.appendChild(ovEl)}
 function clearOv(){if(ovEl){ovEl.remove();ovEl=null}}
-function endWave(){mod="";clearOv()}
+function endWave(){mod="";clearOv();try{Light.blackout(0)}catch(e){}}
+// the match ended or the map is being rebuilt: drop the modifier, its overlay and its lighting at once
+function reset(){mod="";clearOv();try{Light.blackout(-1)}catch(e){}}
 // ---- monsters
 function pickType(fallback){const d=cur();if(!d||!d.mon||!d.mon.weights)return fallback();
 const n=3+Math.max(0,Math.floor((wave-1)/10)),pool=d.mon.weights.filter(w=>w[1]>0&&(w[0]<3||w[0]<n+1||wave>=6));let tot=0;pool.forEach(w=>tot+=w[1]);let x=rnd()*tot;for(const [k,w] of pool){x-=w;if(x<=0)return k}return 0}
@@ -79,7 +82,8 @@ function skin(g,k,o){const d=cur();if(!d||!d.skin)return;try{d.skin(g,k,o||{})}c
 if(M().scale&&!(o&&o.boss))g.scale.multiplyScalar(M().scale)}
 // after spawnMon builds e
 function onSpawn(e){const d=cur();if(!d)return;e.lvTrait=d.mon&&d.mon.trait||"";
-if(mod==="blackout"&&e.g){const eb=new T.MeshBasicMaterial({color:0xfff26a,fog:false}),hd=e.g.userData.head;if(hd)for(const x of[-.14,.14]){const m=new T.Mesh(new T.SphereGeometry(.06,6,4),eb);m.position.set(x,.06,.3);m.raycast=()=>{};hd.add(m)}}}
+if(mod==="blackout"&&e.g){const eb=new T.MeshBasicMaterial({color:0xfff26a,fog:false}),hd=e.g.userData.head;if(hd)for(const x of[-.14,.14]){const m=new T.Mesh(new T.SphereGeometry(.075,8,6),eb);m.position.set(x,.06,.3);m.raycast=()=>{};hd.add(m);
+const h=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:0xffd84a,transparent:true,opacity:.75,blending:T.AdditiveBlending,depthWrite:false,fog:false}));h.scale.setScalar(.55);h.raycast=()=>{};m.add(h)}}}
 // player damage dealt to a monster: shield trait, glass cannon
 function toMon(e,d,head){if(!on())return d;let m=M().toMon||1;if(e.lvTrait==="shield"&&!head&&!e.boss)m*=.7;return d*m}
 // monster or boss damage to the player
@@ -125,6 +129,6 @@ shake:ms=>{document.body.classList.add("shk");setTimeout(()=>document.body.class
 snd:(n,v)=>{try{snd(n,v==null?.8:v)}catch(err){}},flash:t=>flash(t,1400),
 player:()=>({x:P.x,y:P.y,z:P.z,vx:P.vx||0,vz:P.vz||0}),H:()=>H,rnd:()=>rnd(),clamp:(v,a,b)=>clamp(v,a,b),chill:s=>{P.lvChill=Math.max(P.lvChill||0,s||1.5)},poison:s=>{P.lvPoison=Math.max(P.lvPoison||0,s||3);P.lvPT=.5}};
 function bossSpecial(e){const b=e.lvDef;if(b&&b.special)try{b.special(e,BA)}catch(err){console.warn("boss special",err)}}
-return{on,idx,idxOf,cycle,cur,defAt,idAt,key,slot,reg,ramp,dmgRamp,spdCap,countCap,diffMul,coinMul,bpMul,xpMul,MODS,modFor,startWave,endWave,get mod(){return mod},
+return{on,idx,idxOf,cycle,cur,defAt,idAt,key,slot,reg,ramp,dmgRamp,spdCap,countCap,diffMul,coinMul,bpMul,xpMul,MODS,modFor,startWave,endWave,reset,get mod(){return mod},
 pickType,monName,hpMul,spdMul,dmgMul,countMul,skin,onSpawn,toMon,toYou,onMelee,moveMul,onDeath,frame,bossDef,bossName,bossPick,WIND,bossSpecial,BA}})();
 if(typeof module!=="undefined")module.exports={LV,LV_REG,LV_ORDER,LV_DIFF};
