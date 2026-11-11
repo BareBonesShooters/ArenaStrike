@@ -181,7 +181,7 @@ if(w===true){myS++;tf("kill")}if(w===false)opS++;
 flash(t||(w===true?"Round won":w===false?"Round lost":"Draw"),1500);
 if(myS>=GOAL||opS>=GOAL)return endGame(myS>=GOAL);rL=1.6}
 function endGame(win){
-if(state==="over")return;state="over";try{LV.reset()}catch(e){}menuOpen=false;Aim.release();document.body.classList.remove("playing");clearKeys();
+if(state==="over")return;state="over";try{LV.reset()}catch(e){}{const o=document.getElementById("puov");if(o)o.remove()}menuOpen=false;Aim.release();document.body.classList.remove("playing");clearKeys();
 let b=0,sub="";const me=boardOf(S.name);me.k+=kills;if(win)me.w++;
 const st=[];qAdd("play",1);qAdd("m_"+mode,1);if(win)qAdd("w_"+mode,1);if(PT.on){qAdd("party",1);if(win)qAdd("pwin",1)}
 if(mode==="duel"||mode==="gg"){const bo=boardOf(DF[diff].n);bo.k+=opS;if(!win)bo.w++;

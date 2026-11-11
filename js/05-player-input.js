@@ -266,7 +266,7 @@ if(e.code==="KeyI"||e.code==="Escape"){e.preventDefault();inspClose();return}
 if(e.repeat)return;
 if(e.code==="KeyZ"||e.code==="BracketLeft")inspSwap(-1);else if(e.code==="KeyX"||e.code==="BracketRight")inspSwap(1);else if(e.code==="Space"){e.preventDefault();inspReplay()}
 return}
-K[e.code]=1;if(!isGame()){if(state==="pause"&&!e.repeat&&e.code==="KeyM"){BigMap.toggle();return}if(state==="pause"&&!e.repeat&&e.code==="Escape"&&BigMap.on){BigMap.close();return}if(e.code==="Escape"&&!e.repeat&&(state==="pause"||state==="play"&&menuOpen))resume();return}
+K[e.code]=1;if(!isGame()){if(state==="pause"&&!e.repeat&&e.code==="KeyM"){BigMap.toggle();return}if(state==="pause"&&!e.repeat&&e.code==="Escape"&&BigMap.on){BigMap.close();return}if(e.code==="Escape"&&!e.repeat&&state==="play"&&menuOpen&&$("puov")){pauseGame();return}if(e.code==="Escape"&&!e.repeat&&(state==="pause"||state==="play"&&menuOpen))resume();return}
 if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab","AltLeft","AltRight","ControlLeft","ControlRight"].includes(e.code))e.preventDefault();
 if(e.code==="Tab"){scoreOpen=true;return}
 if(e.repeat)return;
@@ -303,20 +303,22 @@ function disarmLeave(){clearTimeout(leaveT);const b=$("pleave");if(!b)return;b.c
 function leaveMatch(){const b=$("pleave");if(!b.classList.contains("arm")){b.classList.add("arm");b.firstElementChild.textContent="Press again to leave";leaveT=setTimeout(disarmLeave,3000);return}disarmLeave();quit()}
 function pauseMeta(){let i=["Arena"];try{i=BigMap.info()}catch(e){}
 $("pmeta").innerHTML=i.map(t=>`<span class="pill">${esc(t)}</span>`).join("");$("prestart").classList.toggle("hid",mode!=="parkour")}
+// the power-up picker can be paused too: the pause menu opens over it and Resume goes back to the picker
 function pauseGame(){
-if(state!=="play"||menuOpen)return;if(CustomBattle.active){const panel=$("custom-battle-ui");if(panel)panel.hidden=true}clearKeys();Aim.release();syncSliders();BigMap.close();try{pauseQuests()}catch(e){}
+if(state!=="play"||menuOpen&&!$("puov"))return;if(CustomBattle.active){const panel=$("custom-battle-ui");if(panel)panel.hidden=true}clearKeys();Aim.release();syncSliders();BigMap.close();try{pauseQuests()}catch(e){}
 state="pause";menuOpen=false;disarmLeave();pauseMeta();
 document.body.classList.remove("playing");show("ps");
 const q=$("pq");q.classList.add("fresh");setTimeout(()=>q.classList.remove("fresh"),900)}
 function resume(){
 if(CustomBattle.active)return CustomBattle.resume();
 if(state!=="pause"&&state!=="play")return;
-BigMap.close();state="play";menuOpen=false;show("");document.body.classList.add("playing");Aim.reset();Aim.request();
+BigMap.close();state="play";if($("puov")){menuOpen=true;show("");return}menuOpen=false;show("");document.body.classList.add("playing");Aim.reset();Aim.request();
 // 3s freeze after unpause — player and AI locked
 P.fz=Math.max(P.fz,3);lastCount=0;P.vx=P.vz=0;clearKeys();flash("3",500);snd("tick")}
 function quit(){
 try{if(typeof Net!=="undefined"&&Net.ready)Net.exitMatch()}catch(e){}
 try{Party.leave();corrReset()}catch(e){}
+{const o=$("puov");if(o)o.remove()}
 try{if(typeof PK!=="undefined"&&PK.st){if(PK.st.ghost){sc.remove(PK.st.ghost);disposeGeo(PK.st.ghost);PK.st.ghost=null}} }catch(e){}
 try{clearEnts()}catch(e){}
 BigMap.close();Aim.release();menuOpen=false;state="lobby";mode="";document.body.classList.remove("playing","edge");

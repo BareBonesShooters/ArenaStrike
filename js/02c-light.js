@@ -18,15 +18,16 @@ hemi.color.copy(B.hc).lerp(TMP.setHex(DARK.hc),k);hemi.groundColor.copy(B.hg).le
 sun.color.copy(B.sc).lerp(TMP.setHex(DARK.sun),k);sun.intensity=B.si*(1-.92*k)}
 function restore(){if(snap){apply(0);snap=null}K=TG=0;flashL.intensity=0}
 // keeps the sun's shadow box centred a little ahead of the camera, so the whole shadow map is spent where you look (about twice as sharp as one box over the arena)
-function shadows(){if(!sun.castShadow)return;const R=LOD.shR||62,cm=sun.shadow.camera;
+// the title and lobby cameras look out over the whole map, so there the box covers the whole arena instead
+function shadows(){if(!sun.castShadow)return;const near=state==="play"||state==="pause",R=near?LOD.shR||62:62,cm=sun.shadow.camera;
 if(cm.right!==R){cm.left=cm.bottom=-R;cm.right=cm.top=R;cm.updateProjectionMatrix()}
 dir.copy(sun.position).sub(sun.target.position);if(dir.lengthSq()<1e-6)return;dir.normalize();
 cam.getWorldDirection(fw);fw.y=0;if(fw.lengthSq()>1e-6)fw.normalize();
-const s=4*R/sun.shadow.mapSize.x;let x=cam.position.x+fw.x*R*.35,z=cam.position.z+fw.z*R*.35;x=Math.round(x/s)*s;z=Math.round(z/s)*s;
+const s=4*R/sun.shadow.mapSize.x;let x=near?cam.position.x+fw.x*R*.35:0,z=near?cam.position.z+fw.z*R*.35:0;x=Math.round(x/s)*s;z=Math.round(z/s)*s;
 sun.target.position.set(x,0,z);sun.position.copy(sun.target.position).addScaledVector(dir,100);sun.target.updateMatrixWorld()}
 return{
 // after buildWorld sets the theme lights: tiers with shadows get a stronger sun and a little less fill, so shadows read clearly
-world(){snap=null;K=TG=0;flashL.intensity=0;if(LOD.sh){sun.intensity*=1.25;hemi.intensity*=.8}},
+world(){snap=null;K=TG=0;flashL.intensity=0;if(LOD.sh){sun.intensity*=1.15;hemi.intensity*=.82}},
 // 1 fade to dark, 0 fade back, -1 snap back at once (match ended or the map is about to be rebuilt)
 blackout(v){if(v<0)return restore();if(v>0&&!snap&&sc.fog)snap=take();TG=v>0?1:0},
 get dark(){return K},

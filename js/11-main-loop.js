@@ -27,11 +27,11 @@ return{set(v){v=!!v&&!SOFT;if(v===on)return;on=v;if(v&&!cv){cv=document.createEl
 if(cv)cv.style.display=v?"":"none"},draw(){if(!on||!x)return;size();try{x.drawImage(rd.domElement,0,0,w,h)}catch(e){}}}})();
 // post: effect chain level in js/02b-post.js (3 bloom+AO+SMAA, 2 bloom+FXAA, 1 light bloom+FXAA, 0 none); rim: character rim light strength
 const QL=[
-{n:"Ultra High",pr:2,sh:4096,cloud:2,props:1.2,fx:1.2,tex:2048,dust:1.3,lite:0,tm:1.12,mz:1,vg:0,post:3,rim:.5,ppl:2,shR:42},
-{n:"High",pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:1536,dust:1,lite:0,tm:1.12,mz:1,vg:0,post:2,rim:.45,ppl:1,shR:40},
-{n:"Medium",pr:1,sh:1024,cloud:2,props:.8,fx:.8,tex:1024,dust:.7,lite:0,tm:1.06,mz:0,vg:0,post:1,rim:.4,ppl:1,shR:40},
-{n:"Low",pr:1,sh:0,cloud:1,props:.6,fx:.6,tex:1024,dust:.5,lite:1,tm:0,mz:0,vg:0,post:0,rim:.35,ppl:0,shR:40},
-{n:"Potato",pr:.7,sh:0,cloud:0,props:.4,fx:.4,tex:512,dust:.25,lite:1,tm:0,mz:0,vg:0,post:0,rim:.3,ppl:0,shR:40}];
+{n:"Ultra High",pr:2,sh:4096,cloud:2,props:1.2,fx:1.2,tex:2048,dust:1.3,lite:0,tm:1.12,mz:1,vg:0,post:3,rim:.5,shR:42},
+{n:"High",pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:1536,dust:1,lite:0,tm:1.12,mz:1,vg:0,post:2,rim:.45,shR:40},
+{n:"Medium",pr:1,sh:1024,cloud:2,props:.8,fx:.8,tex:1024,dust:.7,lite:0,tm:1.06,mz:0,vg:0,post:1,rim:.4,shR:40},
+{n:"Low",pr:1,sh:0,cloud:1,props:.6,fx:.6,tex:1024,dust:.5,lite:1,tm:0,mz:0,vg:0,post:0,rim:.35,shR:40},
+{n:"Potato",pr:.7,sh:0,cloud:0,props:.4,fx:.4,tex:512,dust:.25,lite:1,tm:0,mz:0,vg:0,post:0,rim:.3,shR:40}];
 const Q=(()=>{
 let acc=0,n=0,skip=90,rs=1,cap=1,hold=0,good=0,upAt=-1e9,noUp=false,secs=0;
 function fit(){rd.setPixelRatio(Math.min(devicePixelRatio||1,QL[S.gfx].pr)*rs);rd.setSize(innerWidth,innerHeight);Post.size()}

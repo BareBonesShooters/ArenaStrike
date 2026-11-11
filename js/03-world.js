@@ -218,13 +218,13 @@ sun.color.setHex(key==="neon"?0x8aa8ff:th.sun.c);sun.intensity=key==="neon"?.5:t
 if(key==="neon")sun.position.set(-40,70,-50);
 sun.target.position.set(0,0,0);Sky.set(th);Light.world();
 // ground
-const gt=paintGround(key,th,crng),gmat=LOD.ppl?new T.MeshPhongMaterial({map:gt,specular:0,shininess:1}):new T.MeshLambertMaterial({map:gt}); // per-pixel lighting so lamp pools, muzzle flash and the Blackout flashlight show on the ground
+const gt=paintGround(key,th,crng),gmat=new T.MeshLambertMaterial({map:gt});
 const fxOn=LOD.cloud>0;if(fxOn)fogFx(gmat,LOD.tex>=1024&&!ruin&&key!=="neon"?"gd":"g");
 // the roads are in the ground texture: sample them so houses, lamps and cars can line up with them instead of landing at random
 RDP=[];GROADS.forEach((r,ri)=>{const f=v=>v*2*H-H;for(let i=0;i<=60;i++){const t=i/60,u=1-t,X=f(u*u*r[0]+2*u*t*r[2]+t*t*r[4]),Z=f(u*u*r[1]+2*u*t*r[3]+t*t*r[5]),dx=2*u*(r[2]-r[0])+2*t*(r[4]-r[2]),dz=2*u*(r[3]-r[1])+2*t*(r[5]-r[3]),dl=Math.hypot(dx,dz)||1;
 if(Math.hypot(X,Z)>12&&Math.abs(X)<H-3&&Math.abs(Z)<H-3)RDP.push({x:X,z:Z,tx:dx/dl,tz:dz/dl,ri})}});
 const gm=new T.Mesh(new T.PlaneGeometry(opt.custom?240:H*2,opt.custom?240:H*2),gmat);gm.rotation.x=-PI/2;gm.receiveShadow=true;grp.add(gm);
-const far=new T.Mesh(new T.CircleGeometry(420,32),new T.MeshLambertMaterial({color:new T.Color(th.gr.base).multiplyScalar(.8)}));far.rotation.x=-PI/2;far.position.y=-.05;grp.add(far);
+const far=new T.Mesh(new T.CircleGeometry(420,32),new T.MeshLambertMaterial({color:new T.Color(th.gr.base).multiplyScalar(.8),polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));/* the land outside the walls sits only 5 cm under the arena floor; the offset keeps it behind the floor in depth, or the two fight and draw stripes from a distance */far.rotation.x=-PI/2;far.position.y=-.05;grp.add(far);
 // perimeter (skipped entirely for parkour so platforms aren't blocked by arena walls)
 if(!opt.parkour&&!opt.custom){
 const wh=ruin?7:3.6,wc=th.wall;
@@ -255,7 +255,9 @@ const lx=w>=d,ry2=lx?ry+PI/2:ry,span=(lx?d:w)+.9,len=(lx?w:d)+.9;
 const bands=[[1,0],[.75,.25],[.5,.5],[.25,.75],[.1,.92]];
 for(const [f,r] of bands){const ac=Math.min(lx?d:w,span*f),tp=h+.2+rh*r,lw=lx?w:ac,ld=lx?ac:d;reg(x,z,rot&1?ld:lw,rot&1?lw:ld,tp)}}
 P("gab",x,h+.15+rh/2,z,span,rh,len,rc,ry2,.78);P("box",x,h+.15+rh+.04,z,.2,.12,len+.08,th.trim,ry2,.9);
-p=L(w*.25,-d*.2);P("box",p[0],h+.3+(rh+.9)/2,p[1],.62,rh+.9,.62,0x8a4b3a,ry,.7);reg(p[0],p[1],.7,.7,h+rh+1.2,1)}
+p=L(w*.25,-d*.2);P("box",p[0],h+.3+(rh+.9)/2,p[1],.62,rh+.9,.62,0x8a4b3a,ry,.7);P("box",p[0],h+1.24+rh,p[1],.78,.12,.78,0x5c3528,ry,.85);reg(p[0],p[1],.7,.7,h+rh+1.2,1);
+// shingle rows: thin lips laid along each roof slope so the roof reads as tiles, not a flat prism
+{const ang=Math.atan2(rh,span/2),c2=Math.cos(ry2),s2=Math.sin(ry2),sc2=lerpC(rc,0x000000,.16);for(const sg of[-1,1])for(let k=1;k<=4;k++){const f=k/5,lx2=sg*(span/2)*(1-f)+sg*Math.sin(ang)*.05,ly=h+.15+rh*f+Math.cos(ang)*.05;P("box",x+lx2*c2,ly,z-lx2*s2,.34,.06,len+.04,k&1?sc2:rc,ry2,.85,null,0,-sg*ang)}}}
 else{ // flat deck: its top is exactly the collision surface, so a player up there stands on the roof; a crate staircase on one side makes it reachable
 reg(x,z,sw,sd,h+.32);
 P("box",x,h+.2,z,w+.04,.24,d+.04,rc,ry,.78);
@@ -274,16 +276,35 @@ for(let i=0;i<n;i+=3){const q=L(lxs+sg*.6,z0+dz*(n-1-i)*dep);P("box",q[0],sh*(i+
 done=true;break}}}}
 p=L(0,d/2+.05);P("box",p[0],1,p[1],1.1,2,.12,0x5b3a21,ry,.9);p=L(0,d/2+.5);P("box",p[0],.08,p[1],1.9,.16,.9,th.trim,ry,1);
 const wcol=th.night?th.win:th.win;
+const frm=lerpC(th.trim,0xffffff,.25),sid=lerpC(wc2,0x000000,.12);
 for(const sx of[-1,1]){p=L(sx*w/4,d/2+.05);P("box",p[0],h*.62,p[1],1.05,.95,.1,0x3a3a40,ry,1);P("box",p[0],h*.62,p[1],.88,.78,.14,wcol,ry,1,glow);
-p=L(sx*(w/2+.05),sx*d*.12);P("box",p[0],h*.62,p[1],.1,.95,1.05,0x3a3a40,ry,1);P("box",p[0],h*.62,p[1],.14,.78,.88,wcol,ry,1,glow)}
+p=L(sx*w/4,d/2+.1);P("box",p[0],h*.62,p[1],.06,.8,.06,frm,ry,1);P("box",p[0],h*.62,p[1],.9,.06,.06,frm,ry,1);
+p=L(sx*w/4,d/2+.14);P("box",p[0],h*.62-.53,p[1],1.25,.08,.24,frm,ry,.9);
+// flower box under each front window
+p=L(sx*w/4,d/2+.26);P("box",p[0],h*.62-.68,p[1],1.05,.22,.26,0x6b4a2e,ry,.8);for(let i=0;i<4;i++){const q=L(sx*w/4+(i-1.5)*.26,d/2+.28);P("ico",q[0],h*.62-.5,q[1],.26,.22,.26,[0xe0584a,0xf2c14e,0xe88fb0,0x7cc46a][(i+(sx>0?1:0))&3],i,.9)}
+p=L(sx*(w/2+.05),sx*d*.12);P("box",p[0],h*.62,p[1],.1,.95,1.05,0x3a3a40,ry,1);P("box",p[0],h*.62,p[1],.14,.78,.88,wcol,ry,1,glow);
+p=L(sx*(w/2+.12),sx*d*.12);P("box",p[0],h*.62-.53,p[1],.24,.08,1.25,frm,ry,.9);p=L(sx*(w/2+.1),sx*d*.12);P("box",p[0],h*.62,p[1],.06,.8,.06,frm,ry,1);P("box",p[0],h*.62,p[1],.06,.06,.9,frm,ry,1);
+// back windows
+p=L(sx*w/4,-d/2-.05);P("box",p[0],h*.62,p[1],1.05,.95,.1,0x3a3a40,ry,1);P("box",p[0],h*.62,p[1],.88,.78,.14,wcol,ry,1,glow);p=L(sx*w/4,-d/2-.12);P("box",p[0],h*.62-.53,p[1],1.25,.08,.24,frm,ry,.9);p=L(sx*w/4,-d/2-.1);P("box",p[0],h*.62,p[1],.06,.8,.06,frm,ry,1);P("box",p[0],h*.62,p[1],.9,.06,.06,frm,ry,1);
+// shrubs by the front corners
+p=L(sx*(w/2-.35),d/2+.45);P("ico",p[0],.42,p[1],1.1,.85,.9,lerpC(pick(th.leaf),0x000000,.1),rng()*3,.6);P("ico",p[0]+.25,.6,p[1]+.1,.7,.6,.7,pick(th.leaf),rng()*3,.7)}
+// lap siding: slim horizontal boards on every wall, a shade darker than the paint
+for(let y=.75;y<h-.25;y+=.48){for(const sg of[-1,1]){p=L(0,sg*(d/2+.015));P("box",p[0],y,p[1],w-.1,.05,.03,sid,ry,.9);p=L(sg*(w/2+.015),0);P("box",p[0],y,p[1],.03,.05,d-.1,sid,ry,.9)}}
+p=L(0,d/2+.1);P("box",p[0],2.08,p[1],1.35,.12,.12,frm,ry,.9);for(const sg of[-1,1]){p=L(sg*.62,d/2+.1);P("box",p[0],1.02,p[1],.12,2.04,.12,frm,ry,.9)}p=L(.36,d/2+.14);P("sph",p[0],1,p[1],.09,.09,.09,0xd8b45a,0,1);
 YardArt.house({P,L,w,d,h,th,ry});
 return true};
+// a branch or root: a thin box leaning out from (x,y,z) toward compass angle a, tilted t from upright
+const limb=(x,y,z,a,t,l,th2,col)=>{const sx=Math.sin(t)*Math.cos(a),sz=Math.sin(t)*Math.sin(a);P("box",x+sx*l/2,y+Math.cos(t)*l/2,z+sz*l/2,th2,l,th2,col,-a,.6,null,0,-t)};
 const tree=(x,z)=>{
 if(!free(x,z,1.5))return false;reg(x,z,.7,.7,3.2);const t=rr(.85,1.25),pine=rng()<th.pine,leaf=pick(th.leaf);
 if(th.crystal){const hh=rr(3.5,7);P("cone",x,hh/2,z,1.5,hh,1.5,leaf,rng()*3,.55);P("cone",x,hh/2,z,.7,hh*1.02,.7,0xffffff,0,1,glow);return true}
-P("cyl",x,1.15*t,z,.55,2.3*t,.55,th.trunk,0,.55);
-if(pine){for(let i=0;i<4;i++){const r=(2.6-i*.5)*t;P("cone",x,(2+i*1.05)*t,z,r*1.6,1.7*t,r*1.6,leaf,i,.62);if(th.snow)P("cone",x,(2.28+i*1.05)*t,z,r*1.15,.9*t,r*1.15,0xf4f8ff,i,.95)}}
-else{P("ico",x,3.5*t,z,3.3*t,2.8*t,3.3*t,leaf,rng()*3,.55);P("ico",x+.9*t,3.0*t,z+.4*t,2.2*t,1.9*t,2.2*t,lerpC(leaf,0xffffff,.1),rng()*3,.6);P("ico",x-.7*t,3.1*t,z-.6*t,2.3*t,2*t,2.3*t,leaf,rng()*3,.6)}
+// tapered trunk with root flares
+P("cyl",x,.7*t,z,.62,1.4*t,.62,th.trunk,0,.55);P("cyl",x,2.05*t,z,.44,1.4*t,.44,th.trunk,0,.6);
+const dk=lerpC(th.trunk,0x000000,.15);for(let i=0;i<3;i++){const a=i*2.09+rng();limb(x+Math.cos(a)*.22,.06,z+Math.sin(a)*.22,a,1.25,.6,.2,dk)}
+if(pine){for(let i=0;i<6;i++){const r=(2.5-i*.36)*t,lc=i&1?lerpC(leaf,0x000000,.1):leaf;P("cone",x,(1.9+i*.72)*t,z,r*1.6,1.35*t,r*1.6,lc,i*.7,.62);if(th.snow)P("cone",x,(2.1+i*.72)*t,z,r*1.1,.7*t,r*1.1,0xf4f8ff,i*.7,.95)}P("cone",x,6.2*t,z,.5*t,.9*t,.5*t,leaf,0,.7)}
+else{for(let i=0;i<3;i++){const a=i*2.09+rng()*.8;limb(x,2.2*t,z,a,.75,1.5*t,.17,th.trunk)}
+const lt=lerpC(leaf,0xffffff,.1),dl=lerpC(leaf,0x000000,.12);P("ico",x,3.9*t,z,3*t,2.5*t,3*t,leaf,rng()*3,.55);P("ico",x+.2*t,4.9*t,z-.1*t,1.9*t,1.6*t,1.9*t,lt,rng()*3,.62);
+for(let i=0;i<5;i++){const a=i*1.257+rng()*.5,r=1.35*t;P("ico",x+Math.cos(a)*r,(3.2+rng()*.7)*t,z+Math.sin(a)*r,(1.6+rng()*.5)*t,(1.4+rng()*.4)*t,(1.6+rng()*.5)*t,i&1?dl:lt,rng()*3,.6)}}
 return true};
 const crateAt=(x,z,s,stack)=>{const h=s*stack,col=pick([0x8b6b3d,0x9a7a48,0x7a5c34]);reg(x,z,s,s,h);
 // Keep crossing straps at different depths, and inset their ends from the lids.
@@ -407,7 +428,7 @@ if(!WORLD.dust&&!opt.parkour){const M=th.motes||{meadow:[0xfff0a8,.13,.75,10,.06
 if(M){mkMotes(grp,Math.max(10,Math.round(220*LOD.dust)),M[0],M[1],M[2],M[3]);WORLD.dv={vy:M[4],top:M[3]}}}
 if(opt.parkour)WORLD.course=PK.build({blk,reg,P,glow,rng,th,key,lerpC,grp,diff:opt.parkour,map:opt.pkmap});
 // finish geometry
-const smat=LOD.ppl>1?new T.MeshPhongMaterial({vertexColors:true,specular:0,shininess:1}):new T.MeshLambertMaterial({vertexColors:true});if(fxOn)fogFx(smat,"s");
+const smat=new T.MeshLambertMaterial({vertexColors:true});if(fxOn)fogFx(smat,"s");
 const sm=solid.mesh(smat);sm.castShadow=true;sm.receiveShadow=true;grp.add(sm);
 if(glow.p.length){const gmesh=glow.mesh(WORLD.glowM=new T.MeshBasicMaterial({vertexColors:true}));grp.add(gmesh)}
 sc.add(grp);WORLD.group=grp;WORLD.theme=key;WORLD.seed=seed;

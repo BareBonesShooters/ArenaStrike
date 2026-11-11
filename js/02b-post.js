@@ -11,7 +11,7 @@ const LV=[null,
 {bloom:[.3,.4,1.35],half:false,aa:"fxaa",ao:false,hdr:true},
 {bloom:[.36,.45,1.35],half:false,aa:"smaa",ao:true,hdr:true}];
 const GradeShader={
-uniforms:{tDiffuse:{value:null},uExp:{value:1.04},uSat:{value:1.16},uCon:{value:1.07},uLift:{value:new T.Vector3(.012,.02,.045)},uGain:{value:new T.Vector3(1.03,1.01,.97)},uVig:{value:.28},uK:{value:.78}},
+uniforms:{tDiffuse:{value:null},uExp:{value:1},uSat:{value:1.16},uCon:{value:1.07},uLift:{value:new T.Vector3(.012,.02,.045)},uGain:{value:new T.Vector3(1.03,1.01,.97)},uVig:{value:.28},uK:{value:.78}},
 vertexShader:"varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
 fragmentShader:`uniform sampler2D tDiffuse;uniform float uExp,uSat,uCon,uVig,uK;uniform vec3 uLift,uGain;varying vec2 vUv;
 vec3 shoulder(vec3 x){vec3 o=x-uK;return mix(x,uK+(1.-uK)*(1.-exp(-o/(1.-uK))),step(uK,x));}
@@ -34,7 +34,8 @@ const rt=new T.WebGLRenderTarget(w*pr,h*pr,{minFilter:T.LinearFilter,magFilter:T
 cmp=new T.EffectComposer(rd,rt);cmp.setPixelRatio(pr);cmp.setSize(w,h);
 rp=new T.RenderPass(sc,cam);cmp.addPass(rp);
 // ambient occlusion runs at half resolution with a depth texture (one extra cheap scene draw instead of two full-size ones); the soft result hides the lower resolution
-if(L.ao&&T.SAOPass){ao=new T.SAOPass(sc,cam,true,false,new T.Vector2(w*pr/2,h*pr/2));{const dt=ao.beautyRenderTarget.depthTexture;for(const m of[ao.saoMaterial,ao.vBlurMaterial,ao.hBlurMaterial])m.uniforms.tDepth.value=dt}/* r128 SAOPass hands its shaders `true` instead of the depth texture */const ss=ao.setSize.bind(ao);ao.setSize=(x,y)=>ss(Math.max(1,x/2),Math.max(1,y/2));const p=ao.params;p.saoBias=.5;p.saoIntensity=.012;p.saoScale=6;p.saoKernelRadius=14;p.saoMinResolution=0;p.saoBlur=true;p.saoBlurRadius=4;p.saoBlurStdDev=3;p.saoBlurDepthCutoff=.01;cmp.addPass(ao)}
+if(L.ao&&T.SAOPass){ao=new T.SAOPass(sc,cam,true,false,new T.Vector2(w*pr/2,h*pr/2));{const dt=ao.beautyRenderTarget.depthTexture;dt.type=T.UnsignedIntType;for(const m of[ao.saoMaterial,ao.vBlurMaterial,ao.hBlurMaterial])m.uniforms.tDepth.value=dt}/* r128 SAOPass hands its shaders `true` instead of the depth texture, and its 16-bit depth smears and stripes distant surfaces, so it gets 24-bit */
+{const m=ao.saoMaterial;m.fragmentShader=m.fragmentShader.replace("float ambientOcclusion = getAmbientOcclusion( viewPosition );","float ambientOcclusion = getAmbientOcclusion( viewPosition )*(1.-smoothstep(22.,40.,-centerViewZ));");m.needsUpdate=true}/* contact shading only up close: far away it adds nothing but noise */const ss=ao.setSize.bind(ao);ao.setSize=(x,y)=>ss(Math.max(1,x/2),Math.max(1,y/2));const p=ao.params;p.saoBias=.5;p.saoIntensity=.012;p.saoScale=6;p.saoKernelRadius=14;p.saoMinResolution=0;p.saoBlur=true;p.saoBlurRadius=4;p.saoBlurStdDev=3;p.saoBlurDepthCutoff=.01;cmp.addPass(ao)}
 vmp=new VMPass();cmp.addPass(vmp);
 // bloom needs the HDR buffer: lit ground already reaches 1.0, so only light sources above that (glow parts, sun, muzzle flash, sparks) should glow
 const b=L.bloom,bs=L.half?.5:1;if(b&&hdr){bloom=new T.UnrealBloomPass(new T.Vector2(w*bs,h*bs),b[0],b[1],b[2]);bloom.highPassUniforms.smoothWidth.value=.25;cmp.addPass(bloom)}
@@ -44,10 +45,10 @@ cmp.addPass(aa)}
 function dispose(){hdrOn=false;glowGain();if(!cmp)return;try{for(const p of cmp.passes){if(p.dispose)p.dispose()}cmp.renderTarget1.dispose();cmp.renderTarget2.dispose()}catch(e){}cmp=null;rp=ao=vmp=bloom=grade=aa=null}
 // per-level colour: night and fog levels get less saturation boost so they stay moody, bright ones get more punch
 function look(){if(!grade)return;const th=THEMES[WORLD.theme]||{},n=th.night||0,g=th.grade||{},u=grade.uniforms;
-u.uSat.value=g.sat!=null?g.sat:1.16-n*.1;u.uCon.value=g.con!=null?g.con:1.07;u.uExp.value=g.exp!=null?g.exp:1.04+n*.06;u.uVig.value=g.vig!=null?g.vig:.26+n*.1;
+u.uSat.value=g.sat!=null?g.sat:1.16-n*.1;u.uCon.value=g.con!=null?g.con:1.07;u.uExp.value=g.exp!=null?g.exp:1+n*.05;u.uVig.value=g.vig!=null?g.vig:.26+n*.1;
 if(bloom)bloom.strength=LV[lvl].bloom[0]*(g.bloom!=null?g.bloom:1+n*.35)}
 // glowing scenery is pushed past 1.0 only when the HDR buffer is on, so it blooms there and looks exactly as before everywhere else
-function glowGain(){const m=WORLD.glowM;if(m)m.color.setScalar(hdrOn?1.8:1)}
+function glowGain(){const m=WORLD.glowM;if(m)m.color.setScalar(hdrOn?1.4:1)}
 let lastTheme="";
 return{RIM,
 get on(){return !!cmp},

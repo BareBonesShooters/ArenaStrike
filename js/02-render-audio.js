@@ -2,7 +2,7 @@
 // ---------- renderer / scene ----------
 const sc=new T.Scene(),cam=new T.PerspectiveCamera(75,innerWidth/innerHeight,.05,420);
 // quality budget read by the world builder, sky, particles and the HUD; 09-main.js owns the levels
-const LOD={pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:2048,dust:1,mz:1,ppl:1,shR:40};
+const LOD={pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:2048,dust:1,mz:1,shR:40};
 const rd=new T.WebGLRenderer({antialias:!SOFT&&S.gfx<3&&(devicePixelRatio||1)<1.5,stencil:false,powerPreference:SOFT?"default":"high-performance"});
 rd.setSize(innerWidth,innerHeight);rd.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
 rd.shadowMap.enabled=true;rd.shadowMap.type=T.PCFSoftShadowMap;

@@ -21,18 +21,34 @@ if(t<.5){P("box",x,.55,z,.8,1.1,.22,col,ry,.6,null,0,tl);P("cyl",x,1.1,z,.8,.22,
 else if(t<.8){P("box",x,.7,z,.18,1.4,.18,col,ry,.6,null,0,tl);P("box",x,1.0,z,.7,.16,.18,col,ry,.6,null,0,tl)}
 else{P("box",x,.15,z,.6,.3,.6,col,ry,.6);P("pyr",x,.95,z,.38,1.4,.38,col,ry,.6)}
 P("box",x,.04,z+.0,1.0,.08,1.8,0x3a2a1c,ry,.9);return true};
-// dead tree: bare trunk with crooked branches
-const dead=(x,z)=>{if(!free(x,z,1.2))return false;reg(x,z,.6,.6,4);const h=rr(3.5,5.5),tc=c.th.trunk;P("cyl",x,h/2,z,.45,h,.45,tc,0,.5,null,rr(-.08,.08),rr(-.08,.08));
-for(let i=0;i<4;i++){const a=rng()*6.283,y=h*(.5+i*.12),l=rr(1.2,2.2);P("box",x+Math.cos(a)*l*.45,y+l*.25,z+Math.sin(a)*l*.45,.14,l,.14,tc,-a,.6,null,0,(PI/2-.6)*(Math.cos(a)>0?-1:1))}return true};
-// log cabin with a glowing window and a steep roof
-const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=rot&1?w:d;if(!free(x,z,Math.max(sw,sd)/2+1.2))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
-reg(x,z,sw,sd,h+2.4,1);const lc=pick(wood);
-for(let i=0;i<6;i++){P("box",x,.25+i*.46,z,w,.42,d,i%2?lc:lerpC(lc,0x000000,.15),ry,.6)}
-for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=L(a,b);P("box",q[0],h/2,q[1],.35,h+.2,.35,lerpC(lc,0x000000,.3),ry,.6)}
-P("gab",x,h+1.1,z,d+.9,2.2,w+.9,pick(c.th.roof),ry+PI/2,.75);
-let q=L(0,d/2+.03);P("box",q[0],1,q[1],1,2,.1,0x2a1a10,ry,.9);
-for(const s of[-1,1]){q=L(s*w/3.2,d/2+.04);P("box",q[0],1.5,q[1],.8,.7,.1,c.th.win,ry,1,glow)}
-q=L(w*.3,-d*.15);P("box",q[0],h+2,q[1],.6,1.4,.6,0x4a4440,ry,.7);return true};
+// a limb: thin box leaning out from (x,y,z) toward compass angle a, tilted t from upright; returns its tip
+const limb=(x,y,z,a,t,l,w,col)=>{const sx=Math.sin(t)*Math.cos(a),sz=Math.sin(t)*Math.sin(a),cy=Math.cos(t);P("box",x+sx*l/2,y+cy*l/2,z+sz*l/2,w,l,w,col,-a,.6,null,0,-t);return[x+sx*l,y+cy*l,z+sz*l]};
+// dead tree: a leaning, tapering trunk that forks into crooked boughs, each splitting into twigs, with roots gripping the ground
+const dead=(x,z)=>{if(!free(x,z,1.2))return false;reg(x,z,.6,.6,4);const h=rr(3.6,5.4),tc=c.th.trunk,dk=lerpC(tc,0x000000,.25),la=rng()*6.283,lt=rr(.04,.12);
+for(let i=0;i<4;i++){const a=i*1.571+rng()*.6;limb(x+Math.cos(a)*.18,.05,z+Math.sin(a)*.18,a,1.3,rr(.7,1.1),.18,dk)}
+let tip=limb(x,0,z,la,lt,h*.55,.5,tc);tip=limb(tip[0]-.02,tip[1]-.05,tip[2],la+.5,lt+.08,h*.3,.36,tc);limb(tip[0],tip[1]-.05,tip[2],la-.3,.25,h*.2,.2,tc);
+const nb=4+(rng()*3|0);for(let i=0;i<nb;i++){const f=.45+i/nb*.45,a=rng()*6.283,y=h*f,bx=x+Math.cos(la)*Math.sin(lt)*y,bz=z+Math.sin(la)*Math.sin(lt)*y,l=rr(1.1,2.1)*(1.15-f*.4);
+const e=limb(bx,y,bz,a,rr(.75,1.15),l,.15,tc);limb(e[0],e[1],e[2],a+rr(.4,.8),rr(.3,.6),l*.55,.08,tc);limb(e[0],e[1],e[2],a-rr(.4,.8),rr(.9,1.3),l*.45,.07,tc)}
+if(rng()<.4){const y=h*.6;P("box",x+.3,y-.3,z,.05,.6,.05,0x1a1410,0,1);P("box",x+.3,y-.66,z,.18,.12,.08,0x2a221c,0,.8)}return true};
+// log cabin: stacked logs with ends poking past the corners, stone chimney, porch with a lean-to roof, framed and shuttered windows
+const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=rot&1?w:d;if(!free(x,z,Math.max(sw,sd)/2+1.6))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
+reg(x,z,sw,sd,h+2.4,1);const lc=pick(wood),dark=lerpC(lc,0x000000,.3),end=lerpC(lc,0xffffff,.18),roof=pick(c.th.roof);
+P("box",x,.12,z,w+.3,.24,d+.3,0x4a4a4e,ry,.7);
+for(let i=0;i<6;i++){const y=.42+i*.42,lg=i%2?lc:lerpC(lc,0x000000,.15);P("box",x,y,z,w,.4,d,lg,ry,.6);
+for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=L(a+Math.sign(a)*.12,b+Math.sign(b)*.12);P("cyl",q[0],y,q[1],.4,.4,.4,i%2?end:lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
+P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
+{const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1])for(let k=1;k<=4;k++){const f=k/5,lx=sg*((d+.9)/2)*(1-f)+sg*Math.sin(ang)*.05,ly=h+f*2.2+Math.cos(ang)*.05;P("box",x+lx*c2,ly,z-lx*s2,.4,.06,w+.95,k&1?lerpC(roof,0x000000,.2):roof,r2,.85,null,0,-sg*ang)}}
+let q=L(0,d/2+.03);P("box",q[0],1,q[1],1,2,.1,0x2a1a10,ry,.9);q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dark,ry,.9);
+for(const s of[-1,1]){q=L(s*w/3.2,d/2+.04);P("box",q[0],1.5,q[1],.8,.7,.1,c.th.win,ry,1,glow);q=L(s*w/3.2,d/2+.09);P("box",q[0],1.5,q[1],.06,.7,.05,dark,ry,1);P("box",q[0],1.5,q[1],.8,.06,.05,dark,ry,1);
+q=L(s*w/3.2,d/2+.12);P("box",q[0],1.1,q[1],1,.08,.2,dark,ry,.9);q=L(s*w/3.2+s*.55,d/2+.1);P("box",q[0],1.5,q[1],.28,.82,.06,lerpC(roof,lc,.4),ry,.9,null,0,s*.06)}
+// porch: plank deck, two posts and a lean-to roof over the door
+q=L(0,d/2+.75);P("box",q[0],.14,q[1],2.6,.12,1.4,lerpC(lc,0x000000,.1),ry,.8);
+for(const s of[-1,1]){q=L(s*1.15,d/2+1.3);P("box",q[0],1.2,q[1],.16,2.2,.16,dark,ry,.75);reg(q[0],q[1],.22,.22,2.3,1)}
+q=L(0,d/2+.8);P("box",q[0],2.4,q[1],1.7,.1,2.9,roof,ry+PI/2,.8,null,0,.22);
+// stone chimney up the side wall
+for(let i=0;i<7;i++){q=L(-w/2-.32,-d*.15);P("box",q[0],.3+i*.62,q[1],.7-(i>4?.12:0),.6,.9-(i>4?.12:0),i&1?0x6e6f72:0x5c5e62,ry,.65)}q=L(-w/2-.32,-d*.15);P("box",q[0],4.65,q[1],.8,.12,1,0x4a4a4e,ry,.8);reg(q[0],q[1],rot&1?.9:.7,rot&1?.7:.9,4.7,1);
+// woodpile by the wall
+q=L(w/2+.45,d*.1);for(let i=0;i<3;i++)P("cyl",q[0],.2+i*.32,q[1],.32,1.3,.32,i&1?end:lc,ry+PI/2,.7,null,0,PI/2);return true};
 // jack-o'-lantern with a glowing face
 const pumpkin=(x,z)=>{if(!free(x,z,.6))return false;const s=rr(.5,.8);P("ico",x,s*.4,z,s,s*.8,s,0xd8701c,rng()*3,.6);P("cyl",x,s*.85,z,.08,.2,.08,0x3a5a20,0,1);P("box",x,s*.45,z+s*.42,s*.5,s*.18,.04,0xffd040,0,1,glow);return true};
 // lantern post with a warm halo

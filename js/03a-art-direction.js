@@ -304,8 +304,8 @@ const YardArt = (() => {
     }
     ring.dispose();
     if(positions.length){const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));geo.computeVertexNormals();
-      const m=new T.Mesh(geo,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}));m.name='yard-dirt-and-paper';m.receiveShadow=true;group.add(m);}
-    if(parts.p.length){const m=parts.mesh(new T.MeshLambertMaterial({vertexColors:true}));m.name='yard-small-debris';m.receiveShadow=true;group.add(m);}
+      const m=new T.Mesh(geo,new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}));m.name='yard-dirt-and-paper';m.receiveShadow=true;group.add(m);}
+    if(parts.p.length){const m=parts.mesh(new T.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}));m.name='yard-small-debris';m.receiveShadow=true;group.add(m);}
   }
   function world(group,key,seed,opt={}) {
     const batch=new Batch(),p=(shape,x,y,z,w,h,d,c,ry=0,rz=0)=>batch.add(U[shape],mt(x,y,z,w,h,d,ry,0,rz),c,.9,1);
