@@ -92,7 +92,7 @@ const box=new T.Box3().setFromObject(b.grp),size=box.getSize(new T.Vector3()),ct
 b.grp.add(b.mf);b.mf.visible=false;b.grp.position.copy(ctr).negate();holder.add(b.grp);pivot.add(holder);
 let sc2,cam2;
 if(inspS){sc2=inspS.sc;cam2=inspS.cam}
-else{sc2=new T.Scene();sc2.add(new T.HemisphereLight(0xffffff,0x3b4660,.95));const d1=new T.DirectionalLight(0xffffff,1.15);d1.position.set(2,3,4);sc2.add(d1);const d2=new T.DirectionalLight(0x9db4ff,.45);d2.position.set(-3,1,-2);sc2.add(d2);cam2=new T.PerspectiveCamera(32,1.6,.01,20)}
+else{sc2=new T.Scene();sc2.add(new T.HemisphereLight(0xffffff,0x3b4660,LU(.95)));const d1=new T.DirectionalLight(0xffffff,LU(1.15));d1.position.set(2,3,4);sc2.add(d1);const d2=new T.DirectionalLight(0x9db4ff,LU(.45));d2.position.set(-3,1,-2);sc2.add(d2);cam2=new T.PerspectiveCamera(32,1.6,.01,20)}
 sc2.add(pivot);
 inspS=Object.assign(inspS||{yaw:.55,pitch:.16,vy:0,drag:0,zoom:1,auto:.006,lx:0,ly:0},{sc:sc2,cam:cam2,pivot,mf:b.mf,mt:0,dist:Math.max(size.x,size.y,size.z)*1.45});
 cam2.position.set(0,0,inspS.dist*inspS.zoom)}
@@ -504,7 +504,7 @@ const lb=LV.on()&&!ghost?LV.bossDef():null;
 let o=awaySpot(P.x,P.z,20);if(blocked(o.x,o.z,0,corr?1.45:1.2))o=freeSpot(o.x,o.z);const g=mkMon(2),sc_=bossScale(),lv=1+xpLevel*.035,hp=Math.round((4200+wave*620)*(1+sc_.tier*.03)*sc_.bf*lv*(corr?2.2:1)*coopHp()*bdf().hp*(lb?(lb.hp||1)*LV.ramp():1));
 if(lb)LV.skin(g,2,{boss:true});g.scale.multiplyScalar(lb&&lb.scale?lb.scale:corr?2.7:2.2);
 if(corr&&!lb){const tc=new T.Color(0x1a0008);(g.userData.mats||[]).forEach(m=>{m.color.lerp(tc,.68);m.userData.em=0x4a0010;m.emissive.setHex(0x4a0010)})}
-const lt=new T.PointLight(lb&&lb.col?lb.col:ghost?0x40e0ff:corr?0xa020ff:0xff2030,2.5,30,1.5);lt.position.y=3;g.add(lt);
+const lt=new T.PointLight(lb&&lb.col?lb.col:ghost?0x40e0ff:corr?0xa020ff:0xff2030,2.5*PLK(30,1.5),PLR(30,1.5),PLD);lt.position.y=3;g.add(lt);
 if(!lb)for(let i=0;i<5;i++){const c=new T.Mesh(new T.ConeGeometry(.09,.55,5),new T.MeshLambertMaterial({color:0xe8e4d0}));c.position.set((i-2)*.14,2.35,.1);c.rotation.z=(i-2)*.18;g.add(c)}
 const ring=new T.Mesh(new T.TorusGeometry(1.1,.07,8,32),new T.MeshBasicMaterial({color:0xff3344}));ring.rotation.x=Math.PI/2;ring.position.y=.08;g.add(ring);
 const e={g,hp,hpMax:hp,t:"mon",k:2,boss:true,corr:!!corr,lt,sd:1,name:(lb&&LV.bossName())||bossName(corr,ghost),lvDef:lb,ghostB:!!ghost,ghost:!!ghost,rad:corr?1.45:1.2,at:"volley",spd:Math.min(5.2,3.3+wave*.035)*bdf().sp,dmg:(36+wave*2.1)*(1+sc_.tier*.015)*(1+(sc_.bf-1)*.4)*(1+xpLevel*.02)*(corr?1.6:1)*bdf().dm*(lb?LV.dmgRamp():1),ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,stage:0,stun:0,wind:0,atkT:2.2,ring,cd:1,leapT:corr?4:6.5,lp:null,hb:0,addT:7};
@@ -518,7 +518,7 @@ function bossStep(e,dt){
 const g=e.g,p=g.position,u=g.userData,ex=P.x-p.x,ez=P.z-p.z,dist=Math.hypot(ex,ez)||1,t=performance.now()/1000;
 if(e.hf>0){e.hf-=dt;if(e.hf<=0)hurtFlash(g,false)}
 e.ring.rotation.z+=dt*(e.stun>0?6:2);e.ring.material.color.setHex(e.stun>0?0xaefcff:e.wind>0?0xffaa00:e.ghostB?0x6ff3ff:e.corr?0xb050ff:0xff3344);
-if(e.lt)e.lt.intensity=(e.stun>0?1:2.2+Math.sin(t*4)*.8)+(e.wind>0?2.5:0);
+if(e.lt)e.lt.intensity=((e.stun>0?1:2.2+Math.sin(t*4)*.8)+(e.wind>0?2.5:0))*PLK(30,1.5);
 if((fr&7)===0&&e.stun<=0)Fx.burst({x:p.x+(rnd()-.5)*2.4,y:.2,z:p.z+(rnd()-.5)*2.4},e.corr?0xa020ff:0xff3344,2,1.5,.06,2,8);
 if(rnd()<dt*.35)e.sd*=-1;
 e.phCD=(e.phCD||0)-dt;e.blCD=(e.blCD||0)-dt;

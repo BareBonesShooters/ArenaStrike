@@ -353,9 +353,9 @@ const panel=host;
 try{
 item=I(host.dataset.preview);cat=host.dataset.category;
 if(!renderer){renderer=new T.WebGLRenderer({antialias:!SOFT,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x000000,0)}
-scene=new T.Scene();scene.add(new T.HemisphereLight(0xa9d2ce,0x7c7054,.67));
-const key=new T.DirectionalLight(0xffe0a5,.85);key.position.set(3,4,5);scene.add(key);
-const rim=new T.DirectionalLight(0xa9d2ce,.3);rim.position.set(-4,3,-3);scene.add(rim);
+scene=new T.Scene();scene.add(new T.HemisphereLight(0xa9d2ce,0x7c7054,LU(.67)));
+const key=new T.DirectionalLight(0xffe0a5,LU(.85));key.position.set(3,4,5);scene.add(key);
+const rim=new T.DirectionalLight(0xa9d2ce,LU(.3));rim.position.set(-4,3,-3);scene.add(rim);
 camera=new T.PerspectiveCamera(35,1,.05,100);pivot=new T.Group();scene.add(pivot);
 const outfit=cat==="p"?item:I(eq().p);
 if(cat==="g"||cat==="s"){model=buildGun(cat==="g"?item:GB(eq().g),cat==="s"?item:I(eq().s)).grp;model.rotation.y=Math.PI/2+.4}

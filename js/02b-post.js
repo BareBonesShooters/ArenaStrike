@@ -1,7 +1,8 @@
 "use strict";
 // ---------- stylized look: post-processing and character rim light ----------
 // Ultra High, High and Medium draw the scene through a small effect chain: scene, ambient occlusion (Ultra only), the gun,
-// bloom, a colour grade (soft highlight roll-off, punchier colour, cool shadows, warm highlights, vignette) and anti-aliasing.
+// bloom, the output pass (linear light to the screen's sRGB), a colour grade (soft highlight roll-off, punchier colour, cool shadows,
+// warm highlights, vignette) and anti-aliasing. Everything up to bloom works in linear light; the grade and anti-aliasing see display values.
 // Low and Potato skip the chain and draw straight to the screen. Every tier keeps the rim light on players and monsters.
 const Post=(()=>{
 const RIM={k:{value:.45},c:{value:new T.Color(0xcfe4ff)}};
@@ -26,29 +27,34 @@ let cmp=null,lvl=0,rp,ao,vmp,bloom,grade,aa,vmOn=false,hdrOn=false,gm=null;
 // draws the first-person gun into the frame after the world (and its ambient occlusion), so the gun gets bloom and grading too
 class VMPass extends T.Pass{constructor(){super();this.needsSwap=false}
 render(r,wb,rb){if(!vmOn)return;const ac=r.autoClear;r.autoClear=false;r.setRenderTarget(this.renderToScreen?null:rb);r.clearDepth();r.render(VM.scene,VM.cam);r.autoClear=ac}}
-function canHDR(){try{return rd.capabilities.isWebGL2&&!!rd.extensions.get("EXT_color_buffer_float")&&!SOFT}catch(e){return false}}
+function canHDR(){try{return rd.extensions.has("EXT_color_buffer_float")&&!SOFT}catch(e){return false}}
 function build(L){
 dispose();
 const pr=rd.getPixelRatio(),w=innerWidth,h=innerHeight,hdr=L.hdr&&canHDR();hdrOn=hdr;gm=null;
 const rt=new T.WebGLRenderTarget(w*pr,h*pr,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,type:hdr?T.HalfFloatType:T.UnsignedByteType,stencilBuffer:false});
+// without HDR the 8-bit buffer is stored sRGB-encoded (the GPU converts on write and read), so linear light doesn't band in the shadows
+if(!hdr)rt.texture.colorSpace=T.SRGBColorSpace;
 cmp=new T.EffectComposer(rd,rt);cmp.setPixelRatio(pr);cmp.setSize(w,h);
 rp=new T.RenderPass(sc,cam);cmp.addPass(rp);
 // ambient occlusion runs at half resolution with a depth texture (one extra cheap scene draw instead of two full-size ones); the soft result hides the lower resolution
-if(L.ao&&T.SAOPass){ao=new T.SAOPass(sc,cam,true,false,new T.Vector2(w*pr/2,h*pr/2));{const dt=ao.beautyRenderTarget.depthTexture;dt.type=T.UnsignedIntType;for(const m of[ao.saoMaterial,ao.vBlurMaterial,ao.hBlurMaterial])m.uniforms.tDepth.value=dt}/* r128 SAOPass hands its shaders `true` instead of the depth texture, and its 16-bit depth smears and stripes distant surfaces, so it gets 24-bit */
-{const m=ao.saoMaterial;m.fragmentShader=m.fragmentShader.replace("float ambientOcclusion = getAmbientOcclusion( viewPosition );","float ambientOcclusion = getAmbientOcclusion( viewPosition )*(1.-smoothstep(22.,40.,-centerViewZ));");m.needsUpdate=true}/* contact shading only up close: far away it adds nothing but noise */const ss=ao.setSize.bind(ao);ao.setSize=(x,y)=>ss(Math.max(1,x/2),Math.max(1,y/2));const p=ao.params;p.saoBias=.5;p.saoIntensity=.012;p.saoScale=6;p.saoKernelRadius=14;p.saoMinResolution=0;p.saoBlur=true;p.saoBlurRadius=4;p.saoBlurStdDev=3;p.saoBlurDepthCutoff=.01;cmp.addPass(ao)}
+if(L.ao&&T.SAOPass){ao=new T.SAOPass(sc,cam,new T.Vector2(w*pr/2,h*pr/2));/* SAOPass draws one normal+depth pass with a 24-bit depth buffer, so distant surfaces don't stripe */
+{const m=ao.saoMaterial;m.fragmentShader=m.fragmentShader.replace("float ambientOcclusion = getAmbientOcclusion( viewPosition );","float ambientOcclusion = getAmbientOcclusion( viewPosition )*(1.-smoothstep(22.,40.,-centerViewZ));");m.needsUpdate=true}/* contact shading only up close: far away it adds nothing but noise */const ss=ao.setSize.bind(ao);ao.setSize=(x,y)=>ss(Math.max(1,x/2),Math.max(1,y/2));const p=ao.params;p.saoBias=.5;p.saoIntensity=Tune.n("gfx.aoK",.012,0,.05);p.saoScale=Tune.n("gfx.aoScale",6,1,20);p.saoKernelRadius=14;p.saoMinResolution=0;p.saoBlur=true;p.saoBlurRadius=4;p.saoBlurStdDev=3;p.saoBlurDepthCutoff=.01;cmp.addPass(ao)}
 vmp=new VMPass();cmp.addPass(vmp);
 // bloom needs the HDR buffer: lit ground already reaches 1.0, so only light sources above that (glow parts, sun, muzzle flash, sparks) should glow
 // the threshold sits just above 1.0 so light sources visibly glow, while sunlit walls (graded down to at most about 1.0) stay clean
-const b=L.bloom,bs=L.half?.5:1;if(b&&hdr){bloom=new T.UnrealBloomPass(new T.Vector2(w*bs,h*bs),b[0],b[1],b[2]);bloom.highPassUniforms.smoothWidth.value=.25;
+const b=L.bloom,bs=L.half?.5:1;if(b&&hdr){// bloom is added in linear light before the sRGB output step, which lifts its faint outer halo, so radius is trimmed here and strength in look()
+bloom=new T.UnrealBloomPass(new T.Vector2(w*bs,h*bs),b[0],b[1]*Tune.n("gfx.bloomR",.6,.2,1.5),b[2]);bloom.highPassUniforms.smoothWidth.value=.25;
 const bset=bloom.setSize.bind(bloom);bloom.setSize=(x,y)=>bset(Math.max(1,Math.round(x/rd.getPixelRatio()*bs)),Math.max(1,Math.round(y/rd.getPixelRatio()*bs)));cmp.addPass(bloom)}
+// linear light to the screen's sRGB (and the renderer's tone mapping, if any); the grade and anti-aliasing then work on display values as they were tuned
+cmp.addPass(new T.OutputPass());
 grade=new T.ShaderPass(GradeShader);cmp.addPass(grade);
-if(L.aa==="smaa"&&T.SMAAPass){aa=new T.SMAAPass(w*pr,h*pr)}else{aa=new T.ShaderPass(T.FXAAShader);aa.material.uniforms.resolution.value.set(1/(w*pr),1/(h*pr))}
+if(L.aa==="smaa"&&T.SMAAPass){aa=new T.SMAAPass()}else{aa=new T.ShaderPass(T.FXAAShader);aa.material.uniforms.resolution.value.set(1/(w*pr),1/(h*pr))}
 cmp.addPass(aa)}
 function dispose(){hdrOn=false;glowGain();if(!cmp)return;try{for(const p of cmp.passes){if(p.dispose)p.dispose()}cmp.renderTarget1.dispose();cmp.renderTarget2.dispose()}catch(e){}cmp=null;rp=ao=vmp=bloom=grade=aa=null}
 // per-level colour: night and fog levels get less saturation boost so they stay moody, bright ones get more punch
 function look(){if(!grade)return;const th=THEMES[WORLD.theme]||{},n=th.night||0,g=th.grade||{},u=grade.uniforms;
 u.uSat.value=g.sat!=null?g.sat:1.16-n*.1;u.uCon.value=g.con!=null?g.con:1.07;u.uExp.value=g.exp!=null?g.exp:1+n*.05;u.uVig.value=g.vig!=null?g.vig:.26+n*.1;
-if(bloom){bloom.strength=LV[lvl].bloom[0]*(g.bloom!=null?g.bloom:1+n*.35);
+if(bloom){bloom.strength=LV[lvl].bloom[0]*Tune.n("gfx.bloomK",.55,.1,2)*(g.bloom!=null?g.bloom:1+n*.35);
 // sunlit sand and snow go past 1.0 by themselves, so bright-ground themes raise the threshold (light sources are pushed far enough to still clear it)
 const gl=th.gr&&th.gr.base?(C_T.set(th.gr.base),C_T.r*.299+C_T.g*.587+C_T.b*.114):.5;
 bloom.threshold=g.bloomThr!=null?g.bloomThr:Tune.n("gfx.bloomThr",1.05,.8,2)+Math.max(0,gl-.55)*Tune.n("gfx.bloomBright",1.2,0,3)}}

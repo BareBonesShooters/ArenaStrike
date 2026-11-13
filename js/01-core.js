@@ -13,6 +13,12 @@ const REDEEM_CODES = {
 
 // ---------- helpers ----------
 const $=id=>document.getElementById(id),T=THREE,rnd=Math.random;
+// light units: current three lights physically, without r128's hidden x pi on sun, sky and ambient light, and with inverse-power falloff for point and spot lights.
+// LU(v) turns an intensity tuned under r128 into the new units. A point or spot light tuned under r128 with distance r and decay d (falloff (1-dist/r)^d)
+// is rebuilt with decay PLD, distance PLR(r,d) and intensity times PLK(r,d): a shallow inverse power with a shorter cutoff, fitted to the old curve
+// (within about 5% everywhere), so lamp pools keep their size and surfaces next to a lamp do not blow out. Lambert now lights per pixel
+// (r128 lit per vertex, so a lamp beside a big wall barely showed), so lamps are trimmed overall by gfx.pointK to keep night maps moody.
+const LU=v=>v*Math.PI*Tune.n("gfx.lightK",1,.3,3),PLD=.25,PLR=(range,dec)=>range*(1.3-.29*dec),PLK=(range,dec)=>Math.PI*(.54-.06*dec)*Math.pow(range,PLD)*Tune.n("gfx.pointK",.7,.2,4);
 const pk=a=>a[Math.floor(rnd()*a.length)],clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cleanName=s=>String(s||"").replace(/[^\p{L}\p{N} _.\-]/gu,"").trim().slice(0,12);

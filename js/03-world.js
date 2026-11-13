@@ -124,7 +124,9 @@ col=mix(col,cl,cov*cloud*smoothstep(.012,.25,h)*.92);
 if(cq>1.5){float c2=fbm(d.xz/(h+.1)*.55+vec2(time*.006,17.),3);col=mix(col,cc,smoothstep(.6,.9,c2)*.18*cloud*smoothstep(.1,.5,h));}}
 if(stars>0.&&h>0.){vec2 uv=d.xz/(h+.12)*46.;float s=h21(floor(uv));float tw=.6+.4*sin(time*2.+s*60.);col+=step(.982,s)*stars*tw*(.35+.65*h21(floor(uv)+3.))*smoothstep(0.,.2,h);}
 col+=(h21(gl_FragCoord.xy)-.5)/255.;
-gl_FragColor=vec4(col,1.);}`}));
+gl_FragColor=vec4(col,1.);
+#include <colorspace_fragment>
+}`}));
 m.renderOrder=-10;m.frustumCulled=false;sc.add(m);
 return{m,u,set(th){u.cT.value.setHex(th.sky[0]);u.cM.value.setHex(th.sky[1]);u.cH.value.setHex(th.sky[2]).lerp(C0.setHex(th.fog[0]),th.night?0:.65);u.cc.value.setRGB(th.cc[0],th.cc[1],th.cc[2]);u.sunDir.value.set(...th.sun.d);u.sunCol.value.setHex(th.sun.c);u.stars.value=th.stars;u.cloud.value=LOD.cloud>0?th.cloud:0;u.cq.value=LOD.cloud}}})();
 
@@ -161,7 +163,7 @@ const n=256,c=document.createElement("canvas");c.width=c.height=n;const g=c.getC
 g.fillStyle="#808080";g.fillRect(0,0,n,n);g.lineCap="round";
 for(let i=0;i<4200;i++){const x=r()*n,y=r()*n,l=4+r()*8,a=(r()-.5)*.7;g.strokeStyle=r()<.5?"rgba(255,255,255,.2)":"rgba(0,0,0,.24)";g.lineWidth=.8+r()*.9;
 for(const ox of[-n,0,n])for(const oy of[-n,0,n]){const px=x+ox,py=y+oy;if(px<-14||px>n+14||py<-14||py>n+14)continue;g.beginPath();g.moveTo(px,py);g.lineTo(px+Math.sin(a)*l,py-Math.cos(a)*l);g.stroke()}}
-GDET=new T.CanvasTexture(c);GDET.wrapS=GDET.wrapT=T.RepeatWrapping;GDET.anisotropy=Math.min(8,rd.capabilities.getMaxAnisotropy());return GDET}
+GDET=new T.CanvasTexture(c);GDET.colorSpace=T.NoColorSpace;/* a multiplier around grey, not a colour */GDET.wrapS=GDET.wrapT=T.RepeatWrapping;GDET.anisotropy=Math.min(8,rd.capabilities.getMaxAnisotropy());return GDET}
 
 // ---------- world: build ----------
 function disposeWorld(){
@@ -197,16 +199,21 @@ soft(o,th.night?.5:.42,.22);gt.needsUpdate=true}
 // It starts a couple of metres out, so the floor at your own feet stays clear, and it thickens with the distance the view ray travels inside the layer, so looking down on it from above stays clear. Only tiers with the sky effects get it (Low and Potato keep plain fog).
 // camP: three r128 only sends cameraPosition to Phong/Standard/shader materials, never to Lambert, so these shaders get the camera from their own uniform
 const MISTU={mistT:{value:new T.Color(1,1,1)},mistP:{value:new T.Vector3(3,0,0)},mistH:{value:3},camP:{value:cam.position}};
+// fog runs after the colour-space step, so the colour here is in the output space: linear light when drawing into the post chain, sRGB when
+// drawing straight to the screen. Fog is blended in a gamma-2 space either way (the GLSL compiler folds the test), so haze looks the same on
+// every tier and as light as it did before the Three.js upgrade (blending in linear light makes distant haze look thicker and paler)
 const FOGF=`#ifdef USE_FOG
 float fogFactor=smoothstep(fogNear,fogFar,vFogDepth);
+bool fogLin=linearToOutputTexel(vec4(.25)).r<.3;if(fogLin)gl_FragColor.rgb=sqrt(max(gl_FragColor.rgb,0.));
 vec3 vd=normalize(vWP-camP);float sA=pow(max(dot(vd,normalize(sunD)),0.),5.);
-vec3 fogC=mix(fogColor,min(fogColor*.5+sunC*.7,vec3(1.)),sA*fogFactor*.75);
+vec3 fogC=mix(fogColor,min(fogColor*.5+sunC*.7,vec3(1.)),sA*fogFactor*.75);if(fogLin)fogC=sqrt(fogC);
 gl_FragColor.rgb=mix(gl_FragColor.rgb,fogC,fogFactor);
 float hm=1.-smoothstep(0.,mistH,vWP.y);
 float bank=1.+mistP.y*sin(vWP.x*.11+fogT*.21)*sin(vWP.z*.083-fogT*.16);
 float L=vd.y<-.001?min(vFogDepth,max(mistH-vWP.y,0.)/-vd.y):vFogDepth;
 float mk=clamp(hm*hm*mistP.x*bank*smoothstep(2.,24.,L),0.,.5);
 gl_FragColor.rgb=mix(gl_FragColor.rgb,min(fogC*mistT,vec3(1.)),mk);
+if(fogLin)gl_FragColor.rgb*=gl_FragColor.rgb;
 #endif`;
 function fogFx(mat,tag){
 const prev=mat.onBeforeCompile;
@@ -260,7 +267,7 @@ P("ico",x,h/2-6,z,r*2.3,h*1.2,r*1.9,mc,crng()*3,.75);if(th.snow&&crng()<th.snow)
 // interior shell for the ruin
 if(ruin){WORLD.ceil=7;P("box",0,7.25,0,2*H+6,.5,2*H+6,0x3b5347,0,.9);
 for(let u=-35;u<=35;u+=10){P("box",u,6.6,0,.7,.7,2*H,0x2c4c42,0,.8);P("box",0,6.6,u,2*H,.7,.7,0x2c4c42,0,.8)}
-for(let i=0;i<10;i++){const [x,z]=P2(8);P("box",x,6.85,z,1.6,.12,.7,0xffd9a0,0,1,glow);if(i<3){const l=new T.PointLight(0xffc477,1.1,30,1.6);l.position.set(x,5.5,z);l.userData.base=1.1;l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l)}}
+for(let i=0;i<10;i++){const [x,z]=P2(8);P("box",x,6.85,z,1.6,.12,.7,0xffd9a0,0,1,glow);if(i<3){const l=new T.PointLight(0xffc477,1.1*PLK(30,1.6),PLR(30,1.6),PLD);l.position.set(x,5.5,z);l.userData.base=1.1*PLK(30,1.6);l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l)}}
 for(let u=-34;u<=34;u+=12){[[u,-H+.15],[u,H-.15]].forEach(([x,z])=>P("box",x,4.6,z,5,1.1,.1,th.win,0,1,glow));[[-H+.15,u],[H-.15,u]].forEach(([x,z])=>P("box",x,4.6,z,.1,1.1,5,th.win,0,1,glow))}}
 // props
 const lb=(cx,cz,rot,lx,lz,w,h,d,col,ao)=>{const c=Math.cos(rot*PI/2),s=Math.sin(rot*PI/2),x=cx+lx*c+lz*s,z=cz-lx*s+lz*c,sw=rot&1?d:w,sd=rot&1?w:d;blk(x,z,sw,h,sd,col,ao)};
@@ -397,7 +404,7 @@ if(opt.waves&&!(LVD&&LVD.pack===-1))arenaPack(LVD&&LVD.pack!=null?LVD.pack:((see
 if(LVD){ // a Monster Rush level builds all of its own scenery (js/06h-lv-*.js)
 let nl=0;WORLD.lvAnim=[];
 const c={blk,reg,P,glow,solid,grp,rng,crng,rr,cr,pick,cpick,free,place,pc,crateAt,crate,barrel,rock,lerpC,th,key,H,PI,U,LOD,
-light:(x,y,z,col,int,dist)=>{if(nl>=4||SOFT)return null;nl++;const l=new T.PointLight(col,int||1.2,dist||24,1.6);l.position.set(x,y,z);l.userData.base=int||1.2;l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l);return l},
+light:(x,y,z,col,int,dist)=>{if(nl>=4||SOFT)return null;nl++;const l=new T.PointLight(col,(int||1.2)*PLK(dist||24,1.6),PLR(dist||24,1.6),PLD);l.position.set(x,y,z);l.userData.base=(int||1.2)*PLK(dist||24,1.6);l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l);return l},
 halo:(x,y,z,col,s,op)=>{const h=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:col,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:op==null?.7:op,fog:false}));h.scale.setScalar(s||2);h.position.set(x,y,z);h.raycast=()=>{};grp.add(h);return h},
 add:o=>{o.traverse(m=>{m.raycast=()=>{}});grp.add(o);return o},
 anim:fn=>{WORLD.lvAnim.push(fn)}};

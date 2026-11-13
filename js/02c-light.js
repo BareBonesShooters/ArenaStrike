@@ -2,7 +2,7 @@
 // ---------- lighting: sun shadows that follow the player, the per-tier light balance, and the Blackout darkness with a flashlight ----------
 const Light=(()=>{
 // the flashlight stays in the scene at zero strength, so switching it on never makes every material recompile
-const flashL=new T.SpotLight(0xfff0d2,0,34,.5,.55,1.2);flashL.castShadow=false;sc.add(flashL,flashL.target);
+const flashL=new T.SpotLight(0xfff0d2,0,PLR(34,1.2),.5,.55,PLD);flashL.castShadow=false;sc.add(flashL,flashL.target);
 const dir=new T.Vector3(),fw=new T.Vector3(),TMP=new T.Color();
 // Blackout: the sky, fog and lights fade almost to black, only a short fog distance stays visible
 const DARK={sky:[0x010104,0x030409,0x070a13],cloud:0x0b0d16,fog:0x020308,hc:0x3a4670,hg:0x040509,sun:0x5060a0};
@@ -31,8 +31,10 @@ return{
 // after buildWorld sets the theme lights: a warmer, stronger sun and a cooler, weaker sky fill whose ground half takes the colour of the ground,
 // so lit faces read warm and shade reads cool instead of everything being evenly flat. Night themes keep their cold moonlight.
 // A theme can override any of it with light:{warm,sun,fill,cool,bounce}. Tiers with shadows then get a little more sun and less fill, so shadows read clearly.
-world(th){snap=null;K=TG=0;flashL.intensity=0;th=th||{};const L=th.light||{},n=Math.min(1,Math.max(th.night||0,th.stars||0)),v=(k,d,a,b)=>L[k]!=null?L[k]:Tune.n("gfx."+k,d,a,b),fk=v("fill",.75,.3,1.5);
+world(th){snap=null;K=TG=0;flashL.intensity=0;th=th||{};const L=th.light||{},n=Math.min(1,Math.max(th.night||0,th.stars||0)),v=(k,d,a,b)=>L[k]!=null?L[k]:Tune.n("gfx."+k,d,a,b),fk=v("fill",.45,.1,1.5);
 // n: how dark the theme is (night or dusk). Dark themes have little light to spare, so they keep their fill and colours
+// the theme tables hold r128-era intensities; LU converts them to the physically based units once, before the balance below
+sun.intensity=LU(sun.intensity);hemi.intensity=LU(hemi.intensity);
 sun.color.lerp(TMP.setHex(0xffc890),v("warm",.32,0,1)*(1-n)*(th.snow?.6:1));sun.intensity*=v("sun",1.22,.5,2);
 hemi.color.lerp(TMP.setHex(0x9cc4ff),v("cool",.45,0,1)*(1-n*.6));hemi.intensity*=fk+(1-fk)*n;
 if(th.gr&&th.gr.base)hemi.groundColor.lerp(TMP.set(th.gr.base),v("bounce",.4,0,1));
@@ -43,4 +45,4 @@ get dark(){return K},
 frame(dt){shadows();
 if(snap){K+=(TG-K)*Math.min(1,dt*1.6);if(TG===0&&K<.01){restore();return}apply(K)}
 if(K>.01){cam.getWorldDirection(fw);flashL.position.copy(cam.position).addScaledVector(fw,.3);flashL.position.y-=.25;flashL.target.position.copy(cam.position).addScaledVector(fw,12);flashL.target.updateMatrixWorld();
-flashL.intensity=K*(state==="play"||state==="pause"?1.7:0)}else if(flashL.intensity)flashL.intensity=0}}})();
+flashL.intensity=K*(state==="play"||state==="pause"?1.7*PLK(34,1.2):0)}else if(flashL.intensity)flashL.intensity=0}}})();

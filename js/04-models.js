@@ -385,7 +385,7 @@ const s=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),depthWrite
 const Thumb=(()=>{
 let r=null,scn=null,tcam=null;const cache=new Map(),q=[];let busy=false;
 function init(){if(r)return true;try{r=new T.WebGLRenderer({antialias:!SOFT,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(1)}catch(e){r=false;return false}
-scn=new T.Scene();scn.add(new T.HemisphereLight(0xa9d2ce,0x7c7054,.67));const d=new T.DirectionalLight(0xffe0a5,.85);d.position.set(3,4,5);scn.add(d);const rim=new T.DirectionalLight(0xa9d2ce,.3);rim.position.set(-4,2,-3);scn.add(rim);const d2=new T.DirectionalLight(0xfff0d0,.45);d2.position.set(-3,-1,4);scn.add(d2);
+scn=new T.Scene();scn.add(new T.HemisphereLight(0xa9d2ce,0x7c7054,LU(.67)));const d=new T.DirectionalLight(0xffe0a5,LU(.85));d.position.set(3,4,5);scn.add(d);const rim=new T.DirectionalLight(0xa9d2ce,LU(.3));rim.position.set(-4,2,-3);scn.add(rim);const d2=new T.DirectionalLight(0xfff0d0,LU(.45));d2.position.set(-3,-1,4);scn.add(d2);
 tcam=new T.PerspectiveCamera(30,1.6,.05,50);return true}
 function make(kind,item,w,h){
 if(!init())return"";r.setSize(w,h,false);tcam.aspect=w/h;tcam.updateProjectionMatrix();

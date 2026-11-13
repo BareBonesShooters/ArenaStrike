@@ -29,8 +29,11 @@ function showMessage(text) {
 if (noWebGL2()) {
   showMessage("The game needs WebGL 2, which this browser or graphics chip doesn't support. Try an up-to-date Chrome, Edge, Firefox or Safari, or another device.");
 } else {
+  // every canvas the game paints holds colours, so canvas textures default to sRGB (the renderer converts them to linear light);
+  // a texture that holds data instead (the grass detail multiplier) sets NoColorSpace itself
+  class CanvasTexture extends THREE_NS.CanvasTexture { constructor(...a) { super(...a); this.colorSpace = THREE_NS.SRGBColorSpace; } }
   // the module namespace is frozen, so the game gets a plain object it can extend
-  const T = Object.assign({}, THREE_NS, { EffectComposer, Pass, FullScreenQuad, RenderPass, ShaderPass, UnrealBloomPass, SAOPass, SMAAPass, OutputPass, FXAAShader, CopyShader });
+  const T = Object.assign({}, THREE_NS, { CanvasTexture, EffectComposer, Pass, FullScreenQuad, RenderPass, ShaderPass, UnrealBloomPass, SAOPass, SMAAPass, OutputPass, FXAAShader, CopyShader });
   window.THREE = T;
   // classic scripts inserted with async=false run one after another in insertion order, like the plain script tags they replace
   for (const tag of document.querySelectorAll("script[data-src]")) {

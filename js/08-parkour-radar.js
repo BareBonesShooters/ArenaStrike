@@ -223,7 +223,7 @@ const o=(y*NZ+x)*4;nd[o]=nd[o+1]=nd[o+2]=Math.min(255,v*270);nd[o+3]=255}
 const tx=new T.DataTexture(nd,NZ,NZ,T.RGBAFormat);tx.wrapS=tx.wrapT=T.RepeatWrapping;tx.magFilter=T.LinearFilter;tx.minFilter=T.LinearMipmapLinearFilter;tx.generateMipmaps=true;tx.needsUpdate=true;
 const pal=c.key==="toxic"?[[.01,.06,.01],[.2,.9,.1],[.8,1,.5]]:c.key==="neon"?[[.05,.01,.09],[1,.1,.8],[.3,.95,1]]:c.key==="frost"?[[.01,.07,.16],[.1,.55,1],[.8,.96,1]]:[[.07,.015,.005],[1,.32,.05],[1,.82,.35]];
 const haz=new T.Mesh(new T.PlaneGeometry(bnd.x1-bnd.x0+160,bnd.z1-bnd.z0+160),new T.ShaderMaterial({
-uniforms:{map:{value:tx},t:{value:0},c0:{value:new T.Vector3(...pal[0])},c1:{value:new T.Vector3(...pal[1])},c2:{value:new T.Vector3(...pal[2])}},
+uniforms:{map:{value:tx},t:{value:0},c0:{value:new T.Color().setRGB(...pal[0],T.SRGBColorSpace)},c1:{value:new T.Color().setRGB(...pal[1],T.SRGBColorSpace)},c2:{value:new T.Color().setRGB(...pal[2],T.SRGBColorSpace)}}/* palette is in sRGB; the shader works in linear light and converts on output */,
 vertexShader:"varying vec2 v;void main(){v=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
 fragmentShader:"uniform sampler2D map;uniform float t;uniform vec3 c0,c1,c2;varying vec2 v;"+
 "void main(){vec2 u=v*.045;"+
@@ -232,7 +232,7 @@ fragmentShader:"uniform sampler2D map;uniform float t;uniform vec3 c0,c1,c2;vary
 "float crack=smoothstep(.88,.99,ridge),bleed=smoothstep(.55,.97,ridge);"+
 "float pulse=.8+.2*sin(t*1.4+a*11.);"+
 "vec3 col=c0*(.35+1.3*b*b);col=mix(col,c1,bleed*.42*pulse);col=mix(col,c1*1.4,crack*pulse);col=mix(col,c2,crack*crack*.9);"+
-"gl_FragColor=vec4(col,1.);}"}));
+"gl_FragColor=vec4(col,1.);\n#include <colorspace_fragment>\n}"}));
 haz.rotation.x=-Math.PI/2;haz.position.set((bnd.x0+bnd.x1)/2,.06,(bnd.z0+bnd.z1)/2);c.grp.add(haz);
 // embers drift up out of the hazard
 const NE=S.gfx>2?36:90,ep=new Float32Array(NE*3),ev=new Float32Array(NE);

@@ -196,8 +196,8 @@ function create(campaign,mapIndex=0,freePlacement=false){
 function light(mapIndex){
   const spec=maps[mapIndex],th=THEMES[spec.theme];Sky.set(th);
   sc.background=new T.Color(spec.sky);sc.fog=new T.Fog(spec.sky,160,390);
-  hemi.color.setHex(0xa9d2ce);hemi.groundColor.setHex(0x7c7054);hemi.intensity=.77;
-  sun.color.setHex(spec.sun);sun.intensity=.92;sun.position.set(-45,75,35);
+  hemi.color.setHex(0xa9d2ce);hemi.groundColor.setHex(0x7c7054);hemi.intensity=LU(.77);
+  sun.color.setHex(spec.sun);sun.intensity=LU(.92);sun.position.set(-45,75,35);
   Sky.u.sunDir.value.copy(sun.position).normalize();Sky.u.sunCol.value.setHex(spec.sun);
 }
 function decorate(g,t,col){

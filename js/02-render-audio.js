@@ -6,9 +6,9 @@ const LOD={pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:2048,dust:1,mz:1,shR:40};
 // no MSAA: the tiers that used it all draw through the effect chain (02b-post.js), which renders into its own buffers and anti-aliases with SMAA/FXAA, so the multisampled screen buffer was wasted memory
 const rd=new T.WebGLRenderer({antialias:false,stencil:false,powerPreference:SOFT?"default":"high-performance"});
 rd.setSize(innerWidth,innerHeight);rd.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
-rd.shadowMap.enabled=true;rd.shadowMap.type=T.PCFSoftShadowMap;
+rd.shadowMap.enabled=true;rd.shadowMap.type=T.PCFShadowMap;/* PCFSoftShadowMap was removed; PCF filters softly by itself now */
 rd.domElement.id="gl";document.body.prepend(rd.domElement);{const v=document.createElement("div");v.id="vgn";v.setAttribute("aria-hidden","true");rd.domElement.after(v)}
-const hemi=new T.HemisphereLight(0xffffff,0x555566,.8),sun=new T.DirectionalLight(0xffffff,.9),mzL=new T.PointLight(0xffd7a0,0,16,2);let mzT=0;
+const hemi=new T.HemisphereLight(0xffffff,0x555566,.8),sun=new T.DirectionalLight(0xffffff,.9),mzL=new T.PointLight(0xffd7a0,0,PLR(16,2),PLD);let mzT=0;
 sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
 {const c=sun.shadow.camera;c.left=-62;c.right=62;c.top=62;c.bottom=-62;c.near=1;c.far=260}
 sun.shadow.bias=-.0005;sun.shadow.normalBias=.04;

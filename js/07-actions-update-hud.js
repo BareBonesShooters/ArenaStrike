@@ -134,7 +134,7 @@ const h=tg.length?rc.intersectObjects(tg,false)[0]:null;Aim.setHot(!!h&&h.distan
 // ---------- per-frame game update ----------
 function update(dt){
 if(CustomBattle.active){CustomBattle.update(dt);return}
-if(mzT>0){mzT-=dt;mzL.intensity=Math.max(0,mzT/.07)*2.6;cam.getWorldDirection(fwd);mzL.position.copy(cam.position).addScaledVector(fwd,1.6)}else if(mzL.intensity)mzL.intensity=0;
+if(mzT>0){mzT-=dt;mzL.intensity=Math.max(0,mzT/.07)*2.6*PLK(16,2);cam.getWorldDirection(fwd);mzL.position.copy(cam.position).addScaledVector(fwd,1.6)}else if(mzL.intensity)mzL.intensity=0;
 Aim.frame(dt,scoped);
 const g=cg(),lock=P.fz>0||P.dead>0||rL>0||(mode==="parkour"&&PK.st.celeb>0),K_=K;
 const f=lock?0:(K_.KeyW||K_.ArrowUp?1:0)-(K_.KeyS||K_.ArrowDown?1:0),s=lock?0:(K_.KeyD?1:0)-(K_.KeyA?1:0),sprint=!!(K_.ShiftLeft||K_.ShiftRight);

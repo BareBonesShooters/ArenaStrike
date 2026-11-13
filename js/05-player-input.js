@@ -170,7 +170,7 @@ function kframe(p,f){for(let i=0;i<f.length-1;i++){const a=f[i],b=f[i+1];if(p<=b
 // ---------- first person viewmodel (drawn in its own pass so it never clips walls) ----------
 const VM=(()=>{
 const scn=new T.Scene(),vc=new T.PerspectiveCamera(58,innerWidth/innerHeight,.03,6);
-const vh=new T.HemisphereLight(0xffffff,0x667088,.78),vd=new T.DirectionalLight(0xffffff,.9);vd.position.set(.6,1,.8);scn.add(vh,vd,vc);
+const vh=new T.HemisphereLight(0xffffff,0x667088,LU(.78)),vd=new T.DirectionalLight(0xffffff,LU(.9));vd.position.set(.6,1,.8);scn.add(vh,vd,vc);
 const root=new T.Group();scn.add(root);const gunH=new T.Group(),knifeH=new T.Group();root.add(gunH,knifeH);
 let gb=null,gkey="",kkey="",flashT=0,gdef=GB("g0"),gz=-.4;
 const st={rec:0,rr:0,swap:1,stab:0,cm:0,sx:0,sy:0,bx:0,by:0,rlp:0,ia:0,ip:0,sf:0,land:0,spr:0,air:0,pg:true,pvy:0};let cbShot=null,offH=null;
