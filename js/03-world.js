@@ -191,21 +191,30 @@ const hull=lo.slice(0,-1).concat(up.slice(0,-1));
 g.beginPath();hull.forEach((p,i)=>{const X=(p[0]+H)*u,Y=(p[1]+H)*u;i?g.lineTo(X,Y):g.moveTo(X,Y)});g.closePath();g.fill()}
 soft(o,th.night?.5:.42,.22);gt.needsUpdate=true}
 
-// sun-scatter fog for the world materials: distant scenery warms toward the sun's colour when you look at it and a thin haze hugs the ground, which carries the sky shader's own horizon glow onto the land
+// sun-scatter fog for the world materials: distant scenery warms toward the sun's colour when you look at it.
+// On top, each biome has its own ground mist (theme.mist = [height m, strength, drift, tint]): a layer that hugs the floor, thickens with distance,
+// rolls slowly in soft banks, and is tinted relative to the fog colour, so blackout and corruption darken or redden it along with the fog.
+// It starts a couple of metres out, so the floor at your own feet stays clear, and it thickens with the distance the view ray travels inside the layer, so looking down on it from above stays clear. Only tiers with the sky effects get it (Low and Potato keep plain fog).
+// camP: three r128 only sends cameraPosition to Phong/Standard/shader materials, never to Lambert, so these shaders get the camera from their own uniform
+const MISTU={mistT:{value:new T.Color(1,1,1)},mistP:{value:new T.Vector3(3,0,0)},mistH:{value:3},camP:{value:cam.position}};
 const FOGF=`#ifdef USE_FOG
 float fogFactor=smoothstep(fogNear,fogFar,fogDepth);
-float sA=pow(max(dot(normalize(vWP-cameraPosition),normalize(sunD)),0.),5.);
+vec3 vd=normalize(vWP-camP);float sA=pow(max(dot(vd,normalize(sunD)),0.),5.);
 vec3 fogC=mix(fogColor,min(fogColor*.5+sunC*.7,vec3(1.)),sA*fogFactor*.75);
-fogFactor=clamp(fogFactor+(1.-smoothstep(0.,7.,vWP.y))*smoothstep(fogNear*.25,fogFar*.8,fogDepth)*.15,0.,1.);
 gl_FragColor.rgb=mix(gl_FragColor.rgb,fogC,fogFactor);
+float hm=1.-smoothstep(0.,mistH,vWP.y);
+float bank=1.+mistP.y*sin(vWP.x*.11+fogT*.21)*sin(vWP.z*.083-fogT*.16);
+float L=vd.y<-.001?min(fogDepth,max(mistH-vWP.y,0.)/-vd.y):fogDepth;
+float mk=clamp(hm*hm*mistP.x*bank*smoothstep(2.,24.,L),0.,.5);
+gl_FragColor.rgb=mix(gl_FragColor.rgb,min(fogC*mistT,vec3(1.)),mk);
 #endif`;
 function fogFx(mat,tag){
 const prev=mat.onBeforeCompile;
 mat.onBeforeCompile=sh=>{
 if(prev)prev(sh);
-sh.uniforms.sunD=Sky.u.sunDir;sh.uniforms.sunC=Sky.u.sunCol;
+sh.uniforms.sunD=Sky.u.sunDir;sh.uniforms.sunC=Sky.u.sunCol;sh.uniforms.fogT=Sky.u.time;Object.assign(sh.uniforms,MISTU);
 sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;").replace("#include <project_vertex>","#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;");
-sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 sunD,sunC;").replace("#include <fog_fragment>",FOGF)};
+sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 sunD,sunC,mistT,mistP,camP;uniform float fogT,mistH;").replace("#include <fog_fragment>",FOGF)};
 mat.customProgramCacheKey=()=>"fx"+tag}
 
 function buildWorld(key,seed,opt){
@@ -224,7 +233,8 @@ const blk=(x,z,w,h,d,col,ao)=>{reg(x,z,w,d,h);P("box",x,h/2,z,w,h,d,col,0,ao)};
 const P2=m=>[(rng()-.5)*(H*2-(m||10)),(rng()-.5)*(H*2-(m||10))];
 const lerpC=(a,b,t)=>{const x=new T.Color(a),y=new T.Color(b);return x.lerp(y,t).getHex()};
 // lighting and atmosphere
-sc.background=new T.Color(th.fog[0]);sc.fog=new T.Fog(th.fog[0],th.fog[1],th.fog[2]);
+sc.background=new T.Color(th.fog[0]);{const fd=Tune.n("gfx.fogDist",1,.5,2);sc.fog=new T.Fog(th.fog[0],th.fog[1]*fd,th.fog[2]*fd)}
+{const m=th.mist||[3,.12,.3,[1,1,1]];MISTU.mistH.value=m[0];MISTU.mistP.value.set(m[1]*Tune.n("gfx.mist",1,0,3),m[2],0);MISTU.mistT.value.setRGB(...m[3])}
 hemi.color.setHex(th.hemi[0]);hemi.groundColor.setHex(th.hemi[1]);hemi.intensity=th.hemi[2];
 sun.color.setHex(key==="neon"?0x8aa8ff:th.sun.c);sun.intensity=key==="neon"?.5:th.sun.i;sun.position.set(th.sun.d[0]*100,Math.max(30,th.sun.d[1]*100),th.sun.d[2]*100);
 if(key==="neon")sun.position.set(-40,70,-50);
