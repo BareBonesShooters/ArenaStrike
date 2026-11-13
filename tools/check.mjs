@@ -40,9 +40,12 @@ for (const f of [...list("js"), ...list("css"), ...list("tests"), ...list("tools
   else if (!crlfSet.has(f) && crlf) fails.push(`eol     ${f}: must be LF but is CRLF. Fix with: python3 tools/patch.py --fix-eol ${f}`);
 }
 
-// 4. index.html script tags
+// 4. index.html script tags: plain src= tags, plus the data-src= tags that js/00b-boot.js loads in order once Three.js (an ES module) is ready
 const html = fs.readFileSync("index.html", "utf8");
-const tags = [...html.matchAll(/<script[^>]*src="(js\/[^"?]+)/g)].map(m => m[1]);
+const tags = [...html.matchAll(/<script[^>]*?\s(?:data-)?src="(js\/[^"?]+)/g)].map(m => m[1]);
+const im = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
+if (!im) fails.push("index   index.html has no import map for three");
+else for (const [k, v] of Object.entries(JSON.parse(im[1]).imports || {})) if (!fs.existsSync(v.replace(/^\.\//, ""))) fails.push(`index   import map entry ${k} points at ${v}, which does not exist`);
 for (const f of list("js").filter(f => f.endsWith(".js"))) {
   const n = tags.filter(t => t === f).length;
   if (n === 0) fails.push(`index   ${f} is not loaded by index.html`);

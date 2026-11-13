@@ -34,7 +34,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a1020'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ff8a3d' stroke-width='2.5'/%3E%3Cpath d='M16 3v6M16 23v6M3 16h6M23 16h6' stroke='%23ff8a3d' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+<script type="importmap">{"imports":{"three":"./vendor/three-0.186.1/three.module.js","three/addons/":"./vendor/three-0.186.1/addons/"}}</script>
+<script nomodule>document.addEventListener("DOMContentLoaded",function(){document.body.innerHTML="<p style='padding:24px;font:16px system-ui'>This browser is too old to run Arena Strike 3D. Try an up-to-date Chrome, Edge, Firefox or Safari.</p>"})</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js" integrity="sha384-SSf4pKRrGaeWL8bdA89QvGkhZo5WvIVCGwKVzfX7z+9sSaIHtE/AkOLehofI4JVY" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="css/style.css"><link rel="stylesheet" href="css/battle-maker.css"><link rel="stylesheet" href="css/branding.css"><link rel="stylesheet" href="css/mobile.css"></head><body>
@@ -133,49 +134,38 @@
 
 <div id="toasts" aria-live="polite"></div>
 <script src="js/reward-codes.js"></script>
-<script src="vendor/three-r128/CopyShader.js"></script>
-<script src="vendor/three-r128/LuminosityHighPassShader.js"></script>
-<script src="vendor/three-r128/FXAAShader.js"></script>
-<script src="vendor/three-r128/SAOShader.js"></script>
-<script src="vendor/three-r128/DepthLimitedBlurShader.js"></script>
-<script src="vendor/three-r128/UnpackDepthRGBAShader.js"></script>
-<script src="vendor/three-r128/SMAAShader.js"></script>
-<script src="vendor/three-r128/EffectComposer.js"></script>
-<script src="vendor/three-r128/RenderPass.js"></script>
-<script src="vendor/three-r128/ShaderPass.js"></script>
-<script src="vendor/three-r128/UnrealBloomPass.js"></script>
-<script src="vendor/three-r128/SAOPass.js"></script>
-<script src="vendor/three-r128/SMAAPass.js"></script>
-<script src="js/01-core.js"></script>
-<script src="js/02-render-audio.js"></script>
-<script src="js/02b-post.js"></script>
-<script src="js/02c-light.js"></script>
-<script src="js/03-world.js"></script>
-<script src="js/03a-art-direction.js"></script>
-<script src="js/04-models.js"></script>
-<script src="js/05-player-input.js"></script>
-<script src="js/05b-scopes.js"></script>
-<script src="js/06-game-modes.js"></script>
-<script src="js/06b-death.js"></script>
-<script src="js/06c-ghost.js"></script>
-<script src="js/06d-nav.js"></script>
-<script src="js/06e-phases.js"></script>
-<script src="js/06f-battle-visuals.js"></script>
-<script src="js/06f-battle-levels.js"></script>
-<script src="js/06f-custom-battles.js"></script>
-<script src="js/06g-levels.js"></script>
-<script src="js/06h-lv-hollow.js"></script>
-<script src="js/06h-lv-dunes.js"></script>
-<script src="js/06h-lv-corrupt.js"></script>
-<script src="js/06h-lv-spire.js"></script>
-<script src="js/06h-lv-frost.js"></script>
-<script src="js/06h-lv-swamp.js"></script>
-<script src="js/06h-lv-forge.js"></script>
-<script src="js/06h-lv-temple.js"></script>
-<script src="js/07-actions-update-hud.js"></script>
-<script src="js/08-parkour-radar.js"></script>
-<script src="js/09-party-online.js"></script>
-<script src="js/10-ui-pages.js"></script>
-<script src="js/11-main-loop.js"></script>
+<!-- the game scripts below are loaded in this order by js/00b-boot.js once Three.js (an ES module) is ready -->
+<script type="text/x-deferred" data-src="js/01-core.js"></script>
+<script type="text/x-deferred" data-src="js/02-render-audio.js"></script>
+<script type="text/x-deferred" data-src="js/02b-post.js"></script>
+<script type="text/x-deferred" data-src="js/02c-light.js"></script>
+<script type="text/x-deferred" data-src="js/03-world.js"></script>
+<script type="text/x-deferred" data-src="js/03a-art-direction.js"></script>
+<script type="text/x-deferred" data-src="js/04-models.js"></script>
+<script type="text/x-deferred" data-src="js/05-player-input.js"></script>
+<script type="text/x-deferred" data-src="js/05b-scopes.js"></script>
+<script type="text/x-deferred" data-src="js/06-game-modes.js"></script>
+<script type="text/x-deferred" data-src="js/06b-death.js"></script>
+<script type="text/x-deferred" data-src="js/06c-ghost.js"></script>
+<script type="text/x-deferred" data-src="js/06d-nav.js"></script>
+<script type="text/x-deferred" data-src="js/06e-phases.js"></script>
+<script type="text/x-deferred" data-src="js/06f-battle-visuals.js"></script>
+<script type="text/x-deferred" data-src="js/06f-battle-levels.js"></script>
+<script type="text/x-deferred" data-src="js/06f-custom-battles.js"></script>
+<script type="text/x-deferred" data-src="js/06g-levels.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-hollow.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-dunes.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-corrupt.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-spire.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-frost.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-swamp.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-forge.js"></script>
+<script type="text/x-deferred" data-src="js/06h-lv-temple.js"></script>
+<script type="text/x-deferred" data-src="js/07-actions-update-hud.js"></script>
+<script type="text/x-deferred" data-src="js/08-parkour-radar.js"></script>
+<script type="text/x-deferred" data-src="js/09-party-online.js"></script>
+<script type="text/x-deferred" data-src="js/10-ui-pages.js"></script>
+<script type="text/x-deferred" data-src="js/11-main-loop.js"></script>
+<script type="module" src="js/00b-boot.js"></script>
 </body></html>
 

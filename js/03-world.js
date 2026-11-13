@@ -198,13 +198,13 @@ soft(o,th.night?.5:.42,.22);gt.needsUpdate=true}
 // camP: three r128 only sends cameraPosition to Phong/Standard/shader materials, never to Lambert, so these shaders get the camera from their own uniform
 const MISTU={mistT:{value:new T.Color(1,1,1)},mistP:{value:new T.Vector3(3,0,0)},mistH:{value:3},camP:{value:cam.position}};
 const FOGF=`#ifdef USE_FOG
-float fogFactor=smoothstep(fogNear,fogFar,fogDepth);
+float fogFactor=smoothstep(fogNear,fogFar,vFogDepth);
 vec3 vd=normalize(vWP-camP);float sA=pow(max(dot(vd,normalize(sunD)),0.),5.);
 vec3 fogC=mix(fogColor,min(fogColor*.5+sunC*.7,vec3(1.)),sA*fogFactor*.75);
 gl_FragColor.rgb=mix(gl_FragColor.rgb,fogC,fogFactor);
 float hm=1.-smoothstep(0.,mistH,vWP.y);
 float bank=1.+mistP.y*sin(vWP.x*.11+fogT*.21)*sin(vWP.z*.083-fogT*.16);
-float L=vd.y<-.001?min(fogDepth,max(mistH-vWP.y,0.)/-vd.y):fogDepth;
+float L=vd.y<-.001?min(vFogDepth,max(mistH-vWP.y,0.)/-vd.y):vFogDepth;
 float mk=clamp(hm*hm*mistP.x*bank*smoothstep(2.,24.,L),0.,.5);
 gl_FragColor.rgb=mix(gl_FragColor.rgb,min(fogC*mistT,vec3(1.)),mk);
 #endif`;
