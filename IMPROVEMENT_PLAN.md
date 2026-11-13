@@ -1,7 +1,7 @@
 # Arena Strike 3D: improvement plan
 
-Built from code reviews by Fable 5.2 (November 2026). Nothing in it has been built yet.
-Effort is in working days. Each phase can be handed to Haiku agents one batch at a time; I review and verify every batch in the browser before the next one starts.
+Built from code reviews by Fable 5.2 (November 2026). Phase 1 is done.
+The effort numbers inside each phase are only relative sizes, from the first estimate in human working days. Real pace: Phase 1, estimated at 3 days, was built, checked and committed in one burst of about 15–20 minutes of agent work. The Totals table below gives agent time per phase on that basis. The real limit is your play-testing and decisions (how combat feels, which logo), not building time.
 
 Tooling (built first, see `tools/README.md`): `npm run finish` runs every check, a headless play test of each mode, a draw-call/triangle budget per tier and a screenshot diff of every map on Ultra and Potato. Edits go through `tools/patch.py`; tunable numbers go through `Tune.n()` and the `?tune` panel; work items are handed out with `tools/TASK_CARD.md`.
 
@@ -226,18 +226,18 @@ Rules: each step ships with before/after pictures from 10a, works on phones (Pha
 
 ## Totals and suggested order
 
-| Phase | Days | Why this order |
-|-------|------|----------------|
-| 1 Graphics foundation | 3 | Biggest visual jump, cheap, helps every later screenshot |
-| 1b Three.js upgrade | 2–4 | Before more effects are added, so lighting is retuned once |
-| 2 Combat feel | 4.5 | Most of the "feels better" gain |
-| 3 Bots and cover | 3.5 | Needs the crouch from phase 2 |
-| 4 Third person | 3–4 | Reuses body poses from phase 3 |
-| 5 Bullets and scopes | 7.5 | Bots leading shots pairs with cover AI |
-| 6 HUD, maps, atmosphere | 4 | |
-| 7 Movement polish | 5 | |
-| 8 Small details | about 12 | 8a can be slotted in early; it is one day of quick wins |
-| 9 Phones and touch | about 7 | 9a and 9b can start any time; they touch different files from Phases 2–7 |
-| 10 Logo, branding, UI | about 6 | Menus and CSS only, so it can run alongside gameplay phases; logo first |
+| Phase | Agent time | Needs from you | Why this order |
+|-------|-----------|----------------|----------------|
+| 1 Graphics foundation | done (~20 min) | | Biggest visual jump, cheap, helps every later screenshot |
+| 1b Three.js upgrade | 45–60 min | a look at the before/after pictures | Before more effects are added, so lighting is retuned once |
+| 2 Combat feel | 30–45 min | play-test and tune with `?tune` | Most of the "feels better" gain |
+| 3 Bots and cover | ~30 min | play-test | Needs the crouch from phase 2 |
+| 4 Third person | ~30 min | play-test | Reuses body poses from phase 3 |
+| 5 Bullets and scopes | 45–60 min | play-test sniping | Bots leading shots pairs with cover AI |
+| 6 HUD, maps, atmosphere | ~30 min | pictures | |
+| 7 Movement polish | ~30 min | play-test | |
+| 8 Small details | 1.5–2 h, in batches | settings and sound checks | 8a is ~10 min of quick wins and can go early |
+| 9 Phones and touch | ~1 h | feel test on your phone | 9a and 9b can start any time; different files from Phases 2–7 |
+| 10 Logo, branding, UI | ~1 h | pick a logo direction | Menus and CSS only, so it runs alongside gameplay phases; logo first |
 
-About 43–44 days of work as first estimated; with the tooling, expect roughly 28–30. Each phase ends with `npm run finish` passing, the picture changes reviewed in `shots/report.html` and approved, a commit, and a push only with your OK.
+About 8–10 hours of agent work in total, fewer in wall time when the separate-file phases (9, 10) run as parallel sessions. Each phase ends with `npm run finish` passing, the picture changes reviewed in `shots/report.html` and approved, a commit, and a push only with your OK.
