@@ -409,24 +409,55 @@ if(!(ok&&wall>=dl-.1)){const c=cam.position,ux=dx/dl,uy=dy/dl,uz=dz/dl,t=clamp((
 if(cd<1.6&&t<Math.min(len,wall)-.5)snd("whizz",clamp(1.3-cd*.6,.3,1),.9+rnd()*.25)}
 e.err+=.14;snd("sh",clamp(1-dist/70,.12,.55),.8);
 if(ok&&wall>=dl-.1)hit(d.dmg*clamp(1.2-dist/90,.5,1),p)}
+// cover: look for a spot near the bot that the player can't see (full cover, with a side step that can see the player to peek from)
+// or can only see above crouch height (low cover: crouch to hide, stand to peek). One bot searches per frame at most.
+let cvLast=-1;
+function findCover(e,hurt){const p=e.g.position,ey=P.y+1.6,best={s:1e9,c:null},want=hurt?22:14;
+for(let i=0;i<16;i++){const a=i*.785+(i>7?.39:0),r=i>7?7:3.5,cx=p.x+Math.sin(a)*r,cz=p.z+Math.cos(a)*r;
+if(Math.abs(cx)>H-2||Math.abs(cz)>H-2||blocked(cx,cz,0,.5))continue;const fy=floorAt(cx,cz,2),pd=Math.hypot(cx-P.x,cz-P.z);if(pd<6||pd>40||fy>1)continue;
+let c=null;if(!los(P.x,ey,P.z,cx,fy+1.5,cz)){const lx=(cz-P.z)/pd,lz=-(cx-P.x)/pd;
+for(const s of[1,-1]){const px=cx+lx*s*1.05,pz=cz+lz*s*1.05;if(!blocked(px,pz,0,.45)&&los(P.x,ey,P.z,px,fy+1.5,pz)){c={x:cx,z:cz,px,pz,low:false};break}}}
+else if(!los(P.x,ey,P.z,cx,fy+.95,cz))c={x:cx,z:cz,px:cx,pz:cz,low:true};
+if(!c)continue;const s=r+Math.abs(pd-want)*.4;if(s<best.s){best.s=s;best.c=c}}
+return best.c}
+const BRL=1.9; // bot reload time
 function botStep(e,dt){
-const d=DF[diff],g=e.g,p=g.position,ex=P.x-p.x,ez=P.z-p.z,dist=Math.hypot(ex,ez)||1,face=Math.atan2(ex,ez);
+const d=DF[diff],g=e.g,p=g.position,ex=P.x-p.x,ez=P.z-p.z,dist=Math.hypot(ex,ez)||1,face=Math.atan2(ex,ez),u=g.userData;
 g.rotation.y=turnTo(g.rotation.y,face,dt*(e.see?5.5:3.5));
 if(e.hf>0){e.hf-=dt;if(e.hf<=0)hurtFlash(g,false)}
 if(e.mz>0){e.mz-=dt;if(e.mz<=0)setMuzzle(g,false)}
 if(P.fz>0||rL>0||P.dead>0||menuOpen){poseHuman(g,dt,0,0);return}
-e.lt=(e.lt||0)-dt;if(e.lt<=0||e.seeR==null){e.lt=.09+rnd()*.05;e.seeR=dist<70&&los(p.x,1.5,p.z,P.x,P.y+1.4-.5*P.crouch,P.z)}
+e.lt=(e.lt||0)-dt;if(e.lt<=0||e.seeR==null){e.lt=.09+rnd()*.05;e.seeR=dist<70&&los(p.x,1.5-.37*(u.crS||0),p.z,P.x,P.y+1.4-.5*P.crouch,P.z)}
 const see=e.seeR&&dist<70;
 if(see&&!e.see){e.cd=Math.max(e.cd,REACT[diff]+rnd()*.25);e.err=Math.max(e.err||0,.9+dist*.02);e.burst=0}
 e.see=see;e.err=Math.max(0,(e.err||0)-dt*(see?.9:2));
-const sp=steer(e,P.x,P.z,dt,d.spd,6,see?11:3,see?.9:0);
+if(e.mag==null){e.mag=e.magMax=diff==="easy"?8:12+(rnd()*6|0);e.st="push";e.stT=1+rnd()*2;e.rl=0}
+// states: push (close in and strafe, the old behaviour), toCover, hide (crouched or out of sight), peek (stand or side-step out, burst, duck back).
+// Hurt bots break off to cover further away. Tutorial bots keep the simple behaviour.
+let tx=P.x,tz=P.z,near=6,far=see?11:3,str=see?.9:0,spd=d.spd,crouch=0,canFire=true;
+if(mode!=="tut"&&Tune.n("bot.cover",1,0,1)>0){
+e.stT-=dt;const hurt=e.hp<(e.hpMax||100)*.45,hitNow=e.lastHp!=null&&e.hp<e.lastHp;e.lastHp=e.hp;
+if((hitNow&&hurt&&e.st!=="toCover")||(e.st==="push"&&see&&e.stT<=0))e.want=1;
+if(e.want&&cvLast!==fr){cvLast=fr;e.want=0;const c=findCover(e,hurt);if(c){e.cv=c;e.st="toCover";e.stT=4}else{e.st="push";e.stT=2.5}}
+if(e.st==="toCover"){tx=e.cv.x;tz=e.cv.z;near=0;far=.25;str=0;spd*=1.15;canFire=!hurt;if(Math.hypot(e.cv.x-p.x,e.cv.z-p.z)<.5||e.stT<=0){e.st="hide";e.stT=(hurt?1.6:.6)+rnd()*.8}}
+else if(e.st==="hide"){tx=e.cv.x;tz=e.cv.z;near=0;far=.25;str=0;crouch=e.cv.low?1:0;canFire=false;
+if(e.mag<e.magMax*.5&&!e.rl)e.rl=BRL;
+if(see&&(u.crS||0)>.8){e.st="push";e.want=1;e.stT=0} // the player flanked the spot: find another
+else if(e.stT<=0&&!e.rl){e.st="peek";e.stT=1.3+rnd()*.8;e.burst=0}}
+else if(e.st==="peek"){if(e.cv.low){tx=e.cv.x;tz=e.cv.z}else{tx=e.cv.px;tz=e.cv.pz}near=0;far=.2;str=0;
+if(e.stT<=0){e.st="hide";e.stT=.5+rnd()*.9;e.peeks=(e.peeks||0)+1;if(e.peeks>=3+(rnd()*3|0)){e.st="push";e.stT=2+rnd()*2;e.peeks=0}}}}
+const sp=steer(e,tx,tz,dt,spd,near,far,str);
+if(e.rl>0){e.rl-=dt;u.rl=1-e.rl/BRL;canFire=false;if(e.rl<=0){e.rl=0;u.rl=0;e.mag=e.magMax}}
+u.cr=crouch;u.sh=see&&canFire?1:0;
 poseHuman(g,dt,sp,see?1:0);
 e.cd-=dt;
-if(see&&e.cd<=0&&Math.abs(angDiff(g.rotation.y,face))<.3){
+if(see&&canFire&&(u.shS||0)>.85&&e.cd<=0&&Math.abs(angDiff(g.rotation.y,face))<.3){
 if(!e.burst)e.burst=diff==="easy"?1+(rnd()*2|0):2+(rnd()*3|0);
 e.burst--;e.cd=e.burst>0?d.rate*.5:d.rate*(1.8+rnd()*1.6);
 setMuzzle(g,true);e.mz=.06;g.userData.kick=1;
-botShot(e,d,new T.Vector3(p.x+Math.sin(g.rotation.y)*.7,1.35,p.z+Math.cos(g.rotation.y)*.7),dist,Math.hypot(P.vx,P.vz)*.4+sp*d.spd*.15)}}
+botShot(e,d,new T.Vector3(p.x+Math.sin(g.rotation.y)*.7,1.35,p.z+Math.cos(g.rotation.y)*.7),dist,Math.hypot(P.vx,P.vz)*.4+sp*d.spd*.15);
+if(--e.mag<=0){e.rl=BRL;e.burst=0}
+if(e.burst<=0&&e.st==="peek")e.stT=Math.min(e.stT,.3)}}
 // spitter globs travel and can be dodged
 const projs=[];let SPG=null,SPM=null;
 function spit(x,y,z,dmg,dist,col){col=col||0x66ff44;

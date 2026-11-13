@@ -228,8 +228,8 @@ if(rr.z>=-.08){if(d<bestD){bestD=d;bp=[psi,zg]}if(d<=UA+FA+.02){bp=[psi,zg];brea
 tryPlace(bp[0],bp[1]);
 hold={rig,piv,tg:tg.clone(),tf:tf.clone()};
 gun.grp.traverse(m=>{if(m.isMesh)m.castShadow=false})}
-hurtBox(g,.62,1.52,.42,0,.88,0,false,hit);hurtBox(head,.44,.5,.44,0,.02,0,true,hit);
-g.userData={legs,arms,torso,head,hit,mats,gun,hold,body,ph:0,sp:0,kick:0,flashT:0};YardArt.human(g,o);g.scale.setScalar(.88);g.add(blobShadow(.55));if(hold)poseHuman(g,0,0,0);return Post.rim(g)}
+const hb=hurtBox(g,.62,1.52,.42,0,.88,0,false,hit);hurtBox(head,.44,.5,.44,0,.02,0,true,hit);
+g.userData={legs,arms,torso,head,hit,mats,gun,hold,body,hb,ph:0,sp:0,kick:0,flashT:0};YardArt.human(g,o);g.scale.setScalar(.88);g.add(blobShadow(.55));if(hold)poseHuman(g,0,0,0);return Post.rim(g)}
 // invisible hurt boxes: forgiving, gap-free volumes around the body and the head so shots at the visible shape never slip between the thin limbs
 const HURT=new T.MeshBasicMaterial({visible:false});
 function hurtBox(par,w,h,d,x,y,z,head,hit){const m=new T.Mesh(new T.BoxGeometry(w,h,d),HURT);m.position.set(x,y,z);m.userData.head=!!head;par.add(m);hit.push(m);return m}
@@ -249,21 +249,33 @@ el.quaternion.copy(arm.quaternion).invert().multiply(_q1)}
 function poseHuman(m,dt,sp,aim,air){
 const u=m.userData;
 if(u.nar)return narutoPose(m,dt,sp,air);
-u.ph+=dt*(4+sp*7)*(sp>.05?1:0);u.sp+=(sp-u.sp)*Math.min(1,dt*12);const sw=Math.sin(u.ph)*.85*u.sp;
+u.sp+=(sp-u.sp)*Math.min(1,dt*12);
+// the walk cycle follows the ground actually covered (one leg swing per step length, so feet don't skate), and the legs swing along the
+// direction of travel in the body's own frame: forward, backpedal or sidestep while the body keeps facing its aim
+{const p=m.position;if(u.lx===undefined){u.lx=p.x;u.lz=p.z;u.mx=0;u.mz=1}const dx=p.x-u.lx,dz=p.z-u.lz;u.lx=p.x;u.lz=p.z;let d=Math.hypot(dx,dz);if(d>1.5)d=0;
+if(d>1e-4){const ry=m.rotation.y,c=Math.cos(ry),s=Math.sin(ry),k=Math.min(1,dt*10);u.mx+=((dx*c-dz*s)/d-u.mx)*k;u.mz+=((dx*s+dz*c)/d-u.mz)*k}
+if(d>0)u.ph+=d*Math.PI/(2*.69*Math.sin(Math.max(.3,.85*u.sp)))}
+const sw=Math.sin(u.ph)*.85*u.sp,ml=Math.hypot(u.mx,u.mz)||1,fx=u.mx/ml,fz=u.mz/ml;
 u.air=(u.air||0)+((air?1:0)-(u.air||0))*Math.min(1,dt*10);const ar=u.air,br=Math.sin(performance.now()*.0018)*(1-u.sp);
-u.legs[0].rotation.x=sw*(1-ar)-.55*ar;u.legs[1].rotation.x=-sw*(1-ar)+.35*ar;
+// crouch (cover): hips drop, front leg forward and rear leg back into a kneel, and the body hurt box shrinks with it
+u.crS=(u.crS||0)+((u.cr||0)-(u.crS||0))*Math.min(1,dt*8);const cr=u.crS,drop=.42*cr,wk=(1-ar)*(1-cr);
+u.legs[0].rotation.set(sw*fz*wk-.55*ar*(1-cr)-.95*cr,0,-sw*fx*.7*wk);u.legs[1].rotation.set(-sw*fz*wk+.35*ar*(1-cr)+.55*cr,0,sw*fx*.7*wk);
+u.legs[0].position.y=u.legs[1].position.y=.9-drop;u.arms[0].position.y=u.arms[1].position.y=1.56-drop;
+if(u.hb){u.hb.scale.y=1-.29*cr;u.hb.position.y=.88-.22*cr}
 u.kick*=Math.max(0,1-dt*14);
 const hd=u.hold;
 if(hd){
 // both hands stay on the gun: it rides in a rig that tilts with aim and recoil
-const th=-(aim||0)*.5-u.kick*.2;hd.rig.rotation.x=th;
-_v1.copy(hd.tg).sub(hd.piv).applyAxisAngle(_xa,th).add(hd.piv);armIK(u.arms[0],_v1,_pr);
-_v1.copy(hd.tf).sub(hd.piv).applyAxisAngle(_xa,th).add(hd.piv);armIK(u.arms[1],_v1,_pL)}
+// shoulder: sh 0 carries the gun low, 1 shoulders it (bots raise it before they fire, a readable tell); rl 0..1 is a reload: gun tips down, off hand drops to the magazine
+const sh0=u.shS==null?1:u.shS;u.shS=sh0+((u.sh==null?1:u.sh)-sh0)*Math.min(1,dt*9);const rk=u.rl>0?Math.sin(Math.PI*Math.min(1,u.rl)):0;
+const th=-(aim||0)*.5*u.shS-u.kick*.2+.65*(1-u.shS)+.4*rk;hd.rig.rotation.x=th;hd.rig.position.y=hd.piv.y-drop;
+_v1.copy(hd.tg).sub(hd.piv).applyAxisAngle(_xa,th).add(hd.piv);_v1.y-=drop;armIK(u.arms[0],_v1,_pr);
+_v1.copy(hd.tf).sub(hd.piv).applyAxisAngle(_xa,th).add(hd.piv);_v1.y-=drop+.3*rk;_v1.z-=.08*rk;armIK(u.arms[1],_v1,_pL)}
 else{
 u.arms[0].userData.el.rotation.set(0,0,0);u.arms[1].userData.el.rotation.set(0,0,0);
 const ax=-1.38-(aim||0)*.8+u.kick*.35;
 u.arms[1].rotation.set(ax,0,-.3);u.arms[0].rotation.set(ax+.05,0,.3)}
-u.torso.rotation.x=.06*u.sp+.05*ar;u.torso.rotation.z=Math.sin(u.ph)*.035*u.sp;u.torso.position.y=1.26+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.012-.03*ar;u.head.position.y=1.9+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.016-.03*ar;
+u.torso.rotation.x=.06*u.sp+.05*ar+.22*cr;u.torso.rotation.z=Math.sin(u.ph)*.035*u.sp;u.torso.position.y=1.26-drop+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.012-.03*ar;u.head.position.y=1.9-drop*1.04+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.016-.03*ar;
 u.head.rotation.x=-(aim||0)*.5;u.head.rotation.z=-Math.sin(u.ph)*.05*u.sp;hitPose(u,dt)}
 // goofy anime run: body tipped far forward, arms streaming straight back, big wobbly legs and a bobbing head
 function narutoPose(m,dt,sp,air){
