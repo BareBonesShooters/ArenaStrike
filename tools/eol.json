@@ -1,0 +1,4 @@
+{
+  "note": "These files use Windows (CRLF) line endings and must keep them. Every other text file is LF. tools/patch.py keeps endings automatically; npm run check enforces this list.",
+  "crlf": ["js/01-core.js", "js/02-render-audio.js", "js/06-game-modes.js", "js/06b-death.js", "js/06c-ghost.js", "js/06d-nav.js", "js/06e-phases.js", "js/08-parkour-radar.js", "js/09-party-online.js"]
+}
