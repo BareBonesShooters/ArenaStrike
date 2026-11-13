@@ -1,8 +1,120 @@
-/* Shared identity only; layout and colors still come from the original UI. */
-.arena-brand-mark{width:42px;height:42px;object-fit:contain;border-radius:10px;flex:none;float:left;margin-right:10px}
+/* Arena Strike identity layer (Phase 10). Loaded after style.css and before mobile.css.
+   Holds the brand tokens, the heading face, the three panel levels, the line icon set,
+   the title screen lockup and the lobby layout. Colours come from the logo:
+   ember (the strike), bone (the letter) and navy (the ground). */
+@font-face{font-family:"Arena Display";src:url("BarlowCondensed-ExtraBold.ttf") format("truetype");font-weight:800;font-display:swap}
+
+:root{
+/* brand */
+--ember:#ff7a29;--ember-hi:#ff9a57;--ember-ink:#2a1203;--bone:#fff6e6;--navy:#0b1322;
+--net:#8fdcff;--net-bg:#0f2a3d;
+/* surfaces: main panel, secondary panel, inline well */
+--s-main:rgba(11,17,31,.84);--s-solid:#0e1526;--s-2:rgba(255,255,255,.05);--s-3:rgba(0,0,0,.28);
+--line:rgba(255,255,255,.1);--line-2:rgba(255,255,255,.17);
+/* type: one heading face next to Outfit, five sizes */
+--font-head:"Arena Display","Outfit","Arial Narrow",system-ui,sans-serif;
+--fs-1:.75rem;--fs-2:.875rem;--fs-3:1rem;--fs-4:1.25rem;--fs-5:1.75rem;
+caret-color:var(--ember)}
+::selection{background:rgba(255,122,41,.45);color:#fff}
+
 .brand h1{min-width:0}
 .cb-touch-guide{display:none}
-.arena-title-mark{display:block;width:88px;height:88px;object-fit:contain;border-radius:20px;margin:0 auto 16px}
-.mobile-ui .arena-title-mark{width:72px;height:72px;margin-bottom:12px}
-.mobile-ui .arena-brand-mark{width:42px;height:42px}
-@media (orientation:landscape) and (max-height:600px){.mobile-ui .arena-title-mark{grid-row:1 / span 3;margin:0;width:80px;height:80px}}
+
+/* ---------- logo mark ---------- */
+.amark{display:block;flex:none;overflow:visible}
+.amark .am-a{fill:var(--bone)}
+.amark .am-s{fill:var(--ember)}
+
+/* ---------- line icons: one 24px grid, one stroke weight ---------- */
+svg.ic.ln{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- panel levels ---------- */
+/* 1 main: the panels that carry a screen (lobby rail, play panel, page sheet). The only level that blurs. */
+.gl{background:var(--s-main);border:1px solid var(--line-2);border-radius:var(--r2);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 22px 44px -20px rgba(2,6,23,.75)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){
+.gl{background:var(--s-main);-webkit-backdrop-filter:blur(12px) saturate(1.25);backdrop-filter:blur(12px) saturate(1.25)}}
+/* 2 secondary: supporting cards. Flat, no blur, no lift. */
+.stage>.gl{background:rgba(11,17,31,.8);border-color:var(--line);box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.play .opts{background:var(--s-2);border:1px solid var(--line);border-radius:14px;box-shadow:none}
+/* 3 inline: wells for values and notes inside a panel */
+.perk,.play .opts .perk{background:var(--s-3);border:0;border-radius:10px}
+.pill{background:var(--s-3);border-color:transparent}
+.seg,.shtabs{background:var(--s-3);border-color:transparent;box-shadow:none;border-radius:12px}
+.gthumb{background:rgba(255,122,41,.26);border:1px solid rgba(255,160,100,.5);box-shadow:none;border-radius:9px}
+.seg:not(.glided) .b.on,.shtabs:not(.glided) .b.on{background:rgba(255,122,41,.26)!important;border-color:rgba(255,160,100,.5)!important}
+.sh-h{background:none}
+
+/* controls: flat fills, the ember button is the one loud thing */
+.b:not(.p):not(.on){background:rgba(255,255,255,.07);border-color:var(--line);box-shadow:none}
+@media (hover:hover) and (pointer:fine){.b:not(.p):not(.on):hover{background:rgba(255,255,255,.13);border-color:var(--line-2)}}
+.b.p{background:var(--ember);color:var(--ember-ink);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 18px -8px rgba(255,122,41,.7)}
+@media (hover:hover) and (pointer:fine){.b.p:hover{background:var(--ember-hi)}}
+
+/* labels: sentence case at a readable size instead of tiny tracked capitals */
+.eyebrow{font-size:.8125rem;letter-spacing:0;text-transform:none;color:var(--ink2);font-weight:600}
+.sec>h3,.pgrp h4{font-size:var(--fs-2);letter-spacing:0;text-transform:none;color:var(--ink2);font-weight:600}
+.sh-h h2,#pst{font-family:var(--font-head);font-weight:800;font-size:var(--fs-5);letter-spacing:.01em;text-transform:uppercase;line-height:1}
+
+/* ---------- title screen ---------- */
+#title{padding:8vh 20px 9vh;background:linear-gradient(rgba(6,10,20,.82),rgba(6,10,20,.38) 30%,rgba(6,10,20,0) 52%,rgba(6,10,20,0) 70%,rgba(6,10,20,.7))}
+#title .tw{display:flex;flex-direction:column;align-items:center;gap:14px}
+#title .lockup{display:flex;align-items:center;justify-content:center;gap:.16em;font-size:clamp(2.8rem,10vw,7rem)}
+#title .tmark{width:1.02em;height:1.02em;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
+#title h1{font-family:var(--font-head);font-size:1em;font-weight:800;letter-spacing:.005em;line-height:1;text-transform:uppercase;color:var(--bone);text-shadow:0 4px 18px rgba(0,0,0,.5);white-space:nowrap}
+#title h1 span{display:inline-block;overflow:hidden;vertical-align:bottom;padding:.06em .02em 0;margin-bottom:-.04em}
+#title h1 i{display:inline-block;font-style:normal}
+#title h1 span+span i{color:var(--ember)}
+#title .tv{margin:0;padding:5px 12px;border-radius:8px;background:rgba(11,19,34,.82);border:1px solid var(--line-2);font-size:var(--fs-2);font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--bone)}
+#title .pr{display:inline-flex;align-items:center;gap:10px;padding:7px 18px 7px 7px;border-radius:14px;background:rgba(11,19,34,.82);border:1px solid var(--line-2);font-size:var(--fs-3);font-weight:600;letter-spacing:0;text-transform:none;color:var(--bone);text-shadow:none;animation:none}
+#title .pr b{padding:7px 12px;border-radius:9px;background:var(--bone);color:var(--navy);font-weight:700}
+#title .pr-t,html.mobile-ui #title .pr-k{display:none}
+html.mobile-ui #title .pr-t{display:inline}
+@keyframes am-rise{from{opacity:0;transform:translateY(14%)}}
+@keyframes am-cut{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 -10% 0 0)}}
+@keyframes wm-up{from{transform:translateY(108%)}}
+@keyframes t-fade{from{opacity:0}}
+@keyframes pr-pulse{50%{background-color:var(--ember);color:var(--ember-ink)}}
+@media (prefers-reduced-motion:no-preference){
+#title .tmark .am-a{animation:am-rise .5s cubic-bezier(.16,1,.3,1) backwards}
+#title .tmark .am-s{animation:am-cut .42s .28s cubic-bezier(.16,1,.3,1) backwards}
+#title h1 i{animation:wm-up .62s .12s cubic-bezier(.16,1,.3,1) backwards}
+#title h1 span+span i{animation-delay:.2s}
+#title .tv{animation:t-fade .4s .6s backwards}
+#title .pr{animation:t-fade .4s .85s backwards}
+#title .pr b{animation:pr-pulse 2.4s 1.6s ease-in-out infinite}}
+
+/* ---------- lobby rail: brand, then nav in named groups ---------- */
+.rail{width:232px;padding:14px 12px;gap:0}
+.rail .brand{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:2px 6px 12px;margin:0 0 4px;border-bottom:1px solid var(--line)}
+.rail .bmark{grid-row:1 / span 2;width:38px;height:38px}
+.rail .brand h1{font-family:var(--font-head);font-size:1.55rem;font-weight:800;letter-spacing:.01em;line-height:1;text-transform:uppercase;white-space:nowrap}
+.rail .brand .ver{font-size:var(--fs-1);color:var(--ink3);line-height:1.3}
+.ng{display:flex;flex-direction:column;gap:2px;padding:9px 0 3px}
+.ngh{padding:0 10px 3px;font-size:var(--fs-1);font-weight:600;letter-spacing:0;line-height:1.3;color:var(--ink3)}
+.rail .ng .b:not(.p):not(.on){min-height:38px;justify-content:flex-start;gap:11px;padding:0 10px;border-radius:10px;background:transparent;border-color:transparent;box-shadow:none;color:var(--ink2);font-weight:500;transform:none}
+.rail .ng .b .ic{color:var(--ink3);transition:color .2s var(--ease)}
+@media (hover:hover) and (pointer:fine){.rail .ng .b:not(.p):not(.on):hover{background:rgba(255,255,255,.08);border-color:transparent;color:var(--ink);box-shadow:none;transform:none}.rail .ng .b:hover .ic{color:var(--ember-hi)}}
+.rail .ng .b:active{transform:scale(.98)}
+.ng-end{margin-top:6px;padding-top:7px;border-top:1px solid var(--line)}
+.ng-end .ngh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media (max-height:700px){.rail .ng .b:not(.p):not(.on){min-height:34px}.ng{padding-top:6px}}
+
+/* ---------- lobby profile card: the character is the picture ---------- */
+.profile{grid-template-columns:auto minmax(0,1fr);gap:16px;padding:14px;align-items:center}
+.pfpic{position:relative;width:104px;height:124px;border-radius:14px;border:1px solid var(--line-2);background:#16203a}
+.pfchar{position:absolute;inset:6px 0 0;width:100%;height:calc(100% - 6px);object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4))}
+.pfbadge{position:absolute;right:-8px;bottom:-8px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--s-solid);border:1px solid var(--line-2);color:var(--bone);font-size:17px}
+.pfi{gap:8px}
+.pfi .eyebrow{color:var(--ink3);font-size:var(--fs-1)}
+
+/* ---------- lobby modes: cards with a picture and a clear online tag ---------- */
+.modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 7px;padding-top:4px}
+.mode{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:9px;min-height:50px;padding:7px 9px 7px 7px;border-radius:12px;background:var(--s-2);border:1px solid var(--line);color:var(--ink2);text-align:left}
+@media (hover:hover) and (pointer:fine){.mode:hover{background:rgba(255,255,255,.1);border-color:var(--line-2);color:var(--ink)}}
+.mico{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--s-3);color:var(--ink2);font-style:normal;transition:background-color .2s var(--ease),color .2s var(--ease)}
+.mode b{display:block;font-weight:600;font-size:var(--fs-2);line-height:1.15}
+.mode.on{background:rgba(255,122,41,.13);border-color:var(--ember);color:var(--ink)}
+.mode.on .mico{background:var(--ember);color:var(--ember-ink)}
+.mode .tag{position:absolute;top:-8px;right:7px;margin:0;display:inline-flex;align-items:center;gap:3px;padding:1px 7px 1px 6px;border-radius:99px;background:var(--ember);color:var(--ember-ink);font-size:.6875rem;font-weight:700;letter-spacing:0;line-height:1.35;text-transform:none}
+.mode .tag.net{padding-left:4px;background:var(--net-bg);color:var(--net);box-shadow:0 0 0 1px rgba(143,220,255,.4)}
+@media (max-height:960px){.mode{min-height:46px;padding:5px 9px 5px 6px}}

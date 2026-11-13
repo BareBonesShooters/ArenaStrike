@@ -124,7 +124,7 @@ const Title=(()=>{
 // the title screen is a showreel made of the game's own systems: a first-person Monster Rush with your equipped gun, a real parkour course,
 // the weapon inspector on rarity-ordered guns and knives, the case reel, and a bot duel. Nothing here is a mock-up.
 let on=false,seg=-1,segT=0,tt=0,objs=[],fade=null,lab=null,swp=0,A={},fpOn=false,ov=null,fails=0,glowTex=null;
-const SEGS=["rush","parkour","inspect","cases","duel"],DUR={rush:17,parkour:15,inspect:15,cases:13,duel:13};
+const SEGS=["rush","parkour","inspect","duel"],DUR={rush:17,parkour:15,inspect:15,cases:13,duel:13};
 const add=o=>{sc.add(o);objs.push(o);return o};
 function clearSeg(){if(A&&A.keep){mode=A.keep.mode;wave=A.keep.wave;PU=A.keep.PU;wq=0;wt=0;wn=0;try{for(const o of projs)sc.remove(o.m);projs.length=0}catch(e){}try{clearEnts()}catch(e){}}for(const o of objs){sc.remove(o);try{disposeGeo(o)}catch(e){}}objs=[];try{Fx.clear()}catch(e){}if(ov){ov.remove();ov=null}fpOn=false;A={};if(cam.fov!==66){cam.fov=66;cam.updateProjectionMatrix()}}
 const setLab=t=>{if(lab&&lab.textContent!==t)lab.textContent=t};

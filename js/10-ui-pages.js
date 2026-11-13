@@ -4,7 +4,8 @@ let view="lobby",PAGE="",bkReady=false,endAgain="",CB=0,WON=null,CQ=1;
 const IDX={cat:"gun",f:"all",sel:"g0"},LD={slot:0};
 const KIND={g:"gun",s:"skin",n:"knife",p:"out"},HUDV=["lobby","pg","end"];
 const rcol=it=>RC[it.r]||RC[0],owns=it=>!!S.own[it.id];
-const ico=(n,s)=>`<svg class="ic"${s?` style="width:${s}px;height:${s}px"`:""} aria-hidden="true"><use href="#i-${n}"/></svg>`;
+// names starting "n-" are the line icon set (one stroke weight, see svg.ic.ln); the rest are the older filled glyphs
+const ico=(n,s)=>`<svg class="ic${n.slice(0,2)==="n-"?" ln":""}"${s?` style="width:${s}px;height:${s}px"`:""} aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const seg=(a,items,cur)=>items.map(([v,l])=>`<button class="b${String(cur)===String(v)?" on":""}" data-a="${a}" data-v="${v}">${l}</button>`).join("");
 
 function show(v){
@@ -58,7 +59,7 @@ if(!u){e.textContent=it.n[0];return}
 const im=new Image();im.alt=it.n;im.src=u;e.appendChild(im)})})}
 function card(it,o){
 o=o||{};const ow=owns(it);
-return`<button class="it${o.sel?" sel":""}${ow||o.all?"":" lock"}${it.r>=3?" hi":""}" data-a="${o.a}"${o.f?` data-f="${o.f}"`:""} data-v="${it.id}" style="--rc:${rcol(it)};--i:${Math.min(o.i||0,12)}">${thumb(it,o)}<b>${esc(it.n)}</b><span class="m"><span class="rar">${R[it.r]}</span>${ow?"":ico("lock",14)}</span>${o.badge?`<span class="badge ok">${ico("check",13)}</span>`:""}</button>`}
+return`<button class="it${o.sel?" sel":""}${ow||o.all?"":" lock"}${it.r>=3?" hi":""}" data-a="${o.a}"${o.f?` data-f="${o.f}"`:""} data-v="${it.id}" style="--rc:${rcol(it)};--i:${Math.min(o.i||0,12)}">${thumb(it,o)}<b>${esc(it.n)}</b><span class="m"><span class="rar">${R[it.r]}</span>${ow?"":ico("n-lock",14)}</span>${o.badge?`<span class="badge ok">${ico("check",13)}</span>`:""}</button>`}
 
 // ---------- lobby ----------
 MD.splice(MD.findIndex(m=>m[0]==="tut"),0,
@@ -66,14 +67,16 @@ MD.splice(MD.findIndex(m=>m[0]==="tut"),0,
 ["sandbox","Sandbox","Fly freely, place troops on either team, watch them fight, or join a battle yourself."]);
 // the party stays together between matches, so the lobby keeps saying so
 function roomLine(){const s=Net.state;if(s!=="hosting"&&s!=="joined")return "";const n=Net.roster().length;return (s==="hosting"?"Hosting party ":"In party ")+Net.code+" \u00b7 "+n+" player"+(n===1?"":"s")+(s==="hosting"?" \u00b7 open Servers to manage teams and start":"")}
+// picture for each mode card
+const MIC={duel:"duel",gg:"gg",party:"party",waves:"ghost",duel1:"swords",coop:"coop",range:"target",parkour:"run",battle_sim:"flag",sandbox:"cube",tut:"cap"};
 function lobbyUI(msg){
 if(sel==="duel1"||sel==="coop")S.mp.mode=sel;
 const nm=$("nm");if(document.activeElement!==nm)nm.value=S.name;
 paintCoins();$("sk").textContent=S.streak;try{questDot()}catch(e){}
-const bg=I(S.bg),av=I(S.av);$("av").style.background=bg.css;$("av").innerHTML=gly(av.e);
+const bg=I(S.bg),av=I(S.av);$("pfpic").style.background=bg.css;$("av").innerHTML=gly(av.e);
 Thumb.req("out",I(eq().p),440,520,u=>{if(u){const i=$("pfo");if(i.getAttribute("src")!==u)i.src=u;i.hidden=false}});
 // the list is built once and only the highlight moves afterwards, so picking a mode does not replay every row's entrance
-{const mds=$("mds"),h=MD.map((m,i)=>`<button class="mode" data-a="mode" data-v="${m[0]}" style="--i:${i}"><span><b>${m[1]}</b></span>${PMS(m[0])?'<span class="tag">Online</span>':m[0]==="tut"&&!S.tut?'<span class="tag">New</span>':""}</button>`).join("");
+{const mds=$("mds"),h=MD.map((m,i)=>`<button class="mode" data-a="mode" data-v="${m[0]}" style="--i:${i}"><i class="mico">${ico("n-"+(MIC[m[0]]||"play"),22)}</i><b>${m[1]}</b>${PMS(m[0])?`<span class="tag net">${ico("n-globe",12)}Online</span>`:m[0]==="tut"&&!S.tut?'<span class="tag">New</span>':""}</button>`).join("");
 if(mds._h!==h){mds._h=h;mds.innerHTML=h}
 mds.querySelectorAll(".mode").forEach(b=>{const on=b.dataset.v===sel;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on)})}
 {const mi=$("mi");mi.textContent=(MD.find(m=>m[0]===sel)||MD[0])[2];if(sel==="tut"){mi.insertAdjacentHTML("beforeend",Cine.clips([["move","Move"],["aim","Aim and shoot"]]));Cine.scan(mi)}}
@@ -83,7 +86,7 @@ $("sg-rg").innerHTML=seg("rg",[[3,"3"],[5,"5"],[10,"10"]],rgv);
 hide("o-df",!(sel==="duel"||sel==="gg"||sel==="parkour"||sel==="waves"));$("o-dft").textContent=sel==="parkour"?"Course difficulty":sel==="waves"?"Monster difficulty":"Bot difficulty";hide("o-rd",sel!=="duel");hide("o-party",!PMS(sel));
 const hasGhost=Object.keys(S.pkt||{}).some(k=>k.indexOf((S.opt.df||"easy")+"_")===0&&S.pkg&&S.pkg[k]&&S.pkg[k].length>2);
 hide("o-gr",false);{const access=DevAccess.unlocked;
-$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock</button>':'<button class="b" data-a="devaccess">'+ico("lock",16)+'Input code</button>';
+$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock</button>':'<button class="b" data-a="devaccess">'+ico("n-lock",16)+'Input code</button>';
 $("grinfo").textContent=access?"Developer modes unlocked on this device.":"Input code for a dev-only gamemode."}
 hide("o-gl",sel!=="waves");{const gl=!!S.opt.ghostLvl;$("sg-gl").innerHTML=seg("gl",[["0","Classic"],["1","Ghost level"]],gl?1:0);$("glinfo").textContent=gl?"Every monster is a ghost: they hover, keep their distance and shoot when they see you. Every 5th wave brings the Ghost boss.":"Classic Monster Rush. A ghost wave still haunts the arena every 7th wave."}
 hide("o-ghost",sel!=="parkour");hide("o-pkk",sel!=="parkour");$("sg-pk").innerHTML=seg("pkknife",[["0","Off"],["1","On"]],pkKnifeOn()?1:0);
@@ -199,11 +202,11 @@ const ITC=[["g","Guns",G.filter(x=>!x.bp&&!x.codeOnly),"gun"],["s","Skins",SK.fi
 const itemTotal=()=>ITC.reduce((a,c)=>a+c[2].length,0),itemOwned=()=>ITC.reduce((a,c)=>a+c[2].filter(owns).length,0);
 function itemCard(it,i){
 const ow=owns(it),pr=itemPrice(it),k=PRE(it.id);
-const act=ow?`<button class="b" disabled>${ico("check",14)}Owned</button>`:pr?`<button class="b" data-a="itembuy" data-v="${it.id}"${S.coins>=pr&&!CB?"":" disabled"}>${ico("coin")}${pr.toLocaleString()}</button>`:`<small class="fno">${ico("lock",13)}Case only</small>`;
+const act=ow?`<button class="b" disabled>${ico("check",14)}Owned</button>`:pr?`<button class="b" data-a="itembuy" data-v="${it.id}"${S.coins>=pr&&!CB?"":" disabled"}>${ico("coin")}${pr.toLocaleString()}</button>`:`<small class="fno">${ico("n-lock",13)}Case only</small>`;
 return`<article class="fnc${ow?"":" lock"}" style="--rc:${rcol(it)};--i:${Math.min(i,14)}">${thumb(it)}<div class="fni"><div class="fnh"><b>${esc(it.n)}</b><span class="rar">${R[it.r]}</span></div><small>${KLB[k]}${k==="g"?" · "+it.d+" damage":""}</small></div>${act}</article>`}
 function finCard(it,i){
 const ow=owns(it),q=finId()===it.id,pr=itemPrice(it);
-const act=q?`<button class="b" disabled>${ico("check",14)}Equipped</button>`:ow?`<button class="b p" data-a="fin" data-v="${it.id}">Equip</button>`:pr?`<button class="b" data-a="finbuy" data-v="${it.id}"${S.coins>=pr&&!CB?"":" disabled"}>${ico("coin")}${pr.toLocaleString()}</button>`:`<small class="fno">${ico("lock",13)}Case only</small>`;
+const act=q?`<button class="b" disabled>${ico("check",14)}Equipped</button>`:ow?`<button class="b p" data-a="fin" data-v="${it.id}">Equip</button>`:pr?`<button class="b" data-a="finbuy" data-v="${it.id}"${S.coins>=pr&&!CB?"":" disabled"}>${ico("coin")}${pr.toLocaleString()}</button>`:`<small class="fno">${ico("n-lock",13)}Case only</small>`;
 return`<article class="fnc${q?" eqd":""}${ow?"":" lock"}" style="--rc:${rcol(it)};--i:${Math.min(i,14)}">${thumb(it)}<div class="fni"><div class="fnh"><b>${esc(it.n)}</b><span class="rar">${R[it.r]}</span></div><small>${esc(it.d)}</small></div>${act}</article>`}
 function shopIdle(){
 if(SH.tab==="fin"){const f=I(finId());return`<div class="stg0" style="--rc:${rcol(f)}"><div class="stt">${thumb(f)}</div><div class="fqi"><small class="rar">Your finisher · ${R[f.r]}</small><b>${esc(f.n)}</b><small>${esc(f.d)} It plays every time you eliminate someone.</small></div></div>`}
@@ -403,13 +406,13 @@ if(pv&&C[0]==="f")note=(owns(pv)?(isEq(pv)?"Equipped. It plays on every eliminat
 let st="";if(pv&&C[0]==="g")st=statRow("Damage",pv.d*(pv.pel||1),mx(g=>g.d*(g.pel||1)),pv.d+(pv.pel?" x"+pv.pel:""))+statRow("Fire rate",1/pv.t,mx(g=>1/g.t),(1/pv.t).toFixed(1)+"/s")+statRow("Magazine",pv.m,mx(g=>g.m),pv.m)+statRow("Reload",pv.rl,3.2,pv.rl+"s",1);
 else if(pv&&C[0]==="k")st=statRow("Damage",KNIFE_D*KNM[pv.r],100,Math.round(KNIFE_D*KNM[pv.r]))+statRow("Reach",pv.s.len*(1+.04*pv.r),.75,Math.round(pv.s.len*(1+.04*pv.r)*100)+" cm");
 const rows=[["g","Gun",e.g],["s","Skin",e.s],["k","Knife",e.k],["p","Outfit",e.p],["f","Finisher",finId()],["bg","Background",S.bg],["av","Avatar",S.av],["mh","Home music",S.mh],["mm","Match music",S.mm]].map(([c,l,id])=>{const it=I(id),ms=c==="mh"||c==="mm";return`<button class="lkr${ms?(C[0]==="u"&&(LK.ms||"mh")===c?" on":""):C[0]===c?" on":""}" data-a="${ms?"lkms":"lkcat"}" data-v="${c}" style="--rc:${it?rcol(it):"#94a3b8"}"><small>${l}</small><b>${it?esc(it.n):"None"}</b><i></i></button>`}).join("");
-h+=`<div class="lk"><aside class="lkp gl" aria-label="Preview"><div class="lkpv" style="--rc:${pv?rcol(pv):"#94a3b8"}">${pv?LoadoutPreview.markup(pv,C[0]):""}${pv&&isEq(pv)?`<span class="eqb big">${ico("check",14)}Equipped</span>`:pv&&!owns(pv)?`<span class="eqb lockb">${ico("lock",13)}Locked</span>`:""}</div>
+h+=`<div class="lk"><aside class="lkp gl" aria-label="Preview"><div class="lkpv" style="--rc:${pv?rcol(pv):"#94a3b8"}">${pv?LoadoutPreview.markup(pv,C[0]):""}${pv&&isEq(pv)?`<span class="eqb big">${ico("check",14)}Equipped</span>`:pv&&!owns(pv)?`<span class="eqb lockb">${ico("n-lock",13)}Locked</span>`:""}</div>
 <div class="lkn" style="--rc:${pv?rcol(pv):"#94a3b8"}"><small class="rar">${pv?R[pv.r]:""} ${C[1].replace(/s$/,"")}</small><h3>${pv?esc(pv.n):"Nothing here"}</h3><p>${esc(note)}</p></div>${st?`<div class="stats lks">${st}</div>`:""}${wshBtn(pv)}${C[0]==="u"?discPanel(pv):""}
 <div class="lkh"><small>This loadout</small></div><div class="lkrs">${rows}</div>
 <div class="lkh"><small>Emote slots, keys 3 to 7</small></div><div class="slots5">`+[0,1,2,3,4].map(i=>{const it=e.e[i]&&I(e.e[i]);return`<button class="slot${LD.slot===i&&C[0]==="m"?" on":""}" data-a="slot" data-v="${i}" aria-label="Emote slot ${i+1}">${it?gly(it.e):ico("close",18)}<small>Key ${i+3}</small></button>`}).join("")+`</div></aside>
 <section class="lkm"><div class="lkc" role="tablist" aria-label="Item type">${LKC.map(c=>`<button class="b${C[0]===c[0]?" on":""}" role="tab" data-a="lkcat" data-v="${c[0]}">${gly(c[3],18)}${c[1]}<em>${c[2].filter(owns).length}/${c[2].length}</em></button>`).join("")}<button class="b lkf${LK.own?" on":""}" data-a="lkown" aria-pressed="${!!LK.own}">${ico("check",15)}Owned only</button></div>
 <div class="lkg">`+(C[0]==="m"?`<button class="it lkt${e.e[LD.slot]?"":" eqd"}" data-a="em" data-v="" style="--rc:#94a3b8"><div class="th">${ico("close",26)}</div><b>Empty</b><span class="m"><span class="rar">Slot ${LD.slot+3}</span></span>${e.e[LD.slot]?"":`<span class="eqb">${ico("check",12)}Equipped</span>`}</button>`:"")+
-(L.length?L.map((it,i)=>{const q=isEq(it),ow=owns(it);return`<button class="it lkt${q?" eqd":""}${ow?"":" lock"}${pv&&pv.id===it.id?" sel":""}${it.r>=3?" hi":""}" data-a="lkpick" data-v="${it.id}" style="--rc:${rcol(it)};--i:${Math.min(i,14)}" aria-pressed="${q}">${thumb(it,{w:200,h:124,sk:C[0]==="g"?sk:undefined})}<b>${esc(it.n)}</b><span class="m"><span class="rar">${R[it.r]}</span>${ow?"":ico("lock",14)}</span>${q?`<span class="eqb">${ico("check",12)}Equipped</span>`:""}</button>`}).join(""):`<p class="lke">Nothing owned in this category yet. Open cases in the Shop or claim Battle Pass rewards.</p>`)+`</div></section></div>`;
+(L.length?L.map((it,i)=>{const q=isEq(it),ow=owns(it);return`<button class="it lkt${q?" eqd":""}${ow?"":" lock"}${pv&&pv.id===it.id?" sel":""}${it.r>=3?" hi":""}" data-a="lkpick" data-v="${it.id}" style="--rc:${rcol(it)};--i:${Math.min(i,14)}" aria-pressed="${q}">${thumb(it,{w:200,h:124,sk:C[0]==="g"?sk:undefined})}<b>${esc(it.n)}</b><span class="m"><span class="rar">${R[it.r]}</span>${ow?"":ico("n-lock",14)}</span>${q?`<span class="eqb">${ico("check",12)}Equipped</span>`:""}</button>`}).join(""):`<p class="lke">Nothing owned in this category yet. Open cases in the Shop or claim Battle Pass rewards.</p>`)+`</div></section></div>`;
 return h+`<small>Loadouts save automatically. Gun Game uses its own gun ladder, so the gun slot is ignored there. Items are sorted from Common to Secret.</small>`}
 // index
 // ---------- weapon sheet: stats, rarity bonus, ratings, and what each weapon is good and bad at ----------
@@ -481,12 +484,12 @@ return`<div class="wsh-ov" id="wsh" data-a="wshx" role="dialog" aria-modal="true
 function wshOpen(id){const it=I(id);if(!it)return;wshClose();const d=document.createElement("div");d.innerHTML=wshHTML(it);document.body.appendChild(d.firstChild);snd("open",.6)}
 function wshClose(){const o=document.getElementById("wsh");if(o){o.remove();snd("shut",.4)}}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("wsh")){wshClose();e.stopPropagation()}},true);
-const wshBtn=it=>it&&(PRE(it.id)==="g"||PRE(it.id)==="n")?`<button class="b wshb" data-a="wsh" data-v="${it.id}">${ico("help",15)}Strengths &amp; weaknesses</button>`:"";
+const wshBtn=it=>it&&(PRE(it.id)==="g"||PRE(it.id)==="n")?`<button class="b wshb" data-a="wsh" data-v="${it.id}">${ico("n-help",15)}Strengths &amp; weaknesses</button>`:"";
 function discPanel(d){
 if(!d)return"";const pv=Mus.prev,on=pv&&pv.id===d.id,ow=owns(d),bar=(n,l)=>statRow(l,n,5,["","Mellow","Easy","Steady","Driving","Intense"][n]);
 return`<div class="dsk" style="--rc:${rcol(d)}"><p class="sm">${esc(d.desc||"")}</p><div class="stats lks">${bar(d.en||2,"Energy")}<div class="stat"><span>Tempo</span><i></i><b>${d.bl} / ${d.bb} BPM</b></div></div>
 <div class="dskb"><button class="b p" data-a="dskeq" data-v="${d.id}" data-s="mh"${ow?"":" disabled"}>${S.mh===d.id?"Home music ✓":"Use at home"}</button><button class="b p" data-a="dskeq" data-v="${d.id}" data-s="mm"${ow?"":" disabled"}>${S.mm===d.id?"Match music ✓":"Use in matches"}</button>
-<button class="b" data-a="dskprev" data-v="${d.id}">${ico("play")}${on?(pv.kind==="lobby"?"Playing home mix · hear match mix":"Playing match mix · stop"):"Preview"}</button></div></div>`}
+<button class="b" data-a="dskprev" data-v="${d.id}">${ico("n-play")}${on?(pv.kind==="lobby"?"Playing home mix · hear match mix":"Playing match mix · stop"):"Preview"}</button></div></div>`}
 const CATS=[["gun","Guns",G],["skin","Gun skins",SK],["knife","Knives",KN],["emote","Emotes",EM],["out","Outfits",PS],["bg","Backgrounds",BG],["av","Avatars",AV],["disc","Music discs",MU],["more","Other",null]];
 const EQF={g:"g",s:"s",n:"k",p:"p"};
 function foundIn(it){
@@ -546,13 +549,13 @@ longFill();S.qseen=1;setTimeout(()=>{try{questDot()}catch(e){}});
 const tab=["daily","weekly","season"].includes(QV.tab)?QV.tab:"daily",wd=S.wq.list.filter(q=>q.p>=q.need).length,sd=S.sq.list.filter(q=>q.p>=q.need).length;
 const tabs=`<div class="tabs shtabs qtabs" role="tablist" aria-label="Quest type">${[["daily","Daily",S.qb.length?questFill().filter(q=>q.p>0).length+" started":""],["weekly","Weekly",wd+"/"+S.wq.list.length],["season","Season "+SEASON_ID,sd+"/"+S.sq.list.length]].map(([k,l,e])=>`<button class="b${tab===k?" on":""}" role="tab" aria-selected="${tab===k}" data-a="qtab" data-v="${k}">${l}<em>${e}</em></button>`).join("")}</div>`;
 if(tab==="weekly"){const xp=S.wq.list.reduce((a,q)=>a+(q.p>=q.need?0:q.xp),0);
-return tabs+`<div class="row"><div class="l"><b>Weekly quests</b><small>${S.wq.list.length} bigger goals that reset every Monday, in ${wqLeft()}. Each one pays Battle Pass XP and coins the moment you finish it.</small></div><span class="pill gold">${ico("bolt")}${xp.toLocaleString()} XP left</span></div>
+return tabs+`<div class="row"><div class="l"><b>Weekly quests</b><small>${S.wq.list.length} bigger goals that reset every Monday, in ${wqLeft()}. Each one pays Battle Pass XP and coins the moment you finish it.</small></div><span class="pill gold">${ico("n-bolt")}${xp.toLocaleString()} XP left</span></div>
 <div class="qgrid stg">${S.wq.list.map((q,i)=>lqCard(q,i,"#38bdf8")).join("")}</div>`}
 if(tab==="season"){const xp=S.sq.list.reduce((a,q)=>a+(q.p>=q.need?0:q.xp),0),pc=sd/S.sq.list.length*100;
-return tabs+`<div class="row"><div class="l"><b>Season ${SEASON_ID} quests</b><small>Long-term goals that never reset and carry across the whole season. Slow and steady, with the biggest XP and coin payouts in the game.</small><div class="bar" style="height:8px;margin-top:8px"><i style="width:${pc}%;background:linear-gradient(90deg,var(--ac),var(--gold))"></i></div></div><span class="pill gold">${ico("bolt")}${xp.toLocaleString()} XP left</span></div>
+return tabs+`<div class="row"><div class="l"><b>Season ${SEASON_ID} quests</b><small>Long-term goals that never reset and carry across the whole season. Slow and steady, with the biggest XP and coin payouts in the game.</small><div class="bar" style="height:8px;margin-top:8px"><i style="width:${pc}%;background:linear-gradient(90deg,var(--ac),var(--gold))"></i></div></div><span class="pill gold">${ico("n-bolt")}${xp.toLocaleString()} XP left</span></div>
 <div class="qgrid stg">${S.sq.list.map((q,i)=>lqCard(q,i,"#f0abfc")).join("")}</div>`}
 const b=questFill().map((q,i)=>({q,i})).sort((a,c)=>a.q.t-c.q.t||a.i-c.i),xp=b.reduce((a,o)=>a+o.q.xp,0);
-return tabs+`<div class="row"><div class="l"><b>${b.length} daily quests</b><small>New quests every day in ${qLeft()}. Quests you have started stay, the untouched ones rotate out. Quest XP is a bonus on top of what matches pay.</small></div><span class="pill gold">${ico("bolt")}${xp} XP left</span></div>
+return tabs+`<div class="row"><div class="l"><b>${b.length} daily quests</b><small>New quests every day in ${qLeft()}. Quests you have started stay, the untouched ones rotate out. Quest XP is a bonus on top of what matches pay.</small></div><span class="pill gold">${ico("n-bolt")}${xp} XP left</span></div>
 <div class="row"><div class="l"><b>${S.qsw|0} of ${QSW} free switches left today</b><small>Switch swaps a quest for a new one of the same difficulty. Skip pays coins to finish a quest right now and collect its XP.</small></div><span class="pill">${ico("coin")}${(S.coins|0).toLocaleString()}</span></div>
 <div class="qgrid stg">${b.map((o,n)=>qCard(o.q,o.i,n,false)).join("")}</div>
 <p class="sm">Do the task anywhere in the game and the XP goes straight to your Battle Pass (tier ${bpTier()} of ${BP_TIERS}). Harder quests are rarer and pay much more. You can also check them any time from the pause screen.</p>`}
@@ -706,7 +709,7 @@ ${nr?`<div class="bpn"><span class="eyebrow">Next exclusive</span><div class="bp
 for(let i=ch*25;i<Math.min(BP_TIERS,ch*25+25);i++){
 const rw=BP_REW[i],unlocked=t>=rw.tier,done=!!S.bpClaim[rw.tier],can=unlocked&&!done,isNext=rw.tier===next&&!max,big=rw.kind==="item"&&rw.r>=3;
 h+=`<button class="bpt${can?" can":""}${done?" done":""}${!unlocked?" lock":""}${isNext?" nxt":""}${big?" big":""}" data-a="bpclaim" data-v="${rw.tier}" style="--rc:${RC[rw.r]};--i:${i-ch*25}" ${can?"":"disabled"} aria-label="Tier ${rw.tier}, ${esc(rw.n)}${done?", claimed":can?", ready to claim":unlocked?"":", locked"}">
-<span class="tn">${rw.tier}</span><div class="bpa2">${bpArt(rw)}${done?`<span class="bpok">${ico("check",20)}</span>`:!unlocked?`<span class="bpl">${ico("lock",14)}</span>`:""}</div>
+<span class="tn">${rw.tier}</span><div class="bpa2">${bpArt(rw)}${done?`<span class="bpok">${ico("check",20)}</span>`:!unlocked?`<span class="bpl">${ico("n-lock",14)}</span>`:""}</div>
 <b>${esc(rw.n)}</b><small>${done?"Claimed":can?"Tap to claim":rw.kind==="item"?R[rw.r]+(rw.coins?" · +"+rw.coins.toLocaleString():""):(unlocked?"":"Locked")}</small>${isNext?`<i class="bpp"><s style="width:${pct}%"></s></i>`:""}</button>`}
 return h+`</div><div class="sec"><h3>How to earn XP</h3><div class="keys">
 <div><span>Finish a match</span><kbd>70 XP, win 130</kbd></div><div><span>Every kill</span><kbd>+4 XP (up to 150 a match)</kbd></div><div><span>Monster Rush</span><kbd>+10 XP per wave you reach</kbd></div><div><span>Clear a wave</span><kbd>15+ XP, more later on</kbd></div><div><span>Defeat a boss</span><kbd>80+ XP, Corrupted 150+</kbd></div><div><span>Quests</span><kbd>Daily, weekly and season</kbd></div><div><span>Daily boost</span><kbd>${dl} of 3 matches left at x1.5</kbd></div><div><span>After Tier ${BP_TIERS}</span><kbd>${BP_OVER[1]} coins every ${BP_OVER[0].toLocaleString()} XP</kbd></div></div></div>
@@ -726,8 +729,8 @@ ${gfxSel()}
 <div class="row"><span>Aim down sights</span></div><select data-i="scope" aria-label="Aim down sights mode"><option value="toggle"${(S.opt&&S.opt.scopeToggle!==false)?" selected":""}>Toggle (click on / off)</option><option value="hold"${(S.opt&&S.opt.scopeToggle===false)?" selected":""}>Hold (must hold right-click)</option></select>
 </div>`}
 function pSettings(){
-return`<div class="sec"><h3>This device</h3><div class="row"><div class="l"><b>${esc(S.name)}</b><small>Display name for multiplayer. Everything below saves on this device.</small></div><button class="b" data-a="page" data-v="load">${ico("pack",16)}Loadout</button></div>
-<div class="row"><div class="l"><b>Developer access</b><small>${DevAccess.unlocked?"Unlocked on this device.":"Locked. Enter a code under Redeem codes."}</small></div>${DevAccess.unlocked?`<button class="b" data-a="devlock">Lock access</button>`:`<button class="b" data-a="devaccess">${ico("lock",16)}Input code</button>`}</div></div>
+return`<div class="sec"><h3>This device</h3><div class="row"><div class="l"><b>${esc(S.name)}</b><small>Display name for multiplayer. Everything below saves on this device.</small></div><button class="b" data-a="page" data-v="load">${ico("n-load",16)}Loadout</button></div>
+<div class="row"><div class="l"><b>Developer access</b><small>${DevAccess.unlocked?"Unlocked on this device.":"Locked. Enter a code under Redeem codes."}</small></div>${DevAccess.unlocked?`<button class="b" data-a="devlock">Lock access</button>`:`<button class="b" data-a="devaccess">${ico("n-lock",16)}Input code</button>`}</div></div>
 ${settingsHTML()}`}
 function pHelp(){
 const K2=[["Move","W A S D"],["Look and aim","Mouse"],["Jump, climb ledges","Space"],["Sprint","Shift"],["Slide","Control / Option"],["Grenade (hold to aim)","Hold G"],["Shoot / charge knife throw","Left click"],["Aim down sights","Right click to toggle"],["Reload","R"],["Gun or knife","1, 2 or scroll"],["Emotes","3 to 7"],["Scoreboard","Hold Tab"],["Map (shows where everyone is)","M"],["Pause (shows your quests)","P or Esc"],["Restart (parkour only)","T"]];
@@ -746,8 +749,8 @@ const st=Net.state,room=st==="hosting"||st==="joined",ros=Net.roster();
 let h="";
 if(!room){
 h+=`<div class="sec"><h3>Host a server</h3><p class="sm" style="line-height:1.55">Uses PeerJS (needs internet once to connect). Share the 5-letter code. Friends open this same HTML file on any device, enter the code, then you press <b>Start match</b>. Party Mode only for online play.</p>
-<button class="b p lg" data-a="hostgo"${st==="starting"?" disabled":""}>${ico("globe")}${st==="starting"?"Creating room":"Create server"}</button></div>
-<div class="sec"><h3>Join a server</h3><div class="joinbox" style="padding:0;background:none;border:0;box-shadow:none"><div class="rw"><input id="jc2" type="text" maxlength="5" placeholder="CODE" autocomplete="off" spellcheck="false" aria-label="Server code" style="text-transform:uppercase;letter-spacing:.3em;text-align:center;font-weight:800"><button class="b p" data-a="join2">${ico("globe")}Join</button></div></div></div>`;
+<button class="b p lg" data-a="hostgo"${st==="starting"?" disabled":""}>${ico("n-globe")}${st==="starting"?"Creating room":"Create server"}</button></div>
+<div class="sec"><h3>Join a server</h3><div class="joinbox" style="padding:0;background:none;border:0;box-shadow:none"><div class="rw"><input id="jc2" type="text" maxlength="5" placeholder="CODE" autocomplete="off" spellcheck="false" aria-label="Server code" style="text-transform:uppercase;letter-spacing:.3em;text-align:center;font-weight:800"><button class="b p" data-a="join2">${ico("n-globe")}Join</button></div></div></div>`;
 if(Net.err)h+=`<div class="err" role="alert">${esc(Net.err)}</div>`;
 return h}
 h+=`<div class="sec"><h3>${st==="hosting"?"Your server code":"Connected to"}</h3><div class="code">${esc(Net.code)}</div>
@@ -759,7 +762,7 @@ if(st==="hosting"){
 const can=S.mp.mode==="duel1"?ros.length===2:ros.length>=2;
 h+=`<div class="sec"><h3>Party game</h3><div class="pmodes">${Object.entries(PM_MODES).map(([k,m])=>`<button class="b${S.mp.mode===k?" on":""}" data-a="pmode2" data-v="${k}">${esc(m.n)}<small>${esc(m.perk)}</small></button>`).join("")}</div>${card}
 <p class="sm">${need}. ${can?"Everyone is in. Press start when you are ready.":ros.length<2?"Waiting for players to join with your code.":"Too many players for this game, pick another."}</p>
-<div class="rw" style="display:flex;gap:8px;flex-wrap:wrap"><button class="b p lg" data-a="start"${can?"":" disabled"}>${ico("play")}Start match</button>${S.mp.mode==="coop"?"":`<button class="b" data-a="solo">Play solo with bots</button>`}</div></div>`}
+<div class="rw" style="display:flex;gap:8px;flex-wrap:wrap"><button class="b p lg" data-a="start"${can?"":" disabled"}>${ico("n-play")}Start match</button>${S.mp.mode==="coop"?"":`<button class="b" data-a="solo">Play solo with bots</button>`}</div></div>`}
 else h+=`<div class="sec"><h3>Next game</h3>${card}<p class="sm">Waiting for the host to start. You will drop straight in.</p></div>`}
 if(Net.err)h+=`<div class="err" role="alert">${esc(Net.err)}</div>`;
 return h}
@@ -771,7 +774,7 @@ return`<div class="codes-layout">
 <form id="redeem-form" class="code-form"><label for="reward-code">Reward code</label><div class="code-entry"><input id="reward-code" name="code" type="text" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Enter your code" aria-describedby="redeem-status"><button class="b p" type="submit">Redeem</button></div></form>
 <p id="redeem-status" class="code-status" role="status" aria-live="polite"></p>
 <div id="code-rewards" class="code-rewards"></div>
-<button class="b" data-a="page" data-v="load">${ico("pack",16)}Open Loadout</button><small class="code-note">Rewards save on this browser, just like your other items.</small></section>
+<button class="b" data-a="page" data-v="load">${ico("n-load",16)}Open Loadout</button><small class="code-note">Rewards save on this browser, just like your other items.</small></section>
 <section class="code-panel developer-panel"><span class="eyebrow">Developer exclusive</span><h3>Custom Gamemodes</h3><p>Input code for a dev-only gamemode.</p>
 ${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Access stays on this device until you lock it. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
 <p id="developer-status" class="code-status" role="status" aria-live="polite"></p></section></div>`
@@ -839,7 +842,7 @@ id=requestAnimationFrame(loop);return()=>cancelAnimationFrame(id)}
 function reward(o){
 if(el)close();o=o||{};const r=clamp(o.r|0,0,5),col=RC[r],it=o.item,life=[1.8,2.2,2.8,3.4,4.2,5][r];
 const d=document.createElement("div");d.id="cine";d.className="cine r"+r;d.style.setProperty("--rc",col);d.setAttribute("role","dialog");d.setAttribute("aria-label",o.title||"Reward");
-const extra=[o.coins?`<span class="cchip">${ico("coin")}+${o.coins} coins</span>`:"",o.xp?`<span class="cchip">${ico("bolt")}+${o.xp} XP</span>`:""].join("");
+const extra=[o.coins?`<span class="cchip">${ico("coin")}+${o.coins} coins</span>`:"",o.xp?`<span class="cchip">${ico("n-bolt")}+${o.xp} XP</span>`:""].join("");
 d.innerHTML=`<canvas aria-hidden="true"></canvas><div class="cflash"></div><div class="cc"><div class="cey">${esc(o.title||"Reward")}</div><div class="cth">${it?thumb(it,{w:320,h:200}):`<div class="th">${gly(o.icon||"coin")}</div>`}</div><div class="cnm">${esc(o.name||(it?it.n:""))}</div><div class="crr">${esc(o.sub||(it?R[it.r]:R[r]))}</div>${extra?`<div class="cchips">${extra}</div>`:""}<small>Click or press Enter to continue</small></div>`;
 document.body.appendChild(d);el=d;fin=o.done||null;fillThumbs(d);
 d.addEventListener("click",close);document.addEventListener("keydown",onKey,true);

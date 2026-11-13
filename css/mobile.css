@@ -11,18 +11,20 @@ html.mobile-ui :is(.sheet,.sh-b,.lk,.lkp,.lkc,.lkg,.detail,.profile,.pfi,.stage,
 html.mobile-ui :is(.b,.mode,.lkc,.cb-actions){overflow-wrap:anywhere}
 html.mobile-ui .b:hover,html.mobile-ui .it:hover{transform:none}
 html.mobile-ui #title{justify-content:space-between;overflow:auto;gap:20px}
-html.mobile-ui #title h1{font-size:clamp(2.3rem,9vw,4.8rem)}
-html.mobile-ui #title .pr{font-size:16px;letter-spacing:.09em;padding:12px}
+html.mobile-ui #title .lockup{font-size:clamp(2.3rem,11vw,4.8rem)}
+html.mobile-ui #title .pr{font-size:16px}
 html.mobile-ui #lobby{display:flex;flex-direction:column;align-items:stretch;gap:12px;overflow:auto;flex-wrap:nowrap}
-html.mobile-ui #lobby .rail{width:100%;max-height:none;flex:none;display:flex;flex-direction:row;flex-wrap:wrap;padding:10px;gap:4px;overflow:visible}
+html.mobile-ui #lobby .rail{width:100%;max-height:none;flex:none;display:flex;flex-direction:column;flex-wrap:nowrap;padding:10px;gap:0;overflow:visible}
+html.mobile-ui #lobby .ng{flex-direction:row;align-items:center;gap:4px;padding:4px 0 0;margin:0;border:0}
+html.mobile-ui #lobby .ngh{position:static;flex:0 0 66px;width:auto;height:auto;clip-path:none;padding:0 4px}
 html.mobile-ui #lobby .brand{width:100%;padding:2px 4px 10px;margin:0}
-html.mobile-ui #lobby .brand h1{font-size:1.8rem}
+html.mobile-ui #lobby .brand h1{font-size:1.5rem}
 html.mobile-ui #lobby .rail .sp{display:none}
-html.mobile-ui #lobby .rail .b{flex:1 1 calc(33.333% - 8px);justify-content:center;padding:6px;min-height:44px;font-size:12px;gap:5px}
+html.mobile-ui #lobby .rail .ng .b:not(.p):not(.on){flex:1 1 0;min-width:0;justify-content:center;padding:4px 6px;min-height:44px;font-size:12px;line-height:1.15;gap:5px;overflow-wrap:normal;background:var(--s-2);border-color:var(--line)}
 html.mobile-ui #lobby .rail .b .ic{width:17px;height:17px}
 html.mobile-ui #lobby .stage{width:100%;max-width:none;flex:none;overflow:visible;margin:0;padding:0;gap:12px}
-html.mobile-ui #lobby .profile{width:100%;grid-template-columns:44px minmax(0,1fr);padding:16px;gap:10px}
-html.mobile-ui #lobby .pfout{display:none}
+html.mobile-ui #lobby .profile{width:100%;grid-template-columns:auto minmax(0,1fr);padding:12px;gap:14px}
+html.mobile-ui #lobby .pfpic{width:76px;height:92px}
 html.mobile-ui #lobby .pfi input{width:100%;font-size:18px!important}
 html.mobile-ui #lobby .pills{flex-wrap:wrap}
 html.mobile-ui #lobby .play{width:100%;max-height:none;overflow:visible;flex:none;padding:14px;gap:10px}
@@ -153,9 +155,7 @@ html.mobile-ui body.custom-battle.custom-joined #tc :is(#tps,#tsc,#tem,#tmp){top
 @media (orientation:landscape) and (max-height:600px){
  html.mobile-ui #lobby{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,1fr);grid-template-rows:auto 1fr;align-items:start;gap:10px}
  html.mobile-ui #lobby .rail{grid-column:1;grid-row:1;max-height:none}html.mobile-ui #lobby .stage{grid-column:1;grid-row:2}html.mobile-ui #lobby .play{grid-column:2;grid-row:1 / span 2}
- html.mobile-ui #lobby .rail .b{flex-basis:calc(50% - 4px)}
- html.mobile-ui #lobby .brand h1{font-size:24px}
- html.mobile-ui #title .tw{display:grid;grid-template-columns:auto 1fr;column-gap:16px;align-items:center}html.mobile-ui #title h1{font-size:clamp(2rem,7vw,3.5rem);margin:0}html.mobile-ui #title h2,html.mobile-ui #title .tv{grid-column:2;margin-top:7px}
+ html.mobile-ui #title{padding-top:max(var(--mt),5vh);padding-bottom:max(var(--mb),5vh)}html.mobile-ui #title .lockup{font-size:clamp(2.4rem,9vw,4rem)}html.mobile-ui #title .tw{gap:8px}
  html.mobile-ui #ps{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start}html.mobile-ui #ps .card2{height:auto}
  html.mobile-ui .lk{grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr)}html.mobile-ui .lkp{position:static}html.mobile-ui .lk-live{height:170px}
  html.mobile-ui #tc{--control:48px}html.mobile-ui #tgr{bottom:calc(var(--tsb) + 126px)}
@@ -163,7 +163,7 @@ html.mobile-ui body.custom-battle.custom-joined #tc :is(#tps,#tsc,#tem,#tmp){top
  html.mobile-ui #tc[data-m=parkour] #topc{top:calc(var(--mt) + 55px)}
  html.mobile-ui body.custom-battle:not(.custom-joined) #tj{opacity:.28}
 }
-@media (max-width:360px){html.mobile-ui #lobby .rail .b{flex-basis:calc(50% - 4px)}html.mobile-ui #tjp{right:calc(var(--tsr) + 80px);width:52px!important;height:52px!important}html.mobile-ui #tf{width:70px!important;height:70px!important}html.mobile-ui #hpw{font-size:12px}html.mobile-ui #hpw>.ic{display:none}}
+@media (max-width:360px){html.mobile-ui #tjp{right:calc(var(--tsr) + 80px);width:52px!important;height:52px!important}html.mobile-ui #tf{width:70px!important;height:70px!important}html.mobile-ui #hpw{font-size:12px}html.mobile-ui #hpw>.ic{display:none}}
 
 html.mobile-ui #lobby{justify-content:flex-start;align-content:start}
 html.mobile-ui .joinbox .rw{display:flex;min-width:0;gap:8px}
@@ -172,7 +172,6 @@ html.mobile-ui .joinbox .rw .b{flex:none;min-width:88px;white-space:nowrap;overf
 html.mobile-ui #tc.mobile-flight{display:block}
 html.mobile-ui #tc.mobile-flight #tl,html.mobile-ui #tc.mobile-flight #tz{touch-action:none}
 html.mobile-ui .cb-joinhint{pointer-events:auto}
-html.mobile-ui #lobby .pfav{width:44px;height:44px;border-radius:12px;font-size:24px}
 html.mobile-ui #msg{top:30%;bottom:auto;font-size:22px;padding:0 20px}
 html.mobile-ui body.custom-battle:not(.custom-joined) #msg{display:none}
 html.mobile-ui #puov{top:var(--mobile-top);bottom:auto;height:var(--mobile-height);padding:var(--mt) var(--mr) var(--mb) var(--ml);overflow:auto;overscroll-behavior:contain;align-items:start;touch-action:pan-y pinch-zoom}
@@ -208,3 +207,9 @@ html.mobile-ui #tut{top:auto;width:max-content}
 /* Battle HUD buttons: the #id rule in style.css outranks the class rule above, so
    restate the 40px touch size at matching specificity. */
 html.mobile-ui #custom-battle-ui .cb-top>nav .b{min-height:40px;min-width:40px}
+/* Phase 10: phones never pay for live blur. Panels and overlays use solid fills instead. */
+html.mobile-ui *,html.mobile-ui *::before,html.mobile-ui *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.mobile-ui .gl{background:var(--s-solid)}
+html.mobile-ui .stage>.gl{background:var(--s-solid)}
+html.mobile-ui #lobby .rail .rdot{top:5px;right:5px;margin:0;width:9px;height:9px}
+html.mobile-ui #title .pr{margin-bottom:26px}

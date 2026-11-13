@@ -1,16 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
- <title id="title">Arena Strike</title><desc id="desc">An angular ivory A with a lightning crossbar on a riveted orange shield.</desc>
- <path fill="#10202b" d="M0 0h512v512H0z"/>
- <path fill="#1c3540" d="M0 0h512L0 512z"/>
- <path fill="#28444a" d="m0 0 104 104h304L512 0z"/>
- <path fill="#0b1722" d="m104 408 304 0 104 104H0z"/>
- <path fill="#121e24" d="m256 74 154 88v184l-154 89-154-89V162z"/>
- <path fill="#d76537" d="m256 62 154 89v178l-154 89-154-89V151z"/>
- <path fill="#f39551" d="m256 62 154 89-33 19-121-70-121 70-33-19z"/>
- <path fill="#a5462e" d="m256 418 154-89V151l-33 19v140l-121 70z"/>
- <path fill="#e67740" d="m102 151 33 19v140l121 70v38l-154-89z"/>
- <path fill="#233943" d="m256 112 110 64v128l-110 64-110-64V176z"/>
- <path fill="#f4f0d9" fill-rule="evenodd" d="m224 145-73 178h53l15-42h64l15 42h54l-73-178zm26 52 18 49h-36z"/>
- <path fill="#ffb24f" d="m289 224-74 49h36l-29 53 85-69h-39z"/>
- <g fill="#f4d6a4"><path d="m123 178 7-4 7 4v8l-7 4-7-4zM375 178l7-4 7 4v8l-7 4-7-4zM249 389l7-4 7 4v8l-7 4-7-4z"/></g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t d">
+ <title id="t">Arena Strike</title><desc id="d">A dark letter A on an orange tile, cut by a pale strike that forms its crossbar.</desc>
+ <rect width="64" height="64" rx="14" fill="#ff7a29"/>
+ <path fill="#0b1322" d="M26.5 9h11l9.6 22.600-10.200 3.200L32 22.500l-6.400 16-13.400 4.200zM49.700 37.850 57 55H45l-4.900-12.200z"/>
+ <path fill="#fff6e6" d="M4 47.500 61 29.500 9 56.500z"/>
 </svg>
