@@ -99,7 +99,7 @@ const YardArt = (() => {
     const body=material(pal[k],mats),ink=material(0x202d32,mats),bone=material(0xb6c4be,mats),
       trim=material(k===1?C.teal:C.brass,mats),iron=material(C.iron,mats);
     const rust=material(0xa95737,mats),lens=material(k===1?0x7edbd5:0xffcc68,mats);
-    lens.emissive.setHex(k===1?0x266363:0x6b3a0c);lens.emissiveIntensity=.55;
+    lens.emissive.setHex(lens.userData.em=k===1?0x266363:0x6b3a0c);lens.emissiveIntensity=Post.hdr?Tune.n("gfx.eye",2.6,.5,6):.55; // eyes bloom on HDR tiers; userData.em lets the hurt flash restore the glow
     const add=(p,w,h,d,m,x,y,z,head=false)=>box(p,w,h,d,m,x,y,z,hit,head);
     const torso=new T.Group();torso.position.y=1.1;g.add(torso);
     const hd=new T.Group();hd.position.set(0,1.85,.15);g.add(hd);
@@ -308,7 +308,7 @@ const YardArt = (() => {
     if(parts.p.length){const m=parts.mesh(new T.MeshLambertMaterial({vertexColors:true,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}));m.name='yard-small-debris';m.receiveShadow=true;group.add(m);}
   }
   function world(group,key,seed,opt={}) {
-    const batch=new Batch(),p=(shape,x,y,z,w,h,d,c,ry=0,rz=0)=>batch.add(U[shape],mt(x,y,z,w,h,d,ry,0,rz),c,.9,1);
+    const batch=new Batch(true),p=(shape,x,y,z,w,h,d,c,ry=0,rz=0)=>batch.add(U[shape],mt(x,y,z,w,h,d,ry,0,rz),c,.9,1);
     const rand=mkRng((seed^0x73a4e19)>>>0),th=THEMES[key],anim=[];
     group.userData.yard={anim};
     if(key==="ruin"){

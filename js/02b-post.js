@@ -8,8 +8,8 @@ const RIM={k:{value:.45},c:{value:new T.Color(0xcfe4ff)}};
 // tier settings by post level: 3 Ultra High, 2 High, 1 Medium, 0 off
 const LV=[null,
 {bloom:null,half:true,aa:"fxaa",ao:false,hdr:false},
-{bloom:[.3,.4,1.35],half:false,aa:"fxaa",ao:false,hdr:true},
-{bloom:[.36,.45,1.35],half:false,aa:"smaa",ao:true,hdr:true}];
+{bloom:[.3,.4,1.05],half:false,aa:"fxaa",ao:false,hdr:true},
+{bloom:[.36,.45,1.05],half:false,aa:"smaa",ao:true,hdr:true}];
 const GradeShader={
 uniforms:{tDiffuse:{value:null},uExp:{value:1},uSat:{value:1.16},uCon:{value:1.07},uLift:{value:new T.Vector3(.012,.02,.045)},uGain:{value:new T.Vector3(1.03,1.01,.97)},uVig:{value:.28},uK:{value:.78}},
 vertexShader:"varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
@@ -38,7 +38,9 @@ if(L.ao&&T.SAOPass){ao=new T.SAOPass(sc,cam,true,false,new T.Vector2(w*pr/2,h*pr
 {const m=ao.saoMaterial;m.fragmentShader=m.fragmentShader.replace("float ambientOcclusion = getAmbientOcclusion( viewPosition );","float ambientOcclusion = getAmbientOcclusion( viewPosition )*(1.-smoothstep(22.,40.,-centerViewZ));");m.needsUpdate=true}/* contact shading only up close: far away it adds nothing but noise */const ss=ao.setSize.bind(ao);ao.setSize=(x,y)=>ss(Math.max(1,x/2),Math.max(1,y/2));const p=ao.params;p.saoBias=.5;p.saoIntensity=.012;p.saoScale=6;p.saoKernelRadius=14;p.saoMinResolution=0;p.saoBlur=true;p.saoBlurRadius=4;p.saoBlurStdDev=3;p.saoBlurDepthCutoff=.01;cmp.addPass(ao)}
 vmp=new VMPass();cmp.addPass(vmp);
 // bloom needs the HDR buffer: lit ground already reaches 1.0, so only light sources above that (glow parts, sun, muzzle flash, sparks) should glow
-const b=L.bloom,bs=L.half?.5:1;if(b&&hdr){bloom=new T.UnrealBloomPass(new T.Vector2(w*bs,h*bs),b[0],b[1],b[2]);bloom.highPassUniforms.smoothWidth.value=.25;cmp.addPass(bloom)}
+// the threshold sits just above 1.0 so light sources visibly glow, while sunlit walls (graded down to at most about 1.0) stay clean
+const b=L.bloom,bs=L.half?.5:1;if(b&&hdr){bloom=new T.UnrealBloomPass(new T.Vector2(w*bs,h*bs),b[0],b[1],b[2]);bloom.highPassUniforms.smoothWidth.value=.25;
+const bset=bloom.setSize.bind(bloom);bloom.setSize=(x,y)=>bset(Math.max(1,Math.round(x/rd.getPixelRatio()*bs)),Math.max(1,Math.round(y/rd.getPixelRatio()*bs)));cmp.addPass(bloom)}
 grade=new T.ShaderPass(GradeShader);cmp.addPass(grade);
 if(L.aa==="smaa"&&T.SMAAPass){aa=new T.SMAAPass(w*pr,h*pr)}else{aa=new T.ShaderPass(T.FXAAShader);aa.material.uniforms.resolution.value.set(1/(w*pr),1/(h*pr))}
 cmp.addPass(aa)}
@@ -46,16 +48,23 @@ function dispose(){hdrOn=false;glowGain();if(!cmp)return;try{for(const p of cmp.
 // per-level colour: night and fog levels get less saturation boost so they stay moody, bright ones get more punch
 function look(){if(!grade)return;const th=THEMES[WORLD.theme]||{},n=th.night||0,g=th.grade||{},u=grade.uniforms;
 u.uSat.value=g.sat!=null?g.sat:1.16-n*.1;u.uCon.value=g.con!=null?g.con:1.07;u.uExp.value=g.exp!=null?g.exp:1+n*.05;u.uVig.value=g.vig!=null?g.vig:.26+n*.1;
-if(bloom)bloom.strength=LV[lvl].bloom[0]*(g.bloom!=null?g.bloom:1+n*.35)}
-// glowing scenery is pushed past 1.0 only when the HDR buffer is on, so it blooms there and looks exactly as before everywhere else
-function glowGain(){const m=WORLD.glowM;if(m)m.color.setScalar(hdrOn?1.4:1)}
+if(bloom){bloom.strength=LV[lvl].bloom[0]*(g.bloom!=null?g.bloom:1+n*.35);
+// sunlit sand and snow go past 1.0 by themselves, so bright-ground themes raise the threshold (light sources are pushed far enough to still clear it)
+const gl=th.gr&&th.gr.base?(C_T.set(th.gr.base),C_T.r*.299+C_T.g*.587+C_T.b*.114):.5;
+bloom.threshold=g.bloomThr!=null?g.bloomThr:Tune.n("gfx.bloomThr",1.05,.8,2)+Math.max(0,gl-.55)*Tune.n("gfx.bloomBright",1.2,0,3)}}
+// glowing scenery, muzzle flashes, tracers, flares and monster eyes are pushed past 1.0 only when the HDR buffer is on, so they bloom there and look exactly as before everywhere else
+function glowGain(){const m=WORLD.glowM;if(m)m.color.setScalar(hdrOn?Tune.n("gfx.glowGain",1.7,1,4):1)}
 let lastTheme="";
 return{RIM,
 get on(){return !!cmp},
+// brightness multiplier for light-source effects: above 1 only on HDR tiers (see glowGain)
+get hdr(){return hdrOn},get hot(){return hdrOn?Tune.n("gfx.hot",2.2,1,4):1},
 get passes(){return cmp?cmp.passes:[]},
 // level: 0 off, 1 Medium, 2 High, 3 Ultra High
 set(l){l=l|0;if(SOFT)l=0;if(l===lvl&&(!!cmp)===(l>0))return;lvl=l;if(l>0){try{build(LV[l]);lastTheme=""}catch(e){console.error(e);dispose();lvl=0}}else dispose()},
-size(){if(cmp)try{build(LV[lvl]);lastTheme=""}catch(e){dispose();lvl=0}},
+// a resize or an Auto-quality resolution step only resizes the existing buffers; rebuilding the chain (new shaders, new targets) caused hitches
+size(){if(!cmp)return;try{const pr=rd.getPixelRatio(),w=innerWidth,h=innerHeight;if(cmp._pixelRatio!==pr)cmp._pixelRatio=pr;cmp.setSize(w,h);
+const u=aa&&aa.material&&aa.material.uniforms&&aa.material.uniforms.resolution;if(u)u.value.set(1/(w*pr),1/(h*pr))}catch(e){try{build(LV[lvl]);lastTheme=""}catch(e2){dispose();lvl=0}}},
 rimK(v){RIM.k.value=v},
 render(withVM){vmOn=withVM;if(WORLD.glowM!==gm){gm=WORLD.glowM;glowGain()}if(WORLD.theme!==lastTheme){lastTheme=WORLD.theme;look()}cmp.render()},
 frame(){RIM.c.value.copy(Sky.u.cT.value).lerp(Sky.u.sunCol.value,.45).lerp(C_W,.35)},
@@ -65,5 +74,5 @@ m.onBeforeCompile=sh=>{if(prev)prev(sh);sh.uniforms.rimK=RIM.k;sh.uniforms.rimC=
 sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vRimN;varying vec3 vRimV;").replace("#include <project_vertex>","#include <project_vertex>\nvRimN=normalize(transformedNormal);vRimV=-mvPosition.xyz;");
 sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vRimN;varying vec3 vRimV;uniform float rimK;uniform vec3 rimC;").replace("#include <envmap_fragment>","#include <envmap_fragment>\nfloat rimF=pow(1.-clamp(dot(normalize(vRimN),normalize(vRimV)),0.,1.),2.6);outgoingLight+=rimC*rimF*rimK*(.35+.65*diffuseColor.rgb);")};
 const ck=m.customProgramCacheKey;m.customProgramCacheKey=()=>(ck?ck.call(m):"")+"rim";m.needsUpdate=true}});return g}}})();
-const C_W=new T.Color(1,1,1);
+const C_W=new T.Color(1,1,1),C_T=new T.Color();
 addEventListener("resize",()=>Post.size());

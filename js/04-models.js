@@ -234,7 +234,7 @@ g.userData={legs,arms,torso,head,hit,mats,gun,hold,body,ph:0,sp:0,kick:0,flashT:
 const HURT=new T.MeshBasicMaterial({visible:false});
 function hurtBox(par,w,h,d,x,y,z,head,hit){const m=new T.Mesh(new T.BoxGeometry(w,h,d),HURT);m.position.set(x,y,z);m.userData.head=!!head;par.add(m);hit.push(m);return m}
 function bindOwner(m,owner,key){m.userData.hit.forEach(h=>{h.userData[key||"en"]=owner})}
-function setMuzzle(m,on){const gn=m.userData.gun;if(gn){gn.mf.visible=on;gn.mf.material.rotation=rnd()*6}}
+function setMuzzle(m,on){const gn=m.userData.gun;if(gn){gn.mf.visible=on;if(on)gn.mf.material.color.setScalar(Post.hot);gn.mf.material.rotation=rnd()*6}}
 // walk and aim pose
 const _xa=new T.Vector3(1,0,0),_dn=new T.Vector3(0,-1,0),_q1=new T.Quaternion(),_v1=new T.Vector3(),_v2=new T.Vector3(),_v3=new T.Vector3(),_E=new T.Vector3(),_pl=new T.Vector3(),_pr=new T.Vector3(-.6,-1,-.25),_pL=new T.Vector3(.6,-1,-.25);
 // two-bone arm: shoulder -> elbow -> hand lands on target (model space)

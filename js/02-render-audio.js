@@ -3,7 +3,8 @@
 const sc=new T.Scene(),cam=new T.PerspectiveCamera(75,innerWidth/innerHeight,.05,420);
 // quality budget read by the world builder, sky, particles and the HUD; 09-main.js owns the levels
 const LOD={pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:2048,dust:1,mz:1,shR:40};
-const rd=new T.WebGLRenderer({antialias:!SOFT&&S.gfx<3&&(devicePixelRatio||1)<1.5,stencil:false,powerPreference:SOFT?"default":"high-performance"});
+// no MSAA: the tiers that used it all draw through the effect chain (02b-post.js), which renders into its own buffers and anti-aliases with SMAA/FXAA, so the multisampled screen buffer was wasted memory
+const rd=new T.WebGLRenderer({antialias:false,stencil:false,powerPreference:SOFT?"default":"high-performance"});
 rd.setSize(innerWidth,innerHeight);rd.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
 rd.shadowMap.enabled=true;rd.shadowMap.type=T.PCFSoftShadowMap;
 rd.domElement.id="gl";document.body.prepend(rd.domElement);{const v=document.createElement("div");v.id="vgn";v.setAttribute("aria-hidden","true");rd.domElement.after(v)}
@@ -428,7 +429,7 @@ const TR=[],tg=new T.BoxGeometry(1,1,1);let tc=0;
 for(let i=0;i<28;i++){const m=new T.Mesh(tg,new T.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false}));m.visible=false;m.frustumCulled=false;m.raycast=()=>{};sc.add(m);TR.push({m,l:0})}
 const a3=new T.Vector3();
 function tracer(a,b,col,w,life){const o=TR[tc=(tc+1)%TR.length],m=o.m,len=a.distanceTo(b);if(len<.3)return;
-m.position.copy(a).add(b).multiplyScalar(.5);m.lookAt(b);const t=w||.022;m.scale.set(t,t,len);m.material.color.setHex(col||0xffe9a0);m.material.opacity=.9;m.visible=true;o.l=o.ml=life||.09}
+m.position.copy(a).add(b).multiplyScalar(.5);m.lookAt(b);const t=w||.022;m.scale.set(t,t,len);m.material.color.setHex(col||0xffe9a0).multiplyScalar(Post.hot);m.material.opacity=.9;m.visible=true;o.l=o.ml=life||.09}
 function tracers(dt){for(const o of TR){if(o.l<=0)continue;o.l-=dt;if(o.l<=0){o.m.visible=false;continue}o.m.material.opacity=o.l/(o.ml||.09)*.9}}
 return{burst,step,tracer,tracers,clear(){for(const o of pr)o.l=0;im.instanceMatrix.needsUpdate=true;TR.forEach(o=>{o.l=0;o.m.visible=false});try{Gfx.clear()}catch(e){}}}})();
 // ---------- combat graphics: muzzle and impact flares, shock rings, glowing ground cracks, lightning, spawn portals, claw slashes ----------
@@ -439,7 +440,7 @@ for(let i=0;i<32;i++){const s=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,ble
 const rg=new T.RingGeometry(.86,1,44);
 for(let i=0;i<18;i++){const m=new T.Mesh(rg,new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending,fog:false}));m.rotation.x=-Math.PI/2;m.visible=false;m.raycast=()=>{};m.frustumCulled=false;sc.add(m);RG.push({m,l:0,mx:1,r0:1,r1:2,op:1})}
 crG=new T.BoxGeometry(1,.02,1)}
-function flare(p,col,size,life,vy){if(LOD.fx<.2)return;init();const o=FL[fi=(fi+1)%FL.length];o.s.position.set(p.x,p.y,p.z);o.s.material.color.setHex(col);o.z=size;o.l=o.m=life;o.vy=vy||0;o.s.visible=true;o.s.scale.set(size,size,1)}
+function flare(p,col,size,life,vy){if(LOD.fx<.2)return;init();const o=FL[fi=(fi+1)%FL.length];o.s.position.set(p.x,p.y,p.z);o.s.material.color.setHex(col).multiplyScalar(Post.hot);o.z=size;o.l=o.m=life;o.vy=vy||0;o.s.visible=true;o.s.scale.set(size,size,1)}
 function ring(x,y,z,col,r0,r1,life,op){if(LOD.fx<.2)return;init();const o=RG[ri=(ri+1)%RG.length];o.m.position.set(x,y,z);o.m.material.color.setHex(col);o.r0=r0;o.r1=r1;o.l=o.mx=life;o.op=op==null?.7:op;o.m.visible=true;o.m.scale.set(r0,r0,1)}
 function drop(o){sc.remove(o.o);o.o.traverse(c=>{if(c.geometry&&!c.userData.shared)c.geometry.dispose();if(c.material)c.material.dispose()})}
 function add(o){if(TF.length>44)drop(TF.shift());TF.push(o)}

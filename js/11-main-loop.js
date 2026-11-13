@@ -53,7 +53,7 @@ const th=THEMES[WORLD.theme];if(th)Sky.u.cloud.value=q.cloud>0?th.cloud:0;Sky.u.
 if(WORLD.dust)WORLD.dust.visible=q.dust>0;
 acc=n=0;skip=90}
 function pick(v){if(v==="auto"){S.auto=1;S.ac=0;set(HW.tier)}else{S.auto=0;set(+v)}sv()}
-// every resize rebuilds the effect chain, so the next frames are skipped instead of being counted as slowness (that used to cascade into needless drops)
+// a resolution change shifts frame times for a moment, so the next frames are skipped instead of being counted as slowness (that used to cascade into needless drops)
 function refit(){fit();skip=45}
 function tick(ms){
 if(skip>0){skip--;return}

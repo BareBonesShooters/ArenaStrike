@@ -47,11 +47,23 @@ const A=[-.5,-.5,-.5],B=[.5,-.5,-.5],C=[.5,-.5,.5],D=[-.5,-.5,.5],R1=[0,.5,-.5],
 const gab=fix([A,D,R2,A,R2,R1,B,R1,R2,B,R2,C,D,C,R2,A,R1,B,A,B,C,A,C,D]);
 return{box:new T.BoxGeometry(1,1,1).toNonIndexed(),cyl:new T.CylinderGeometry(.5,.5,1,12,1).toNonIndexed(),cone:new T.ConeGeometry(.5,1,9,1).toNonIndexed(),
 ico:new T.IcosahedronGeometry(.5,0).toNonIndexed(),sph:new T.SphereGeometry(.5,10,8).toNonIndexed(),pyr,gab}})();
+// bake: world props get shading baked into their vertex colours at build time, so it costs nothing per frame and Low and Potato get it too:
+// darker near the ground (contact shading), darker on faces that look down (eave and overhang undersides), and a slight tint per flat face
 class Batch{
-constructor(){this.p=[];this.n=[];this.c=[]}
-add(g,m,col,ao,br){const pa=g.attributes.position,na=g.attributes.normal,nm=NM3.getNormalMatrix(m);C0.set(col);const r=C0.r*br,gg=C0.g*br,b=C0.b*br;
-for(let i=0;i<pa.count;i++){V0.set(pa.getX(i),pa.getY(i),pa.getZ(i));const sh=ao+(1-ao)*(V0.y+.5);V0.applyMatrix4(m);this.p.push(V0.x,V0.y,V0.z);
-V0.set(na.getX(i),na.getY(i),na.getZ(i)).applyMatrix3(nm).normalize();this.n.push(V0.x,V0.y,V0.z);this.c.push(r*sh,gg*sh,b*sh)}}
+constructor(bake){this.p=[];this.n=[];this.c=[];this.i=0;this.k=bake?[Tune.n("gfx.aoGround",.4,0,.8),Tune.n("gfx.aoDown",.22,0,.8),Tune.n("gfx.faceVar",.06,0,.15)]:null}
+add(g,m,col,ao,br){const pa=g.attributes.position,na=g.attributes.normal,nm=NM3.getNormalMatrix(m),K=this.k,o=this.p.length,pi=++this.i,me=m.elements;C0.set(col);
+const dn=K?K[1]*Math.min(1,8/Math.max(Math.hypot(me[0],me[1],me[2]),Math.hypot(me[8],me[9],me[10]))):0;/* eaves and overhangs darken underneath; a whole ceiling or a big slab barely does */const r=C0.r*br,gg=C0.g*br,b=C0.b*br;
+for(let i=0;i<pa.count;i++){V0.set(pa.getX(i),pa.getY(i),pa.getZ(i));let sh=ao+(1-ao)*(V0.y+.5);V0.applyMatrix4(m);this.p.push(V0.x,V0.y,V0.z);const wy=V0.y;
+V0.set(na.getX(i),na.getY(i),na.getZ(i)).applyMatrix3(nm).normalize();this.n.push(V0.x,V0.y,V0.z);
+if(K){const gy=Math.min(1,Math.max(0,wy/1.4));sh*=1-K[0]*(1-gy)*(1-gy);if(V0.y<0)sh*=1+dn*V0.y}
+this.c.push(r*sh,gg*sh,b*sh)}
+if(K&&K[2]>0)this.vary(o,pi,K[2])}
+// one tint per flat face: both triangles of a box side share it (no diagonal seam); seeded by piece order and face direction, so every build of a map matches
+vary(o,pi,v){const p=this.p,c=this.c;for(let t=o;t<p.length;t+=9){
+const ax=p[t+3]-p[t],ay=p[t+4]-p[t+1],az=p[t+5]-p[t+2],bx=p[t+6]-p[t],by=p[t+7]-p[t+1],bz=p[t+8]-p[t+2],nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx,l=Math.hypot(nx,ny,nz)||1;
+let h=Math.imul(pi,73856093)^Math.imul(Math.round(nx/l*4)+9,19349663)^Math.imul(Math.round(ny/l*4)+9,83492791)^Math.imul(Math.round(nz/l*4)+9,40503);h=Math.imul(h^(h>>>15),2246822507);h^=h>>>13;
+const f=1+((h&1023)/511.5-1)*v,w=(((h>>>10)&1023)/511.5-1)*v*.5;
+for(let j=t;j<t+9;j+=3){c[j]*=f*(1+w);c[j+1]*=f;c[j+2]*=f*(1-w)}}}
 mesh(mat){const g=new T.BufferGeometry();g.setAttribute("position",new T.Float32BufferAttribute(this.p,3));g.setAttribute("normal",new T.Float32BufferAttribute(this.n,3));g.setAttribute("color",new T.Float32BufferAttribute(this.c,3));return new T.Mesh(g,mat)}}
 
 // ---------- world: themes ----------
@@ -203,7 +215,7 @@ const th=THEMES[key]||THEMES.meadow;key=THEMES[key]?key:"meadow";const ruin=key=
 // crng drives looks only (brightness jitter, mountains, flowers, grass), so weaker settings can drop decoration without changing the map.
 const crng=mkRng(((seed>>>0)^0x5bd1e995)>>>0||1);
 const rr=(a,b)=>a+(b-a)*rng(),pick=a=>a[Math.floor(rng()*a.length)],br=()=>.94+crng()*.12,PI=Math.PI,cr=(a,b)=>a+(b-a)*crng(),cpick=a=>a[Math.floor(crng()*a.length)];
-const solid=new Batch(),glow=new Batch(),grp=new T.Group();
+const solid=new Batch(true),glow=new Batch(),grp=new T.Group();
 const reg=(x,z,w,d,h,nc,rf)=>{boxes.push({x,z,w,d,h,nc:nc?1:0,rf:rf?1:0})}; // rf: unused now (roofs are walkable); // nc: solid all the way up, never climbed or stood on (house roofs)
 let RDP=[];const onRoad=(x,z,m)=>{for(const q of RDP)if((x-q.x)*(x-q.x)+(z-q.z)*(z-q.z)<m*m)return true;return false};
 const free=(x,z,r,ig)=>{if(Math.abs(x)>H-r-1.5||Math.abs(z)>H-r-1.5)return false;if(!ig&&RDP.length&&onRoad(x,z,3.9+r*.5))return false;for(const b of boxes)if(Math.abs(x-b.x)<b.w/2+r&&Math.abs(z-b.z)<b.d/2+r)return false;return true};
@@ -216,7 +228,7 @@ sc.background=new T.Color(th.fog[0]);sc.fog=new T.Fog(th.fog[0],th.fog[1],th.fog
 hemi.color.setHex(th.hemi[0]);hemi.groundColor.setHex(th.hemi[1]);hemi.intensity=th.hemi[2];
 sun.color.setHex(key==="neon"?0x8aa8ff:th.sun.c);sun.intensity=key==="neon"?.5:th.sun.i;sun.position.set(th.sun.d[0]*100,Math.max(30,th.sun.d[1]*100),th.sun.d[2]*100);
 if(key==="neon")sun.position.set(-40,70,-50);
-sun.target.position.set(0,0,0);Sky.set(th);Light.world();
+sun.target.position.set(0,0,0);Sky.set(th);Light.world(th);
 // ground
 const gt=paintGround(key,th,crng),gmat=new T.MeshLambertMaterial({map:gt});
 const fxOn=LOD.cloud>0;if(fxOn)fogFx(gmat,LOD.tex>=1024&&!ruin&&key!=="neon"?"gd":"g");

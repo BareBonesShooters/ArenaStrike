@@ -21,13 +21,22 @@ function restore(){if(snap){apply(0);snap=null}K=TG=0;flashL.intensity=0}
 // the title and lobby cameras look out over the whole map, so there the box covers the whole arena instead
 function shadows(){if(!sun.castShadow)return;const near=state==="play"||state==="pause",R=near?LOD.shR||62:62,cm=sun.shadow.camera;
 if(cm.right!==R){cm.left=cm.bottom=-R;cm.right=cm.top=R;cm.updateProjectionMatrix()}
+// bias in shadow-map texels: a fixed bias was too small for Medium's coarse map (acne) and too big for Ultra's fine one (shadows floating off their casters)
+{const tx=2*R/sun.shadow.mapSize.x;sun.shadow.normalBias=tx*Tune.n("gfx.shNormal",1,0,3);sun.shadow.bias=-tx*Tune.n("gfx.shBias",.012,0,.05)}
 dir.copy(sun.position).sub(sun.target.position);if(dir.lengthSq()<1e-6)return;dir.normalize();
 cam.getWorldDirection(fw);fw.y=0;if(fw.lengthSq()>1e-6)fw.normalize();
 const s=4*R/sun.shadow.mapSize.x;let x=near?cam.position.x+fw.x*R*.35:0,z=near?cam.position.z+fw.z*R*.35:0;x=Math.round(x/s)*s;z=Math.round(z/s)*s;
 sun.target.position.set(x,0,z);sun.position.copy(sun.target.position).addScaledVector(dir,100);sun.target.updateMatrixWorld()}
 return{
-// after buildWorld sets the theme lights: tiers with shadows get a stronger sun and a little less fill, so shadows read clearly
-world(){snap=null;K=TG=0;flashL.intensity=0;if(LOD.sh){sun.intensity*=1.15;hemi.intensity*=.82}},
+// after buildWorld sets the theme lights: a warmer, stronger sun and a cooler, weaker sky fill whose ground half takes the colour of the ground,
+// so lit faces read warm and shade reads cool instead of everything being evenly flat. Night themes keep their cold moonlight.
+// A theme can override any of it with light:{warm,sun,fill,cool,bounce}. Tiers with shadows then get a little more sun and less fill, so shadows read clearly.
+world(th){snap=null;K=TG=0;flashL.intensity=0;th=th||{};const L=th.light||{},n=Math.min(1,Math.max(th.night||0,th.stars||0)),v=(k,d,a,b)=>L[k]!=null?L[k]:Tune.n("gfx."+k,d,a,b),fk=v("fill",.75,.3,1.5);
+// n: how dark the theme is (night or dusk). Dark themes have little light to spare, so they keep their fill and colours
+sun.color.lerp(TMP.setHex(0xffc890),v("warm",.32,0,1)*(1-n)*(th.snow?.6:1));sun.intensity*=v("sun",1.22,.5,2);
+hemi.color.lerp(TMP.setHex(0x9cc4ff),v("cool",.45,0,1)*(1-n*.6));hemi.intensity*=fk+(1-fk)*n;
+if(th.gr&&th.gr.base)hemi.groundColor.lerp(TMP.set(th.gr.base),v("bounce",.4,0,1));
+if(LOD.sh){sun.intensity*=1.15;hemi.intensity*=.88}},
 // 1 fade to dark, 0 fade back, -1 snap back at once (match ended or the map is about to be rebuilt)
 blackout(v){if(v<0)return restore();if(v>0&&!snap&&sc.fog)snap=take();TG=v>0?1:0},
 get dark(){return K},

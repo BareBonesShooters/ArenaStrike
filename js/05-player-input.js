@@ -250,7 +250,7 @@ if(o.charging&&o.slot===1&&!(o.knifeCD>0)){const c=clamp(o.charge||0,0,1);knifeH
 if(knifeH.userData.pr&&knifeH.userData.mats)knifeH.userData.mats.forEach(m=>{if(m.color)m.color.setHSL((t*.8)%1,.85,.6)});
 vh.color.copy(hemi.color);vh.groundColor.copy(hemi.groundColor)}
 return{scene:scn,cam:vc,set,frame,swap(){st.swap=1;try{snd("swap",.7)}catch(e){}},inspect(){st.ia=1;st.ip=0;st.sf=0},onShot(f){cbShot=f},get inspecting(){return !!st.ia},stab(r,k){st.stab=1;st.kr=r|0;st.ks=ksty(k);st.cm=((st.cm|0)+1)%3},throwAnim(r){st.th=1;st.kr=r|0},cmv(){return st.cm|0},kick(k){st.rec=Math.min(1.4,st.rec+k);st.rr=Math.min(1.5,st.rr+k)},
-flash(){if(LOD.mz){mzT=.07;if(!mzL.parent)sc.add(mzL)}if(gb){gb.mf.visible=true;gb.mf.material.rotation=rnd()*6;gb.mf.scale.setScalar(.26+rnd()*.14);flashT=.045}},get gb(){return gb},get ads(){return st.ads||0},
+flash(){if(LOD.mz){mzT=.07;if(!mzL.parent)sc.add(mzL)}if(gb){gb.mf.visible=true;gb.mf.material.color.setScalar(Post.hot);gb.mf.material.rotation=rnd()*6;gb.mf.scale.setScalar(.26+rnd()*.14);flashT=.045}},get gb(){return gb},get ads(){return st.ads||0},
 resize(){vc.aspect=innerWidth/innerHeight;vc.updateProjectionMatrix()}}})();
 addEventListener("resize",VM.resize);
 
