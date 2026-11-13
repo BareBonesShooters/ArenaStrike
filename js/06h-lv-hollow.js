@@ -52,7 +52,7 @@ q=L(w/2+.45,d*.1);for(let i=0;i<3;i++)P("cyl",q[0],.2+i*.32,q[1],.32,1.3,.32,i&1
 // jack-o'-lantern with a glowing face
 const pumpkin=(x,z)=>{if(!free(x,z,.6))return false;const s=rr(.5,.8);P("ico",x,s*.4,z,s,s*.8,s,0xd8701c,rng()*3,.6);P("cyl",x,s*.85,z,.08,.2,.08,0x3a5a20,0,1);P("box",x,s*.45,z+s*.42,s*.5,s*.18,.04,0xffd040,0,1,glow);return true};
 // lantern post with a warm halo
-const lantern=(x,z)=>{if(!free(x,z,.5))return false;reg(x,z,.25,.25,3);P("box",x,1.4,z,.14,2.8,.14,0x2a2420,0,.7);P("box",x+.35,2.75,z,.7,.08,.08,0x2a2420,0,.8);P("box",x+.7,2.45,z,.28,.4,.28,0xffb04a,0,1,glow);c.halo(x+.7,2.45,z,0xffa040,2.2,.6);return true};
+const lantern=(x,z)=>{if(!free(x,z,.5))return false;reg(x,z,.25,.25,3);P("box",x,1.4,z,.14,2.8,.14,0x2a2420,0,.7);P("box",x+.35,2.75,z,.7,.08,.08,0x2a2420,0,.8);P("box",x+.7,2.45,z,.28,.4,.28,0xffb04a,0,1,glow);c.halo(x+.7,2.45,z,0xffa040,2.2,.6);c.light(x+.7,2.3,z,0xffa040,.9,11,true);return true};
 // iron fence run with spiked tips
 const fence=(x,z,rot)=>{const len=rr(5,8),w=rot&1?.2:len,d=rot&1?len:.2;if(!free(x,z,len/2+.3))return false;reg(x,z,w,d,1.4);
 P("box",x,1.1,z,w,.06,d,0x1a1a1e,0,1);P("box",x,.4,z,w,.06,d,0x1a1a1e,0,1);for(let i=0;i<=len/.35;i++){const o=-len/2+i*.35,px=rot&1?x:x+o,pz=rot&1?z+o:z;P("box",px,.65,pz,.05,1.3,.05,0x1a1a1e,0,1);P("cone",px,1.38,pz,.09,.18,.09,0x1a1a1e,0,1)}return true};

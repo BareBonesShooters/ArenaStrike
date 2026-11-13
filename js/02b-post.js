@@ -37,8 +37,14 @@ if(!hdr)rt.texture.colorSpace=T.SRGBColorSpace;
 cmp=new T.EffectComposer(rd,rt);cmp.setPixelRatio(pr);cmp.setSize(w,h);
 rp=new T.RenderPass(sc,cam);cmp.addPass(rp);
 // ambient occlusion runs at half resolution with a depth texture (one extra cheap scene draw instead of two full-size ones); the soft result hides the lower resolution
-if(L.ao&&T.SAOPass){ao=new T.SAOPass(sc,cam,new T.Vector2(w*pr/2,h*pr/2));/* SAOPass draws one normal+depth pass with a 24-bit depth buffer, so distant surfaces don't stripe */
-{const m=ao.saoMaterial;m.fragmentShader=m.fragmentShader.replace("float ambientOcclusion = getAmbientOcclusion( viewPosition );","float ambientOcclusion = getAmbientOcclusion( viewPosition )*(1.-smoothstep(22.,40.,-centerViewZ));");m.needsUpdate=true}/* contact shading only up close: far away it adds nothing but noise */const ss=ao.setSize.bind(ao);ao.setSize=(x,y)=>ss(Math.max(1,x/2),Math.max(1,y/2));const p=ao.params;p.saoBias=.5;p.saoIntensity=Tune.n("gfx.aoK",.012,0,.05);p.saoScale=Tune.n("gfx.aoScale",6,1,20);p.saoKernelRadius=14;p.saoMinResolution=0;p.saoBlur=true;p.saoBlurRadius=4;p.saoBlurStdDev=3;p.saoBlurDepthCutoff=.01;cmp.addPass(ao)}
+// ambient occlusion (Ultra only): GTAO at half resolution with its own normal and depth pass, then a Poisson denoise; it finds contact shadow
+// in corners, under props and where walls meet the ground, with fewer halos and less noise than the old SAO
+if(L.ao&&T.GTAOPass){ao=new T.GTAOPass(sc,cam,Math.max(1,w*pr/2),Math.max(1,h*pr/2));const ss=ao.setSize.bind(ao);ao.setSize=(x,y)=>ss(Math.max(1,x/2),Math.max(1,y/2));
+ao.updateGtaoMaterial({radius:Tune.n("gfx.aoR",1.1,.2,4),distanceExponent:1.5,thickness:Tune.n("gfx.aoThick",1.5,.2,6),scale:1,samples:12,distanceFallOff:1,screenSpaceRadius:false});
+ao.updatePdMaterial({lumaPhi:10,depthPhi:2,normalPhi:3,radius:6,radiusExponent:1,rings:2,samples:12});ao.blendIntensity=Tune.n("gfx.aoK",.85,0,1);
+// its normal and depth pass hides only points and lines; halo sprites, glow quads and other see-through effects would draw there as solid squares
+// and cast dark rectangles of occlusion, so they are hidden too
+ao._overrideVisibility=function(){const c=this._visibilityCache;this.scene.traverse(o=>{if(o.visible&&(o.isPoints||o.isLine||o.isLine2||o.isSprite||(o.material&&o.material.transparent&&!o.material.depthWrite))){o.visible=false;c.push(o)}})};cmp.addPass(ao)}
 vmp=new VMPass();cmp.addPass(vmp);
 // bloom needs the HDR buffer: lit ground already reaches 1.0, so only light sources above that (glow parts, sun, muzzle flash, sparks) should glow
 // the threshold sits just above 1.0 so light sources visibly glow, while sunlit walls (graded down to at most about 1.0) stay clean

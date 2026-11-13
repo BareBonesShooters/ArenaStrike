@@ -79,7 +79,7 @@ blk(x-2.6,z,1.3,5,1.3,sc,.6);blk(x+2.6,z,1.3,3.4,1.3,sc,.6);
 P("box",x,5.2,z,6.4,.6,1.3,dk,0,.7,null,0,-.08);
 P("box",x,.2,z,7.2,.4,3,dk,0,.6);
 P("cyl",x,6.9,z+.3,1.6,.14,1.6,0xffc040,0,1,null,PI/2,0);
-c.halo(x,6.9,z+.6,0xffc040,6,.45);
+c.halo(x,6.9,z+.6,0xffc040,6,.45);c.light(x,6.6,z+.6,0xffc040,1,16,true);
 blk(x+7,z,1.2,4,1.2,sc,.6);P("pyr",x+7,4.6,z,1.2,1.2,1.2,sc,0,.6);
 return true};
 // big tall dunes outside the walls: backdrop only, no collision

@@ -3,7 +3,7 @@
 // Monsters are cinder imps and magma golems that burst into flame when they die. Boss: Furnace Colossus, whose Lava Wave rings must be jumped.
 LV.reg({
 id:"forge",n:"Molten Forge",tag:"The mountain is bleeding fire",mod:"firestorm",pack:1,
-theme:{sky:[0x14100e,0x5a1a10,0xff7a2a],cloud:.6,cc:[.42,.28,.24],stars:.2,sun:{c:0xff7a3a,i:1.05,d:[.5,.18,.6]},hemi:[0xffa06a,0x4a2a1c,.95],fog:[0x5a2414,35,150],
+theme:{light:{fill:.55,cool:.27,bounce:.24},sky:[0x14100e,0x5a1a10,0xff7a2a],cloud:.6,cc:[.42,.28,.24],stars:.2,sun:{c:0xff7a3a,i:1.05,d:[.5,.18,.6]},hemi:[0xffa06a,0x4a2a1c,.95],fog:[0x5a2414,35,150],
 gr:{base:"#3a2c24",v:["#30241e","#44342a","#4a3424","#3a2a20"],path:"#3a2a20",edge:"#150f0c",plaza:"#2e2622"},roads:false,
 wall:0x4a3a34,trim:0x2a1e1a,house:[0x2e2624,0x3a2e2a,0x262020],roof:[0x1a1412,0x221a18],leaf:[0x2a1a10],trunk:0x1a1210,mount:[0x140e0c,0x1e1614],win:0xff8a2a,lamp:0xff7a2a,night:.35,
 motes:[0xffa040,.14,.85,8,1]},

@@ -3,7 +3,7 @@
 // Monsters are bog mutants whose hits poison you. Boss: Mother Mire, who calls up acid geysers under your feet.
 LV.reg({
 id:"swamp",n:"Toxic Bog",tag:"Don't breathe the air",mod:"blight",pack:2,
-theme:{sky:[0x2c3316,0x4a5a2a,0xa8b43a],cloud:.4,cc:[.7,.8,.5],stars:0,sun:{c:0xd8e060,i:.45,d:[.6,.25,.5]},hemi:[0x7aa050,0x2a2c18,.7],fog:[0x4a5a30,18,100],
+theme:{light:{fill:.55,cool:.27,bounce:.24},sky:[0x2c3316,0x4a5a2a,0xa8b43a],cloud:.4,cc:[.7,.8,.5],stars:0,sun:{c:0xd8e060,i:.45,d:[.6,.25,.5]},hemi:[0x7aa050,0x2a2c18,.7],fog:[0x4a5a30,18,100],
 gr:{base:"#2e3320",v:["#2a2e1a","#363a20","#33301c","#2a3a22"],path:"#4a4228",edge:"#262a18",plaza:"#4a4630"},roads:false,
 wall:0x3a3a26,trim:0x2a2a18,house:[0x4a3a22,0x3e3020,0x5a4628],roof:[0x3a3a22,0x4a4428],leaf:[0x4a6a2a],trunk:0x3a3024,mount:[0x2e3a24,0x3a4a2e],win:0xd8ff40,lamp:0xc8ff40,night:.4,
 motes:[0xd8ff50,.18,.8,6,.06]},
@@ -71,7 +71,7 @@ P("cyl",lx,8.05,lz,6.6,.12,6.6,0x2a1e12,0,1);P("cyl",lx,8.1,lz,5.4,.04,5.4,0x9df
 P("cone",lx+.5,10.1,lz,6.2,4,6.2,0x221a14,0,.7,null,.12,-.1);
 for(let t=-1;t<=1;t++){const wx=lx+Math.cos(di)*3.45-Math.sin(di)*t*1.6,wz=lz+Math.sin(di)*3.45+Math.cos(di)*t*1.6;P("box",wx,4.6,wz,.9,1.3,.15,0x9dff3a,PI/2-di,1,glow)}
 P("box",lx+Math.cos(di)*3.5,1.2,lz+Math.sin(di)*3.5,1.2,2.2,.2,0x0a0a06,PI/2-di,1);
-c.halo(lx+Math.cos(di)*3.4,4.6,lz+Math.sin(di)*3.4,0x9dff3a,3,.6);
+c.halo(lx+Math.cos(di)*3.4,4.6,lz+Math.sin(di)*3.4,0x9dff3a,3,.6);c.light(lx+Math.cos(di)*3.4,4.4,lz+Math.sin(di)*3.4,0x9dff3a,.8,12,true);
 c.light(lx+Math.cos(di)*6,5,lz+Math.sin(di)*6,0x9dff40,1.1,22);
 // dead cypress silhouettes outside the walls
 for(let i=0;i<26;i++){const a=i/26*6.283+rng()*.1,r=c.H+8+rng()*14,x=Math.cos(a)*r,z=Math.sin(a)*r,h=rr(8,13);P("cyl",x,h/2,z,.5,h,.5,bark,0,.5,null,rr(-.1,.1),rr(-.1,.1));P("box",x+.6,h*.7,z,1.6,.2,.2,bark,rng()*3,.5,null,0,.3)}

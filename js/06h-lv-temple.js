@@ -79,7 +79,7 @@ return true};
 // burning torch on a post, with a warm halo
 const torch=(x,z)=>{if(!ok(x,z,.6))return false;reg(x,z,.3,.3,2.6,1);
 P("cyl",x,1.3,z,.22,2.6,.22,0x4a3a2a,0,.7);P("cyl",x,2.7,z,.42,.3,.42,0x2a2018,0,.8);
-P("ico",x,2.98,z,.3,.5,.3,0xffb040,0,1,glow);c.halo(x,3.2,z,0xffa030,3.4,.7);return true};
+P("ico",x,2.98,z,.3,.5,.3,0xffb040,0,1,glow);c.halo(x,3.2,z,0xffa030,3.4,.7);c.light(x,3.1,z,0xffa030,.9,11,true);return true};
 // crumbled moss-covered wall, 1-1.5 m high, usable as cover
 const wall=(x,z,rot)=>{const len=rr(4,7),th=.8,h=rr(1,1.5),w=rot&1?th:len,d=rot&1?len:th;if(!ok(x,z,len/2+.5))return false;
 blk(x,z,w,h,d,pick(STN),.8);

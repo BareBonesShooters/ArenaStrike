@@ -189,14 +189,14 @@ const YardArt = (() => {
   const palettes={
     meadow:{sky:[0x7aadaf,0xb5cbc0,0xe1e3cb],fog:[0xd1d9c7,48,200],mist:[3,.2,.35,[1.03,1.05,1]],ground:["#828976","#89907a","#7b826e","#969780"],leaf:[0x507d65,0x688f69,0xb19e69,0x84a178],house:[0xc8cbb5,0xb8aa88,0x9cb6ac,0xbd8d70],roof:[0xb85c40,0x468582,0x455d58,0xb28c53]},
     sunset:{sky:[0x657d91,0xd6a08a,0xf4d4a4],fog:[0xe4c6a1,42,185],mist:[5,.18,.25,[1.07,.98,.9]],ground:["#a39d66","#a8a16d","#9c955f","#b0a674"],leaf:[0x6a8160,0xa09b58,0xc17f4b,0x72865c],house:[0xf0d3a3,0xd6b294,0xc1b4a1],roof:[0xaf5843,0x517875,0x74584d]},
-    frost:{sky:[0x83a3b0,0xc3d5d4,0xf1e9cf],fog:[0xd8e3da,40,175],mist:[4,.26,.45,[1.04,1.06,1.09]],ground:["#e0e8d9","#e5ebdf","#dbe3d6","#e9eddf"],leaf:[0x477b77,0x60958b,0x426761],house:[0xe7d8b5,0xaac9c1,0xd1b294],roof:[0xb7664a,0x527d7b,0x6d8481]},
+    frost:{light:{warm:.1,cool:.6},grade:{exp:1.1},sky:[0x83a3b0,0xc3d5d4,0xf1e9cf],fog:[0xd8e3da,40,175],mist:[4,.26,.45,[1.04,1.06,1.09]],ground:["#e0e8d9","#e5ebdf","#dbe3d6","#e9eddf"],leaf:[0x477b77,0x60958b,0x426761],house:[0xe7d8b5,0xaac9c1,0xd1b294],roof:[0xb7664a,0x527d7b,0x6d8481]},
     desert:{sky:[0x79a3a8,0xc2ceba,0xf3d9ad],fog:[0xe9d6b3,50,200],mist:[6,.15,.2,[1.05,1,.9]],ground:["#dcb783","#e1bd89","#d4ad7b","#e4c18f"],leaf:[0x75916b,0x99a36c,0x578171],house:[0xf0d3a4,0xdfb582,0xb2c3ab],roof:[0xb35d40,0x488682,0x856448]},
     autumn:{sky:[0x8ba8a2,0xcccfb3,0xf2deb5],fog:[0xe1d7b5,42,182],mist:[3.5,.22,.35,[1.05,1,.93]],ground:["#b3a26d","#b8a773","#aa9964","#bbaa79"],leaf:[0xc37f44,0xcd9e51,0xa85d3c,0x889458],house:[0xefdab0,0xdbbd8e,0xb4c5b4],roof:[0xaf563e,0x527b70,0x72614d]},
     neon:{sky:[0x192f39,0x325455,0x78918a],fog:[0x3c625f,36,160],mist:[3,.42,.5,[.85,1.4,1.75]],ground:["#415b50","#476156","#3c554a","#4d6659"],leaf:[0x5a9e8c,0x9ea86c,0x6b9e8e],house:[0x688b7c,0x8f9b80,0xb09573],roof:[0xa96846,0x3c7778,0x5b6e61]},
     toxic:{sky:[0x273b36,0x52634b,0xa3b176],fog:[0x6c805c,32,150],mist:[2.6,.38,.55,[1,1.45,.72]],ground:["#68794c","#718153","#607245","#78885a"],leaf:[0xa7b76a,0x63866b,0xd0b66a],house:[0x83946d,0xabaa79,0x71927c],roof:[0x9e6b46,0x4b756c,0x61744c]}
   };
   for(const [key,p] of Object.entries(palettes)){
-    const t=THEMES[key];t.sky=p.sky;t.fog=p.fog;t.mist=p.mist;t.cloud=0;t.cc=[.96,.94,.84];t.house=p.house;t.roof=p.roof;t.leaf=p.leaf;
+    const t=THEMES[key];t.sky=p.sky;t.fog=p.fog;t.mist=p.mist;t.cloud=0;t.cc=[.96,.94,.84];t.house=p.house;if(p.light)t.light=p.light;if(p.grade)t.grade=Object.assign({},t.grade,p.grade);t.roof=p.roof;t.leaf=p.leaf;
     t.gr={base:p.ground[0],v:p.ground.slice(1),path:key==="frost"?"#bdcfc1":"#cfbb8e",edge:key==="frost"?"#a3b9ae":"#b3a078",plaza:key==="frost"?"#d8e0cd":"#e0cda4"};
     t.trim=C.iron;t.wall=key==="frost"?0x99afa4:0x9d9e7b;t.trunk=0x78654c;t.win=0xe6cf8e;t.lamp=0xf3d78e;
     t.sun={c:0xffe0a5,i:key==="neon"?.68:.92,d:[-.58,.72,.4]};t.hemi=[0xa9d2ce,0x7c7054,.77];

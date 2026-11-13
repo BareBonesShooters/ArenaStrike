@@ -4,7 +4,7 @@
 // Boss: The Crimson Herald, who calls down Blood Rain.
 LV.reg({
 id:"corrupt",n:"The Corrupted Realm",tag:"Everything turns red",mod:"frenzy",pack:2,corrupt:true,
-theme:{sky:[0x0a0004,0x6a0a18,0xc0203a],cloud:.3,cc:[.8,.2,.25],stars:.6,sun:{c:0xff3040,i:.5,d:[.6,.3,.5]},hemi:[0x8a1a2a,0x1a0a0c,.6],fog:[0x2a0408,20,110],
+theme:{light:{fill:.55,cool:.27,bounce:.24},sky:[0x0a0004,0x6a0a18,0xc0203a],cloud:.3,cc:[.8,.2,.25],stars:.6,sun:{c:0xff3040,i:.5,d:[.6,.3,.5]},hemi:[0x8a1a2a,0x1a0a0c,.6],fog:[0x2a0408,20,110],
 gr:{base:"#1a0a0c",v:["#160809","#1e0c0e","#120506","#22100f"],path:"#2a0c10",edge:"#0c0304",plaza:"#24100e"},roads:false,
 wall:0x2a1418,trim:0x1a0a0c,house:[0x2a1418,0x3a1a20],roof:[0x14080a,0x1e0a0e],leaf:[0x2a0a10],trunk:0x1a0a0c,mount:[0x1a0408,0x2a0a12],win:0xff2a3a,lamp:0xff3040,night:1,
 motes:[0xff3a3a,.2,.85,7,.6]},

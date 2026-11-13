@@ -43,7 +43,7 @@ fit();
 sun.castShadow=q.sh>0;
 if(q.sh&&sun.shadow.mapSize.x!==q.sh){sun.shadow.mapSize.set(q.sh,q.sh);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}
 if(!q.sh&&sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
-Bloom.set(false);Flare.set(false);Post.set(q.post);Post.rimK(q.rim);document.body.classList.remove("grade");document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
+Bloom.set(false);Flare.set(false);Post.set(q.post);Post.rimK(q.rim);MISTU.lampK.value=q.post>=2?Tune.n("gfx.lampFog",1.8,0,4):0;document.body.classList.remove("grade");document.body.classList.toggle("lite",!!q.lite);document.body.classList.toggle("vg",!!q.vg);
 // filmic tone mapping (High and Medium) rolls bright skies and muzzle glare off smoothly instead of clipping them
 const tmWas=rd.toneMapping;rd.toneMapping=T.NoToneMapping;rd.toneMappingExposure=1;
 if(q.mz&&!mzL.parent)sc.add(mzL);else if(!q.mz&&mzL.parent)sc.remove(mzL);

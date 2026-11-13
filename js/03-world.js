@@ -198,7 +198,7 @@ soft(o,th.night?.5:.42,.22);gt.needsUpdate=true}
 // rolls slowly in soft banks, and is tinted relative to the fog colour, so blackout and corruption darken or redden it along with the fog.
 // It starts a couple of metres out, so the floor at your own feet stays clear, and it thickens with the distance the view ray travels inside the layer, so looking down on it from above stays clear. Only tiers with the sky effects get it (Low and Potato keep plain fog).
 // camP: three r128 only sends cameraPosition to Phong/Standard/shader materials, never to Lambert, so these shaders get the camera from their own uniform
-const MISTU={mistT:{value:new T.Color(1,1,1)},mistP:{value:new T.Vector3(3,0,0)},mistH:{value:3},camP:{value:cam.position}};
+const MISTU={mistT:{value:new T.Color(1,1,1)},mistP:{value:new T.Vector3(3,0,0)},mistH:{value:3},camP:{value:cam.position},lampK:{value:0}};
 // fog runs after the colour-space step, so the colour here is in the output space: linear light when drawing into the post chain, sRGB when
 // drawing straight to the screen. Fog is blended in a gamma-2 space either way (the GLSL compiler folds the test), so haze looks the same on
 // every tier and as light as it did before the Three.js upgrade (blending in linear light makes distant haze look thicker and paler)
@@ -214,6 +214,14 @@ float L=vd.y<-.001?min(vFogDepth,max(mistH-vWP.y,0.)/-vd.y):vFogDepth;
 float mk=clamp(hm*hm*mistP.x*bank*smoothstep(2.,24.,L),0.,.5);
 gl_FragColor.rgb=mix(gl_FragColor.rgb,min(fogC*mistT,vec3(1.)),mk);
 if(fogLin)gl_FragColor.rgb*=gl_FragColor.rgb;
+#if NUM_POINT_LIGHTS>0&&defined(LAMBERT)
+// lamp glow in the air (High and Ultra): the light each lamp scatters toward the camera along the view ray through fog and ground mist,
+// worked out exactly for a point light (an arctangent integral), so every glow sits on a real light and thickens where the mist does
+if(fogLin&&lampK>0.){vec3 P=-vViewPosition;float len=length(P);vec3 d=P/max(len,1e-3);vec3 sc=vec3(0.);
+for(int i=0;i<NUM_POINT_LIGHTS;i++){vec3 lp=pointLights[i].position;float tc=dot(lp,d),h=max(length(lp-d*tc),.35),w=1.-clamp(h/max(pointLights[i].distance,1.),0.,1.);
+sc+=pointLights[i].color*w*w*(atan((len-tc)/h)-atan(-tc/h))/h;}
+gl_FragColor.rgb+=sc*lampK*(.012+mk*.05+fogFactor*.01);}
+#endif
 #endif`;
 function fogFx(mat,tag){
 const prev=mat.onBeforeCompile;
@@ -221,7 +229,7 @@ mat.onBeforeCompile=sh=>{
 if(prev)prev(sh);
 sh.uniforms.sunD=Sky.u.sunDir;sh.uniforms.sunC=Sky.u.sunCol;sh.uniforms.fogT=Sky.u.time;Object.assign(sh.uniforms,MISTU);
 sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;").replace("#include <project_vertex>","#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;");
-sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 sunD,sunC,mistT,mistP,camP;uniform float fogT,mistH;").replace("#include <fog_fragment>",FOGF)};
+sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 sunD,sunC,mistT,mistP,camP;uniform float fogT,mistH,lampK;").replace("#include <fog_fragment>",FOGF)};
 mat.customProgramCacheKey=()=>"fx"+tag}
 
 function buildWorld(key,seed,opt){
@@ -402,9 +410,11 @@ if(!opt.empty){
 const LVD=opt.level&&typeof LV_REG!=="undefined"&&LV_REG[opt.level];
 if(opt.waves&&!(LVD&&LVD.pack===-1))arenaPack(LVD&&LVD.pack!=null?LVD.pack:((seed>>>0)>>3)%4);
 if(LVD){ // a Monster Rush level builds all of its own scenery (js/06h-lv-*.js)
-let nl=0;WORLD.lvAnim=[];
+let nl=0,ne=0;WORLD.lvAnim=[];
 const c={blk,reg,P,glow,solid,grp,rng,crng,rr,cr,pick,cpick,free,place,pc,crateAt,crate,barrel,rock,lerpC,th,key,H,PI,U,LOD,
-light:(x,y,z,col,int,dist)=>{if(nl>=4||SOFT)return null;nl++;const l=new T.PointLight(col,(int||1.2)*PLK(dist||24,1.6),PLR(dist||24,1.6),PLD);l.position.set(x,y,z);l.userData.base=(int||1.2)*PLK(dist||24,1.6);l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l);return l},
+// extra=true: a lamp that only lights its surroundings on High and Ultra (up to 4 more), so lanterns and torches you can see cast real light there
+// while Low keeps its original 4 lights and costs no more
+light:(x,y,z,col,int,dist,extra)=>{if(SOFT)return null;if(extra){if((LOD.post|0)<2||ne>=4)return null;ne++}else{if(nl>=4)return null;nl++}const l=new T.PointLight(col,(int||1.2)*PLK(dist||24,1.6),PLR(dist||24,1.6),PLD);l.position.set(x,y,z);l.userData.base=(int||1.2)*PLK(dist||24,1.6);l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l);return l},
 halo:(x,y,z,col,s,op)=>{const h=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:col,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:op==null?.7:op,fog:false}));h.scale.setScalar(s||2);h.position.set(x,y,z);h.raycast=()=>{};grp.add(h);return h},
 add:o=>{o.traverse(m=>{m.raycast=()=>{}});grp.add(o);return o},
 anim:fn=>{WORLD.lvAnim.push(fn)}};

@@ -8,7 +8,7 @@ import { Pass, FullScreenQuad } from "three/addons/postprocessing/Pass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import { SAOPass } from "three/addons/postprocessing/SAOPass.js";
+import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
@@ -42,7 +42,7 @@ if (noWebGL2()) {
   };
   M.customProgramCacheKey = function () { return this.blending === THREE_NS.AdditiveBlending ? "add" : this.onBeforeCompile.toString(); };
   // the module namespace is frozen, so the game gets a plain object it can extend
-  const T = Object.assign({}, THREE_NS, { CanvasTexture, EffectComposer, Pass, FullScreenQuad, RenderPass, ShaderPass, UnrealBloomPass, SAOPass, SMAAPass, OutputPass, FXAAShader, CopyShader });
+  const T = Object.assign({}, THREE_NS, { CanvasTexture, EffectComposer, Pass, FullScreenQuad, RenderPass, ShaderPass, UnrealBloomPass, GTAOPass, SMAAPass, OutputPass, FXAAShader, CopyShader });
   window.THREE = T;
   // classic scripts inserted with async=false run one after another in insertion order, like the plain script tags they replace
   for (const tag of document.querySelectorAll("script[data-src]")) {
