@@ -1152,3 +1152,11 @@ body:not(.playing) .dn{display:none}
 @keyframes stb{0%{opacity:0;transform:translateX(-50%) scale(1.4)}12%{opacity:1;transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-8px)}}
 body.lite #stb.on{animation:dnl 1.8s steps(1,end) forwards}
 @media (prefers-reduced-motion:reduce){.dn.go{animation:dnl .65s steps(1,end) forwards!important}#stb.on{animation:dnl 1.8s steps(1,end) forwards!important}}
+/* low health: red edge that pulses with the heartbeat (strength from --lh, set by LH in js/07) */
+#lhv{position:fixed;inset:0;pointer-events:none;z-index:5;opacity:0;box-shadow:inset 0 0 calc(60px + 90px*var(--lh,0)) rgba(200,10,20,.7);transition:opacity .3s}
+body.lowhp #lhv{opacity:calc(.25 + .75*var(--lh,0));animation:lhp 1s ease-in-out infinite}
+@keyframes lhp{0%,100%{filter:brightness(.8)}15%{filter:brightness(1.25)}}
+@media (prefers-reduced-motion:reduce){body.lowhp #lhv{animation:none}}
+body.lite.lowhp #lhv{animation:none}
+/* comfort mode (Settings): no screen shake */
+body.comfort.shk,body.comfort.dthshake,body.comfort .shk{animation:none!important}

@@ -59,15 +59,17 @@ cmp.addPass(aa)}
 function dispose(){hdrOn=false;glowGain();if(!cmp)return;try{for(const p of cmp.passes){if(p.dispose)p.dispose()}cmp.renderTarget1.dispose();cmp.renderTarget2.dispose()}catch(e){}cmp=null;rp=ao=vmp=bloom=grade=aa=null}
 // per-level colour: night and fog levels get less saturation boost so they stay moody, bright ones get more punch
 function look(){if(!grade)return;const th=THEMES[WORLD.theme]||{},n=th.night||0,g=th.grade||{},u=grade.uniforms;
-u.uSat.value=g.sat!=null?g.sat:1.16-n*.1;u.uCon.value=g.con!=null?g.con:1.07;u.uExp.value=g.exp!=null?g.exp:1+n*.05;u.uVig.value=g.vig!=null?g.vig:.26+n*.1;
+u.uSat.value=satB=g.sat!=null?g.sat:1.16-n*.1;u.uCon.value=g.con!=null?g.con:1.07;u.uExp.value=g.exp!=null?g.exp:1+n*.05;u.uVig.value=g.vig!=null?g.vig:.26+n*.1;
 if(bloom){bloom.strength=LV[lvl].bloom[0]*Tune.n("gfx.bloomK",.55,.1,2)*(g.bloom!=null?g.bloom:1+n*.35);
 // sunlit sand and snow go past 1.0 by themselves, so bright-ground themes raise the threshold (light sources are pushed far enough to still clear it)
 const gl=th.gr&&th.gr.base?(C_T.set(th.gr.base),C_T.r*.299+C_T.g*.587+C_T.b*.114):.5;
 bloom.threshold=g.bloomThr!=null?g.bloomThr:Tune.n("gfx.bloomThr",1.05,.8,2)+Math.max(0,gl-.55)*Tune.n("gfx.bloomBright",1.2,0,3)}}
 // glowing scenery, muzzle flashes, tracers, flares and monster eyes are pushed past 1.0 only when the HDR buffer is on, so they bloom there and look exactly as before everywhere else
 function glowGain(){const m=WORLD.glowM;if(m)m.color.setScalar(hdrOn?Tune.n("gfx.glowGain",1.7,1,4):1)}
-let lastTheme="";
+let lastTheme="",satB=1.16;
 return{RIM,
+// low health drains colour (k 0..1)
+lowHp(k){if(grade)grade.uniforms.uSat.value=satB*(1-.6*k)},
 get on(){return !!cmp},
 // brightness multiplier for light-source effects: above 1 only on HDR tiers (see glowGain)
 get hdr(){return hdrOn},get hot(){return hdrOn?Tune.n("gfx.hot",2.2,1,4):1},

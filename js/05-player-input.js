@@ -129,6 +129,26 @@ else P.gr=false;
 if(WORLD.ceil&&P.y>WORLD.ceil-2.1){P.y=WORLD.ceil-2.1;if(P.vy>0)P.vy=0}
 if(P.y<-30)P.y=0}
 
+// analog movement from the touch joystick or a gamepad stick (-1..1 each way; y is down/back), used instead of W/A/S/D while on
+const AN={x:0,y:0,on:false,pad:false};
+// light vibration on phones that support it (Android; iPhones ignore it), off with the haptics option
+function haptic(n){try{if(document.body.classList.contains("touch")&&!(S.opt&&S.opt.haptics===false)&&navigator.vibrate)navigator.vibrate(n)}catch(e){}}
+// gamepad (standard mapping): left stick moves, right stick looks, RT fires, LT aims, A jump, B crouch/slide, X reload, Y swap, RB grenade, L3 sprint, Start pause
+const Pad=(()=>{const was={},kd=(c,dn)=>dispatchEvent(new KeyboardEvent(dn?"keydown":"keyup",{code:c,key:c,bubbles:true}));
+const MAP={0:"Space",1:"ControlLeft",5:"KeyG",10:"ShiftLeft"};
+function frame(dt){let gp=null;try{if(navigator.getGamepads)for(const g of navigator.getGamepads())if(g&&g.connected){gp=g;break}}catch(e){}
+if(!gp||state!=="play"||menuOpen){if(AN.pad){AN.pad=false;AN.on=false;AN.x=AN.y=0}for(const i in was)if(was[i]){was[i]=false;if(MAP[i])kd(MAP[i],false);else if(i==="7")dispatchEvent(new MouseEvent("mouseup",{button:0}));else if(i==="6")dispatchEvent(new MouseEvent("mouseup",{button:2}))}return}
+const dz=v=>Math.abs(v)<.15?0:(v-Math.sign(v)*.15)/.85,ax=gp.axes,lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
+if(lx||ly){AN.pad=true;AN.on=true;AN.x=lx;AN.y=ly}else if(AN.pad){AN.pad=false;AN.on=false;AN.x=AN.y=0}
+const k=Tune.n("pad.look",900,200,2400)*(S.sens||1)*(scoped?.55:1)*dt;if(rx||ry)Aim.touchLook(rx*Math.abs(rx)*k,ry*Math.abs(ry)*k);
+const B=gp.buttons||[];for(let i=0;i<B.length&&i<12;i++){const on=!!(B[i]&&(B[i].pressed||B[i].value>.5));if(on===!!was[i])continue;was[i]=on;
+if(MAP[i])kd(MAP[i],on);
+else if(i===7)on?rd.domElement.dispatchEvent(new MouseEvent("mousedown",{button:0,bubbles:true})):dispatchEvent(new MouseEvent("mouseup",{button:0}));
+else if(i===6)on?rd.domElement.dispatchEvent(new MouseEvent("mousedown",{button:2,bubbles:true})):dispatchEvent(new MouseEvent("mouseup",{button:2}));
+else if(on&&i===2){kd("KeyR",1);kd("KeyR",0)}else if(on&&i===3){const c=slot!==1?"Digit2":"Digit1";kd(c,1);kd(c,0)}else if(on&&i===9){try{pauseGame()}catch(e){}}}}
+return{frame}})();
+// base field of view is a setting (60-100, default 75)
+function baseFov(){return clamp(+S.fov||75,60,100)}
 // ---------- camera ----------
 function updateCamera(dt,inp){
 const lockd=P.fz>0||P.dead>0||rL>0;
@@ -148,9 +168,9 @@ P.stepOff*=Math.exp(-dt*13);
 P.ldS=P.ldS||{x:0,v:0};P.rkS=P.rkS||{x:0,v:0};if(P.landDip>0){P.ldS.v+=P.landDip*Tune.n("cam.land",13,0,40);P.landDip=0}
 const dip=clamp(spring(P.ldS,0,130,11,dt),-.08,.45),rk=spring(P.rkS,P.rk,Tune.n("cam.recoilK",320,60,900),24,dt);
 // head-bob strength is a setting (0 = off); scoped aim keeps only a trace of it
-const spd=Math.hypot(P.vx,P.vz),bobK=(S.bob==null?1:S.bob)*(scoped?.25:1),amp=P.gr&&!lockd&&!P.mantle?Math.min(1,spd/8):0;
+const spd=Math.hypot(P.vx,P.vz),bobK=S.comfort?0:(S.bob==null?1:S.bob)*(scoped?.25:1),amp=P.gr&&!lockd&&!P.mantle?Math.min(1,spd/8):0;
 P.bobA+=(amp-P.bobA)*Math.min(1,dt*8);const o=P.bobPh;P.bobPh+=dt*spd*1.15*(P.gr?1:0);
-if(P.bobA>.3&&Math.floor(P.bobPh/Math.PI)!==Math.floor(o/Math.PI))snd("step",(.5+P.bobA*.3)*(1-.65*P.crouch));
+if(P.bobA>.3&&Math.floor(P.bobPh/Math.PI)!==Math.floor(o/Math.PI))snd(P.y>.3?"stepw":(THEMES[WORLD.theme]||{}).snow?"steps":"step",(.5+P.bobA*.3)*(1-.65*P.crouch));
 const bobY=Math.sin(P.bobPh*2)*.034*P.bobA*bobK,bobX=Math.cos(P.bobPh)*.022*P.bobA*bobK,cs=Math.cos(P.yaw),sn=Math.sin(P.yaw);
 let lift=0,mp=0,rollT=-(inp?inp.s:0)*.014*Math.min(1,spd/6);
 // mantle: the view dips toward the ledge as the arms take the weight, then rises over it
@@ -159,7 +179,7 @@ P.roll+=(rollT-P.roll)*Math.min(1,dt*9);
 cam.position.set(P.x+cs*bobX,P.y+P.eye+P.stepOff-dip+bobY+lift,P.z-sn*bobX);
 cam.rotation.set(P.pitch+rk-dip*.25+mp+Death.pit,P.yaw,P.roll+Death.rol,"YXZ")}
 function updateFov(dt,g,inp){
-const sprinting=inp&&inp.sprint&&inp.f>0&&!scoped&&Math.hypot(P.vx,P.vz)>7.5,tfv=scoped?(scopeOf(g).pip?LENS_BASE:scopeOf(g).fov):P.slide>0?75+Tune.n("cam.slideFov",9,0,20):sprinting?75+Tune.n("cam.sprintFov",6,0,15):75;
+const sprinting=inp&&inp.sprint&&inp.f>0&&!scoped&&Math.hypot(P.vx,P.vz)>7.5,tfv=scoped?(scopeOf(g).pip?LENS_BASE:scopeOf(g).fov):P.slide>0?baseFov()+Tune.n("cam.slideFov",9,0,20):sprinting?baseFov()+Tune.n("cam.sprintFov",6,0,15):baseFov();
 // base FOV eases to its target; a spring kick on fire (not while scoped) rides on top
 if(P.fovL!==cam.fov||P.fovB===undefined)P.fovB=cam.fov-(P.fovK||0);P.fovB+=(tfv-P.fovB)*Math.min(1,dt*(scoped?16:7));
 P.fk=P.fk||{x:0,v:0};P.fovK=scoped?0:clamp(spring(P.fk,0,240,20,dt),-1,3.5);if(scoped){P.fk.x=P.fk.v=0}

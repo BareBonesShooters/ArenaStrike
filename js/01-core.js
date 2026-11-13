@@ -497,7 +497,7 @@ for(const r of R)if(r[0].test(n)){o.score=r[1];break}
 if(SOFT)o.score=0;
 if(o.cores<=2)o.score-=16;else if(o.cores<=4)o.score-=8;else if(o.cores>=8)o.score+=3;
 if(o.mem){if(o.mem<=2)o.score-=20;else if(o.mem<=4)o.score-=8}
-if(o.mobile)o.score-=6;
+if(o.mobile)o.score-=20; // phones and tablets start about one tier lower (tiers are ~20 points apart): heat and battery, not just raw speed
 if(o.tex<8192)o.score-=12;
 // a big or high-density screen means many more pixels to shade; the game caps density at 1.5x, so that is what counts here
 const dp=Math.min(devicePixelRatio||1,1.5);o.px=Math.round(screen.width*screen.height*dp*dp/2073600*100)/100;

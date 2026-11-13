@@ -16,18 +16,28 @@ sc.add(hemi,sun,sun.target,cam);
 addEventListener("resize",()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();rd.setSize(innerWidth,innerHeight)});
 
 // ---------- audio ----------
-let AC=null,MG=null,NB=null,BKG=false,DL=0; // BKG/DL: set while a voice is being rendered offline for Howler
+let AC=null,MG=null,NB=null,BKG=false,DL=0,LPF=null,HLP=null,PANV=0;
+// stereo for world sounds: sndAt sets PANV for the one sound it plays, and the live synth routes that voice through a panner
+function OUT(){if(!PANV||BKG||!AC||!AC.createStereoPanner)return MG;const p=AC.createStereoPanner();p.pan.value=PANV;p.connect(MG);return p}
+// sndAt: a sound placed in the world. Pan follows where it is relative to your view, volume falls with distance, and a wall in between
+// makes it quieter and a little duller (lower rate), so bot shots and monsters can be located by ear
+function sndAt(k,x,y,z,vol,rate,range){try{const dx=x-cam.position.x,dz=z-cam.position.z,d=Math.hypot(dx,dz),yw=P.yaw,rx=Math.cos(yw),rz=-Math.sin(yw);
+let v=(vol==null?1:vol)*clamp(1-d/(range||60),.06,1),r=rate||1;if(d>3&&!los(x,y,z,cam.position.x,cam.position.y,cam.position.z)){v*=Tune.n("snd.wallK",.5,.1,1);r*=.9}
+PANV=d>.5?clamp((dx*rx+dz*rz)/d,-1,1)*Tune.n("snd.pan",.75,0,1):0;snd(k,v,r)}catch(e){}PANV=0}
+// muffle(k): low health dulls every sound (0 clear .. 1 about 1 kHz), on both the live synth and the pre-rendered Howler voices
+function muffle(k){const f=k>0?20000*Math.pow(.05,Math.min(1,k)):20000;try{if(AC&&LPF)LPF.frequency.setTargetAtTime(f,AC.currentTime,.15)}catch(e){}
+try{const H=window.Howler;if(H&&H.ctx&&H.masterGain){if(!HLP){if(!(k>0))return;HLP=H.ctx.createBiquadFilter();HLP.type="lowpass";HLP.frequency.value=20000;H.masterGain.disconnect();H.masterGain.connect(HLP);HLP.connect(H.ctx.destination)}HLP.frequency.setTargetAtTime(f,H.ctx.currentTime,.15)}}catch(e){}} // BKG/DL: set while a voice is being rendered offline for Howler
 function actx(){
-if(AC===null){try{AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=S.vol;MG.connect(AC.destination);
+if(AC===null){try{AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=S.vol;LPF=AC.createBiquadFilter();LPF.type="lowpass";LPF.frequency.value=20000;MG.connect(LPF);LPF.connect(AC.destination);
 const n=AC.sampleRate*.4|0;NB=AC.createBuffer(1,n,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1}catch(e){AC=false}}
 if(AC&&!BKG&&AC.state==="suspended")AC.resume().catch(()=>{});return AC||null}
 const setVol=v=>{S.vol=v;if(MG)MG.gain.value=v;try{if(window.Howler)Howler.volume(v)}catch(e){}};
 function tone(f,d,type,v,f2,dl){const a=actx();if(!a)return;const t=a.currentTime+DL+(dl||0),o=a.createOscillator(),g=a.createGain();
 o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f2||f/2),t+d);
-g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(MG);o.start(t);o.stop(t+d+.03)}
+g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(OUT());o.start(t);o.stop(t+d+.03)}
 function hiss(d,v,fq,dl){const a=actx();if(!a||!NB)return;const t=a.currentTime+DL+(dl||0),s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();
 s.buffer=NB;f.type="highpass";f.frequency.value=fq;g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);
-s.connect(f);f.connect(g);g.connect(MG);s.start(t);s.stop(t+d)}
+s.connect(f);f.connect(g);g.connect(OUT());s.start(t);s.stop(t+d)}
 const SND={
 sh:(v,r)=>{hiss(.09,.26*v,900*r);tone(190*r,.11,"sawtooth",.13*v,60)},
 ktick:(v,r)=>{tone(2300*r,.05,"square",.07*v,1800*r);tone(3400*r,.04,"sine",.06*v,0,.035)},
@@ -38,6 +48,17 @@ rl:v=>{tone(300,.08,"triangle",.08*v,200);tone(420,.1,"triangle",.09*v,300,.5)},
 kill:v=>{tone(520,.12,"sine",.14*v,700);tone(780,.2,"sine",.14*v,1000,.1)},
 hurt:v=>{tone(120,.16,"sawtooth",.15*v,50);hiss(.08,.1*v,300)},
 jump:v=>tone(260,.1,"sine",.05*v,420),
+// kill confirm (rate 1.26 on headshots), heartbeat, last-rounds tick, empty-mag clack, wave-clear chord, pre-wave riser, the quiet beat before a boss
+// footsteps by surface: a hollow knock on crates and roofs, a crunch on snow
+stepw:v=>{tone(170,.06,"triangle",.09*v,110);hiss(.035,.04*v,2600)},
+steps:v=>{hiss(.09,.1*v,1500);hiss(.05,.06*v,3800,.03)},
+kc:(v,r)=>{tone(660*r,.09,"triangle",.13*v,700*r);tone(990*r,.16,"sine",.13*v,1050*r,.075)},
+hb:v=>{tone(62,.13,"sine",.32*v,40);tone(55,.16,"sine",.24*v,36,.2)},
+lastr:(v,r)=>tone(1500*r,.035,"square",.04*v,1300*r),
+mclack:v=>{tone(240,.05,"square",.09*v,90);hiss(.05,.1*v,1800)},
+chord:v=>{tone(523,.6,"triangle",.08*v,523);tone(659,.6,"triangle",.07*v,659,.06);tone(784,.7,"triangle",.07*v,784,.12)},
+riser:v=>{tone(180,.9,"sawtooth",.045*v,720);hiss(.9,.04*v,2500)},
+lowbeat:v=>{tone(70,.25,"sine",.3*v,45);tone(70,.25,"sine",.3*v,45,.5)},
 djump:v=>{tone(420,.13,"sine",.06*v,900);tone(640,.1,"triangle",.03*v,1200,.04)},
 land:v=>{hiss(.07,.12*v,200);tone(90,.09,"sine",.12*v,50)},
 step:v=>hiss(.04,.035*v,500),
@@ -52,7 +73,7 @@ function sndLive(k,vol,rate){try{if(!actx())return;const f=SND[k];if(f)f(vol==nu
 // ---------- weapon voices: every gun and every knife has its own synthesised sound ----------
 function nz(d,v,type,fq,dl,f2,q){const a=actx();if(!a||!NB)return;const t=a.currentTime+DL+(dl||0),s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();d=Math.min(d,.38);
 s.buffer=NB;s.playbackRate.value=.8+Math.random()*.4;f.type=type;f.frequency.setValueAtTime(fq,t);if(f2)f.frequency.exponentialRampToValueAtTime(Math.max(40,f2),t+d);if(q)f.Q.value=q;
-g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);s.connect(f);f.connect(g);g.connect(MG);s.start(t);s.stop(t+d)}
+g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);s.connect(f);f.connect(g);g.connect(OUT());s.start(t);s.stop(t+d)}
 const clk=(f,v,dl)=>{tone(f,.022,"square",.05*v,f*.5,dl);nz(.025,.06*v,"highpass",3500,dl)};
 const GF={ // fire: crack (noise), body (low tone), tail (room) and a signature layer per family
 pistol:(v,p,x)=>{nz(.05,.34*v,"highpass",2100*p);tone(260*p,.09,"sawtooth",.16*v,68*p);tone(1700*p,.025,"square",.06*v,700);if(x)nz(.16,.07*v,"lowpass",1800,.01,500)},
@@ -142,11 +163,11 @@ function pump(){SB.busy=true;const j=SB.q.shift();if(!j){SB.busy=false;return}
 bake(j[0],j[1],j[2],j[3]).then(()=>setTimeout(pump,j[0][0]==="m"?120:20))}
 function bplay(keys,v,rate){ // play one of the baked variants; false = not ready, caller falls back to the live synth
 if(!SB.on)return false;let c=[];for(const k of keys){const x=SB.h[k];if(x&&x.ok)c.push(x)}if(!c.length)return false;
-if(SB.act>40)return true;const x=c[(Math.random()*c.length)|0],id=x.h.play();x.h.volume(Math.max(0,Math.min(1,v)),id);x.h.rate(Math.max(.5,Math.min(2.5,rate||1)),id);
+if(SB.act>40)return true;const x=c[(Math.random()*c.length)|0],id=x.h.play();x.h.volume(Math.max(0,Math.min(1,v)),id);if(PANV)try{x.h.stereo(PANV,id)}catch(e){}x.h.rate(Math.max(.5,Math.min(2.5,rate||1)),id);
 SB.act++;x.h.once("end",()=>{SB.act--},id);return true}
 // a swelling note for music and pads (the live helpers above have no attack)
 function note(f,t,d,v,type,att,det){const a=actx();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t0=a.currentTime+DL+t;o.type=type||"sine";o.frequency.value=f;if(det)o.detune.value=det;
-g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+(att||.02));g.gain.exponentialRampToValueAtTime(.0005,t0+d);o.connect(g);g.connect(MG);o.start(t0);o.stop(t0+d+.02)}
+g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+(att||.02));g.gain.exponentialRampToValueAtTime(.0005,t0+d);o.connect(g);g.connect(OUT());o.start(t0);o.stop(t0+d+.02)}
 // ----- more sound effects (the original table above is kept; these add to it or sharpen it) -----
 Object.assign(SND,{
 hit:v=>{tone(1100,.04,"square",.05*v,700);tone(180,.07,"sine",.12*v,90);nz(.03,.07*v,"highpass",3000)},
@@ -512,13 +533,13 @@ snd(corr?"rift":"dig",clamp(1.1-Math.hypot(x-P.x,z-P.z)/60,.2,.9))}
 let roarT=0;
 // a monster breaking the surface: dirt thrown up, arms raised, and a roar (one per .7 s, so a whole wave does not roar at once)
 function emergeDone(e){const p=e.g.position,dd=Math.hypot(P.x-p.x,P.z-p.z);Fx.spray({x:p.x,y:.2,z:p.z},0,1,0,0x5a4632,8,5,.12,14,.7);e.g.userData.kick=1;
-const now=performance.now();if(now-roarT>700&&dd<45){roarT=now;snd("roar",clamp(.55-dd/70,.1,.5),e.k===2||e.k===4?.72:e.k===1||e.k===3?1.3:1)}
+const now=performance.now();if(now-roarT>700&&dd<45){roarT=now;sndAt("roar",p.x,1.2,p.z,.55,e.k===2||e.k===4?.72:e.k===1||e.k===3?1.3:1)}
 Gfx.ring(p.x,.12,p.z,e.corr?0xb050ff:0xc8a070,.3,2.2,.45,.6);Fx.burst({x:p.x,y:.3,z:p.z},0x5a4632,12,3.5,.1,3,12);
 snd("mrise",clamp(1-Math.hypot(P.x-p.x,P.z-p.z)/50,.15,.8));if(e.elite){Gfx.flare({x:p.x,y:1.2,z:p.z},0xffc233,5,.5);snd("elite",.7)}}
-function monWind(e){const g=e.g,p=g.position,col=e.corr?0xc060ff:0xff4a3a;Gfx.flare({x:p.x,y:2.1*(g.scale.y||1),z:p.z},col,1.8,.32);Gfx.ring(p.x,.1,p.z,col,.3,1.7,.3,.6);snd("mwind",clamp(1-Math.hypot(P.x-p.x,P.z-p.z)/30,.1,.7))}
+function monWind(e){const g=e.g,p=g.position,col=e.corr?0xc060ff:0xff4a3a;Gfx.flare({x:p.x,y:2.1*(g.scale.y||1),z:p.z},col,1.8,.32);Gfx.ring(p.x,.1,p.z,col,.3,1.7,.3,.6);sndAt("mwind",p.x,1.4,p.z,.75,1,30)}
 function clawScreen(corr){const d=document.createElement("div");d.className="claw"+(corr?" cc":"");d.innerHTML="<i></i><i></i><i></i>";document.body.appendChild(d);setTimeout(()=>d.remove(),520)}
 function monStrike(e){const g=e.g,p=g.position,u=g.userData,d=Math.hypot(P.x-p.x,P.z-p.z),big=e.k===2||e.k===4,col=e.corr?0xd08cff:0xff5a4a,fx=Math.sin(g.rotation.y),fz=Math.cos(g.rotation.y);u.kick=1;
-Gfx.slash(p.x+fx*1.1,1.3,p.z+fz*1.1,g.rotation.y,col,big?1.5:1);snd(big?"mslam":"claw",.85);
+Gfx.slash(p.x+fx*1.1,1.3,p.z+fz*1.1,g.rotation.y,col,big?1.5:1);sndAt(big?"mslam":"claw",p.x,1.2,p.z,.9,1,40);
 if(big){Gfx.ring(p.x+fx*1.6,.12,p.z+fz*1.6,col,.3,3.4,.45,.8);Fx.burst({x:p.x+fx*1.6,y:.2,z:p.z+fz*1.6},0x5a4632,10,4,.1,3,12);if(d<6){document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove("shk"),160)}}
 if(e.corr)Gfx.flare({x:p.x,y:1.3,z:p.z},0xc060ff,2.6,.2);
 if(d<(big?2.7:2.35)&&los(p.x,1.2,p.z,P.x,P.y+1.2,P.z)){hit(e.dmg,p);try{LV.onMelee(e)}catch(x){}if(P.dead<=0)clawScreen(e.corr)}}

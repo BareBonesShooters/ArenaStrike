@@ -198,7 +198,7 @@ function join(side){
 if(campaign||!started||finished){message("Start a Sandbox battle before joining a team.");return}
 if(!joined)restoreCamera={x:P.x,y:P.y,z:P.z,yaw:P.yaw,pitch:P.pitch};
 playerTeam=side;joined=true;running=true;clearKeys();slot=0;P.max=100;placePlayer({x:side?26:-26,z:18},side?Math.PI/2:-Math.PI/2,0);P.y=groundHeight(P.x,P.z);P.prot=2;
-cam.fov=75;cam.updateProjectionMatrix();document.body.classList.add("playing","custom-joined");Aim.reset();Aim.request();notice="F returns to flight. Your team is "+(side?"Red":"Blue")+".";paint();
+cam.fov=baseFov();cam.updateProjectionMatrix();document.body.classList.add("playing","custom-joined");Aim.reset();Aim.request();notice="F returns to flight. Your team is "+(side?"Red":"Blue")+".";paint();
 }
 function returnToFlight(){
 if(!joined)return;joined=false;Aim.release();clearKeys();P.dead=0;P.hp=100;P.fz=0;P.em=null;

@@ -15,7 +15,8 @@ function fire(){
 if(CustomBattle.active&&!CustomBattle.canShoot)return;
 if(!isGame()||P.fz>0||P.dead>0||rL>0||P.em||mode==="parkour")return;if(slot===1)return stab();if(A.rl>0)return;
 const g=cg(),now=performance.now()/1000;if(now<nextShot)return;if(A.mag<=0){gunSnd(g,"dry");nextShot=now+.25;reload();return}if(mode==="range"&&rs<=0)return;
-nextShot=now+g.t/PU.rate;A.mag--;P.fk=P.fk||{x:0,v:0};P.fk.v+=Tune.n("fx.fovKick",9,0,40)*clamp(.35+g.d/60,.35,1.4)*((g.pel||1)>1?1.3:1);if(mode==="range"){rs--;rNow=0;if(rs<=0)setTimeout(()=>{if(state==="play"&&mode==="range")endGame(true)},1300)}tf("shoot");cam.updateMatrixWorld();
+nextShot=now+g.t/PU.rate;A.mag--;if(g.m>8&&A.mag<=5){if(A.mag>0)snd("lastr",.6,1+(5-A.mag)*.1);else snd("mclack",.7)} // last-rounds tick rises in pitch; an empty mag clacks
+P.fk=P.fk||{x:0,v:0};if(!S.comfort)P.fk.v+=Tune.n("fx.fovKick",9,0,40)*clamp(.35+g.d/60,.35,1.4)*((g.pel||1)>1?1.3:1);if(mode==="range"){rs--;rNow=0;if(rs<=0)setTimeout(()=>{if(state==="play"&&mode==="range")endGame(true)},1300)}tf("shoot");cam.updateMatrixWorld();
 const tg=gatherTargets(),pel=g.pel||1,acc=new Map(),ax=Aim.x,ay=Aim.y,
 spr=curSpread(g),tf2=Math.tan(cam.fov*.00872665),asp=cam.aspect,mzp=muzzleWorld(),gc=gunCol(g);let lastEnd=null;
 const tgs=tg.slice();
@@ -206,7 +207,8 @@ if(CustomBattle.active){CustomBattle.update(dt);return}
 if(mzT>0){mzT-=dt;mzL.intensity=Math.max(0,mzT/.07)*2.6*PLK(16,2);cam.getWorldDirection(fwd);const tm=TP.on()&&TP.mz();if(tm)mzL.position.copy(tm);else mzL.position.copy(cam.position).addScaledVector(fwd,1.6)}else if(mzL.intensity)mzL.intensity=0;
 Aim.frame(dt,scoped);
 const g=cg(),lock=P.fz>0||P.dead>0||rL>0||(mode==="parkour"&&PK.st.celeb>0),K_=K;
-const f=lock?0:(K_.KeyW||K_.ArrowUp?1:0)-(K_.KeyS||K_.ArrowDown?1:0),s=lock?0:(K_.KeyD?1:0)-(K_.KeyA?1:0),sprint=!!(K_.ShiftLeft||K_.ShiftRight);
+Pad.frame(dt);
+let f=lock?0:(K_.KeyW||K_.ArrowUp?1:0)-(K_.KeyS||K_.ArrowDown?1:0),s=lock?0:(K_.KeyD?1:0)-(K_.KeyA?1:0),sprint=!!(K_.ShiftLeft||K_.ShiftRight);if(!lock&&AN.on){f=-AN.y;s=AN.x} // analog stick: speed follows how far it is pushed
 if(!menuOpen){if(K_.ArrowLeft||K_.KeyQ)P.yaw+=dt*2;if(K_.ArrowRight||K_.KeyE)P.yaw-=dt*2}
 if(f||s)tf("move");
 if(P.em&&(f||s||firing||K_.Space)){endEmote()}
@@ -250,10 +252,10 @@ if(wq>0){wt-=dt;if(wt<=0&&E.length<16+(wmod==="swarm"?6:0)+(coopN()-1)*3){wt=wmo
 else if(!E.length&&!wn&&P.dead<=0){const b=Math.round(2*wave*PU.coin*(corrupted?1.5:1)*LV.coinMul()),lvC=LV.on()&&LV.cur()&&LV.cur().corrupt;LV.endWave();S.coins+=b;addBP(Math.round((15+Math.floor(wave*2.6)+(corrupted?20:0))*LV.bpMul()));sv();qAdd("wave",wave,1);qAdd("wc",1);if(PT.coop)PT.cw=wave;
 if(corrupted&&(!lvC||wave%5===0)){flash("CORRUPTED WAVE CLEARED: pick 3 power-ups",2800);snd("win");wn=1e9;setTimeout(()=>offerCorruptedPU(3),600)}
 else if(Phase.on&&Phase.clear(b)){}
-else{flash("Wave "+wave+" cleared  +"+b+" coins"+(PT.coop?"  \u00b7  waiting for the squad":""),2500);snd("clear");wn=PT.coop?1e9:1.6}
+else{flash("Wave "+wave+" cleared  +"+b+" coins"+(PT.coop?"  \u00b7  waiting for the squad":""),2500);snd("clear");setTimeout(()=>snd("chord",.6),180);wn=PT.coop?1e9:1.6}
 // restore normal lighting after corrupted
 try{if(!lvC||wave%5===0)corrTgt=0}catch(e){}}
-if(wn>0&&wn<1e8){wn-=dt;if(wn<=0){wn=0;nextWave()}}
+if(wn>0&&wn<1e8){const w0=wn;wn-=dt;if(w0>1.1&&wn<=1.1)snd((wave+1)%5===0?"lowbeat":"riser",.55);if(wn<=0){wn=0;nextWave()}} // a riser before each wave, a quiet beat before a boss
 if(PU.regen&&P.dead<=0&&P.hp<P.max)P.hp=Math.min(P.max,P.hp+PU.regen*dt);
 if(P.dead<=0&&P.fz<=0){P.sinceHit+=dt;if(P.sinceHit>=10&&P.hp<P.max){P.hp=Math.min(P.max,P.hp+10*dt)}}}
 }
@@ -267,7 +269,16 @@ Radar.frame(dt);hudFrame(dt)}
 const fwd=new T.Vector3();
 
 // ---------- HUD ----------
-function hudFrame(dt){
+// low health (under 30 hp): a heartbeat that quickens, muffled sound, drained colour and a pulsing red edge, all scaled by how low you are
+const LH=(()=>{let k=0,hbT=0,el=null,on=false;
+function frame(dt){const t=state==="play"&&!menuOpen&&P.dead<=0&&P.hp>0&&P.hp<30?1-P.hp/30:0;k+=(t-k)*Math.min(1,dt*3);
+if(k<.01&&!on)return;
+if(!el){el=document.createElement("div");el.id="lhv";el.setAttribute("aria-hidden","true");document.body.appendChild(el)}
+const nowOn=k>.01;if(nowOn!==on){on=nowOn;document.body.classList.toggle("lowhp",on)}
+el.style.setProperty("--lh",on?k.toFixed(3):"0");try{Post.lowHp(k)}catch(e){}muffle(k*.85);
+if(t>0){hbT-=dt;if(hbT<=0){hbT=1.05-.45*t;snd("hb",.45+.5*t)}}else{hbT=0;if(!on){try{Post.lowHp(0)}catch(e){}muffle(0)}}}
+return{frame}})();
+function hudFrame(dt){LH.frame(dt);
 txt("hpn",String(Math.ceil(P.hp)));el("hp").style.width=Math.max(0,P.hp/P.max*100)+"%";el("hpw").classList.toggle("low",P.hp<30);if(P.hp<30&&P.hp>0)lowHp();
 txt("coins",String(Math.round(S.coins)));hide("ammo",mode==="parkour");hide("rgun",mode!=="range");
 const showW=mode==="waves";

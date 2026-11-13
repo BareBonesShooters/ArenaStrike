@@ -140,7 +140,7 @@ if(!silent){menuOpen=false;document.body.classList.add("playing");Aim.reset();Ai
 // ---------- start / rounds / end ----------
 function placePlayer(s,yaw,fz){
 Object.assign(P,{x:s.x,y:0,z:s.z,vx:0,vz:0,vy:0,pitch:0,hp:P.max,dead:0,fz:fz||0,spd:0,rush:0,sinceHit:99,mantle:null,stepOff:0,landDip:0,prot:0,gr:true,jumping:false,air:0,jHeld:false,jpress:false,coy:0,jb:0,rk:0,sp:0,roll:0,crouch:0,slide:0,slideCD:0,grenCD:0,eye:1.7});
-P.yaw=yaw;endEmote();A.mag=cg().m;A.rl=0;scoped=false;rmb=false;cam.fov=75;cam.updateProjectionMatrix();lastYaw=yaw;lastPitch=0}
+P.yaw=yaw;endEmote();A.mag=cg().m;A.rl=0;scoped=false;rmb=false;cam.fov=baseFov();cam.updateProjectionMatrix();lastYaw=yaw;lastPitch=0}
 function clearEnts(){
 if(typeof CustomBattle!=="undefined")CustomBattle.stop();
 try{inspClose(true)}catch(e){}try{pkBodyDrop()}catch(e){}try{TP.drop()}catch(e){}try{Bul.clear()}catch(e){}
@@ -210,7 +210,7 @@ snd(win||mode==="waves"||mode==="range"?"win":"lose")}
 function hit(d,src){
 if(CustomBattle.active)return CustomBattle.playerHurt(d,src);
 if(state!=="play"||menuOpen||P.dead>0||rL>0||P.fz>0||P.prot>0)return;
-if(grind)d*=.12;d=LV.toYou(d);snd("hurt");P.hp-=d*PU.arm;P.sinceHit=0;dmgFlash();P.rk+=.02;hurtDir(src);lastSrc=src||null;
+if(grind)d*=.12;d=LV.toYou(d);snd("hurt");haptic(d>25?60:25);P.hp-=d*PU.arm;P.sinceHit=0;dmgFlash();P.rk+=.02;hurtDir(src);lastSrc=src||null;
 if(P.hp<=0){P.hp=0;die()}}
 function hurtDir(src){
 if(!src)return;const a=Math.atan2(src.x-P.x,src.z-P.z)-(P.yaw+Math.PI),e=el("hdir");
@@ -257,7 +257,7 @@ const D=deathInit(e.g,P.x,P.z,head,e.t==="mon"),gw=cg(),dd=Math.hypot(P.x-e.g.po
 if(gw&&gw.pel&&dd<12&&!e.boss){D.sl*=2.4;D.w+=1.6;D.lift=.45*(1-dd/12)*(D.sc||1)}else if(head&&!e.boss){D.w=.3+rnd()*.3;D.sl=.25;D.cr=1;D.hd.v=-2;const na=e.g.userData.arms.length;D.L.forEach((l,i)=>{if(i>=na)l.tx=(i-na)%2?.5:-.9})}
 dying.push(D)}
 Fx.burst({x:e.g.position.x,y:e.g.position.y+1,z:e.g.position.z},e.t==="mon"?0x66ff44:0xff4444,18,6,.1,3,18);if(e.t==="mon"){monDeathFx(e);Phase.onKill(e)}
-snd("kill");snd("ktick",.7);hitMark(head,true);HitStop.kill(head?.07:.045);streakSnd();kills++;HX.kill(e,head);qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
+snd("kc",1,head?1.26:1);haptic(head?[12,40,24]:18);snd("ktick",.7);hitMark(head,true);HitStop.kill(head?.07:.045);streakSnd();kills++;HX.kill(e,head);qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
 if(e.t==="mon"){S.coins+=Math.max(1,Math.round((.6+wave*.1)*PU.coin*(e.elite?5:1)*(e.champion?8:1)*LV.coinMul()));if(PU.kh)P.hp=Math.min(P.max,P.hp+PU.kh);const gain=Math.round((8+wave*2+(e.boss?40:e.k===2?18:e.k===1?12:6))*(head?1.25:1)*(e.elite?3:1)*(e.champion?4:1)*LV.xpMul());addXP(gain);LV.onDeath(e)}
 else{S.coins+=1;
 if(mode==="gg"){myS++;ggL=myS;
@@ -410,7 +410,7 @@ const R=(1-d.acc)*(.35+dist*.03)+e.err+mv*.09+(P.gr?0:.35),ox=(rnd()+rnd()-1)*R,
 // and its muzzle, the round dies in that wall
 if(los(p.x,1.35,p.z,a.x,a.y,a.z))Bul.botFire(a,new T.Vector3(P.x+lx*ox,P.y+1.1-.4*P.crouch+oy,P.z+lz*ox),d.dmg*clamp(1.2-dist/90,.5,1),p,LEAD[diff]==null?.5:LEAD[diff]);
 else Gfx.impact(a.clone(),{col:0xffe9a0},{},true);
-e.err+=.14;snd("sh",clamp(1-dist/70,.12,.55),.8)}
+e.err+=.14;sndAt("sh",p.x,1.5,p.z,.6,.8,70)}
 // cover: look for a spot near the bot that the player can't see (full cover, with a side step that can see the player to peek from)
 // or can only see above crouch height (low cover: crouch to hide, stand to peek). One bot searches per frame at most.
 let cvLast=-1;
@@ -514,7 +514,7 @@ if(!rng){if(e.wu>0){e.wu-=dt;u.kick=Math.max(u.kick,.7);if(e.wu<=0)monStrike(e)}
 if(rng&&dist<(gh?28:24)&&e.cd<=0&&los(p.x,1.5,p.z,P.x,P.y+1.4-.5*P.crouch,P.z)){if(gh){e.cd=(e.k===1?1.3:e.k===4?2.8:2.1)+rnd()*.8;u.kick=1;spit(p.x,1.5,p.z,e.dmg*.8,dist,Ghost.CY);Gfx.flare({x:p.x,y:1.5,z:p.z},Ghost.CY,1.6,.2)}else{e.cd=e.k===5?1.4:1.8;u.kick=1;spit(p.x,1.6,p.z,e.dmg*.8,dist,e.corr?0xc060ff:0x66ff44)}}
 if(gh&&(fr&3)===0&&rnd()<.5)Fx.burst({x:p.x+(rnd()-.5)*.8,y:p.y+.4+rnd()*1.4,z:p.z+(rnd()-.5)*.8},Ghost.CY,1,.6,.05,.4,6);
 // gait per type: poseMon leans the fast ones; each footfall of a heavy one nudges your view when it is close
-u.gk=e.k;const ph0=u.ph||0;poseMon(g,dt);if((e.k===2||e.k===4)&&dist<10&&Math.floor((u.ph||0)/Math.PI)!==Math.floor(ph0/Math.PI)){P.landDip+=Tune.n("mon.stompK",.03,0,.1)*(1-dist/10)*(e.k===4?1.4:1);snd("step",.45*(1-dist/10),.5)}}
+u.gk=e.k;const ph0=u.ph||0;poseMon(g,dt);if((e.k===2||e.k===4)&&dist<10&&Math.floor((u.ph||0)/Math.PI)!==Math.floor(ph0/Math.PI)){if(!S.comfort)P.landDip+=Tune.n("mon.stompK",.03,0,.1)*(1-dist/10)*(e.k===4?1.4:1);snd("step",.45*(1-dist/10),.5)}}
 function lungeStep(e,dt,ex,ez){const g=e.g,p=g.position,u=g.userData,l=e.lg,sc=g.scale.y||1;l.t+=dt;
 if(l.t<l.tell){g.rotation.y=turnTo(g.rotation.y,Math.atan2(ex,ez),dt*10);poseMon(g,dt);const k=l.t/l.tell;u.torso.rotation.x+=.55*Math.sin(Math.min(1,k*1.4)*Math.PI*.5);p.y=floorAt(p.x,p.z,p.y+1.2)-.14*k*sc;u.kick=Math.max(u.kick,.5);if(l.t<l.tell-.15){l.tx=P.x;l.tz=P.z}return}
 if(!l.go){l.go=1;l.sx=p.x;l.sz=p.z;l.t0=l.t;const dx=l.tx-p.x,dz=l.tz-p.z,d=Math.hypot(dx,dz)||1,r=Math.min(d+.8,8.5);l.ex=p.x+dx/d*r;l.ez=p.z+dz/d*r;l.dur=r/Tune.n("mon.lungeSpd",13,6,24);snd("claw",.6,1.2);u.kick=1}
@@ -685,7 +685,7 @@ document.body.appendChild(ov);
 ov.addEventListener("click",ev=>{const b=ev.target.closest(".puc");if(!b)return;const q=PUD.find(x=>x.id===b.dataset.p);if(!q||taken.has(q.id))return;q.f();PU.got[q.id]=(PU.got[q.id]||0)+1;taken.add(q.id);snd("pick");flash(q.n,900);left--;
 if(left<=0){ov.remove();menuOpen=false;document.body.classList.add("playing");corrupted=false;wn=1.2;Aim.request()}else show()})};
 show()}
-function flashScreen(c){const d=document.createElement("div");d.style.cssText="position:fixed;inset:0;z-index:30;pointer-events:none;background:"+c+";opacity:.35;transition:opacity .35s";document.body.appendChild(d);requestAnimationFrame(()=>d.style.opacity=0);setTimeout(()=>d.remove(),450)}
+function flashScreen(c){if(S.comfort)return;const d=document.createElement("div");d.style.cssText="position:fixed;inset:0;z-index:30;pointer-events:none;background:"+c+";opacity:.35;transition:opacity .35s";document.body.appendChild(d);requestAnimationFrame(()=>d.style.opacity=0);setTimeout(()=>d.remove(),450)}
 function celebrate(e){const id=S.own[S.fin]?S.fin:"f0";playFinisher(I(id)||FN[0],e.g.position)}
 // The same effect recipes can target the match or an isolated loadout preview.
 function playFinisher(item,p,effects){
@@ -746,8 +746,10 @@ function puStep(dt){
 if(mode!=="range"&&!PT.on){pT-=dt;if(pT<=0&&pu.length<4&&P.fz<=0){pT=6;spawnPU()}}
 const tt=performance.now();
 pu=pu.filter(p=>{p.g.rotation.y+=dt*2.5;p.g.position.y=1+Math.sin(tt/300)*.12;
+// magnet: inside 3.5 m a pickup drifts toward you, faster the closer it gets
+{const q=p.g.position,dx=P.x-q.x,dz=P.z-q.z,d=Math.hypot(dx,dz);if(P.dead<=0&&d<3.5&&d>.05&&P.y<1.6){const k=Math.min(d,dt*(3.5-d)*4.5)/d;q.x+=dx*k;q.z+=dz*k}}
 if(P.dead<=0&&Math.hypot(p.g.position.x-P.x,p.g.position.z-P.z)<1.3&&P.y<1.6){
-Fx.burst(p.g.position,[0xff4466,0x22d3ee,0xffd700][p.t],10,3,.07,2,6);dropModel(p.g);snd(["heal","spd","coin"][p.t]||"pick");qAdd("pick",1);
+Fx.burst(p.g.position,[0xff4466,0x22d3ee,0xffd700][p.t],10,3,.07,2,6);Gfx.ring(p.g.position.x,p.g.position.y,p.g.position.z,[0xff4466,0x22d3ee,0xffd700][p.t],.2,1.1,.25,.7);dropModel(p.g);snd(["heal","spd","coin"][p.t]||"pick");qAdd("pick",1);
 if(p.t==0){P.hp=Math.min(P.max,P.hp+35);flash("+35 Health")}
 if(p.t==1){P.spd=6;flash("Speed boost")}
 if(p.t==2){S.coins+=2;sv();flash("+2 coins")}return false}return true});

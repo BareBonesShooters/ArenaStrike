@@ -347,16 +347,21 @@ let fsTried=false;const goFull=()=>{if(fsTried)return;fsTried=true;try{const de=
 const resets=[];const tj=$("tj"),knob=tj.firstChild;let jid=null,j0=null,lid=null,lx=0,ly=0,lookStart=null;
 const flight=()=>CustomBattle.active&&!CustomBattle.joined;
 const jmove=(x,y)=>{const dx=x-j0.x,dy=y-j0.y,l=Math.hypot(dx,dy)||1,m=Math.min(l,56),nx=dx/l*m,ny=dy/l*m;knob.style.transform=`translate(${nx}px,${ny}px)`;const dz=16;
-set("KeyW",ny<-dz);set("KeyS",ny>dz);set("KeyA",nx<-dz);set("KeyD",nx>dz);const sp=ny<-48&&Math.abs(nx)<40;set("ShiftLeft",sp);tj.classList.toggle("sp",sp)};
-const jend=()=>{jid=null;["KeyW","KeyS","KeyA","KeyD","ShiftLeft"].forEach(c=>set(c,false));knob.style.transform="";tj.classList.remove("on","sp");tj.style.left="";tj.style.top="";tj.style.bottom="";tj.style.marginLeft=""};
+set("KeyW",ny<-dz);set("KeyS",ny>dz);set("KeyA",nx<-dz);set("KeyD",nx>dz);
+// analog: the walk speed follows how far the thumb pushes (small dead zone in the middle)
+{const r=Math.min(1,m/56),q=r<.14?0:(r-.14)/.86;AN.on=true;AN.x=nx/(m||1)*q;AN.y=ny/(m||1)*q}const sp=ny<-48&&Math.abs(nx)<40;set("ShiftLeft",sp);tj.classList.toggle("sp",sp)};
+const jend=()=>{jid=null;AN.on=false;AN.x=AN.y=0;["KeyW","KeyS","KeyA","KeyD","ShiftLeft"].forEach(c=>set(c,false));knob.style.transform="";tj.classList.remove("on","sp");tj.style.left="";tj.style.top="";tj.style.bottom="";tj.style.marginLeft=""};
 const z=$("tz");
 z.addEventListener("pointerdown",e=>{if(jid!=null)return;e.preventDefault();goFull();try{z.setPointerCapture(e.pointerId)}catch(_){}jid=e.pointerId;j0={x:e.clientX,y:e.clientY};tj.classList.add("on");tj.style.left=(e.clientX-tj.offsetWidth/2)+"px";tj.style.top=(e.clientY-tj.offsetHeight/2)+"px";tj.style.bottom="auto";tj.style.marginLeft="0"});
 z.addEventListener("pointermove",e=>{if(e.pointerId===jid)jmove(e.clientX,e.clientY)});z.addEventListener("pointerup",e=>{if(e.pointerId===jid)jend()});z.addEventListener("pointercancel",e=>{if(e.pointerId===jid)jend()});
 z.addEventListener("lostpointercapture",e=>{if(e.pointerId===jid)jend()});
-const look=(dx,dy)=>flight()?CustomBattle.touchLook(dx,dy):Aim.touchLook(dx*2.2,dy*2.2),l=$("tl");
-l.addEventListener("pointerdown",e=>{if(lid!=null)return;e.preventDefault();goFull();try{l.setPointerCapture(e.pointerId)}catch(_){}lid=e.pointerId;lx=e.clientX;ly=e.clientY;lookStart={x:lx,y:ly,t:performance.now(),moved:false}});
+// thumb look curve: slow drags stay precise, fast swipes turn quickly
+const look=(dx,dy)=>{if(flight())return CustomBattle.touchLook(dx,dy);const m=2.2*(.8+Math.min(1.1,Math.hypot(dx,dy)*Tune.n("touch.accel",.05,0,.2)));Aim.touchLook(dx*m,dy*m);if(lookStart){lookStart.ax+=dx*m;lookStart.ay+=dy*m}},l=$("tl");
+l.addEventListener("pointerdown",e=>{if(lid!=null)return;e.preventDefault();goFull();try{l.setPointerCapture(e.pointerId)}catch(_){}lid=e.pointerId;lx=e.clientX;ly=e.clientY;lookStart={x:lx,y:ly,t:performance.now(),moved:false,ax:0,ay:0}});
 l.addEventListener("pointermove",e=>{if(e.pointerId!==lid)return;if(Math.hypot(e.clientX-lookStart.x,e.clientY-lookStart.y)>8)lookStart.moved=true;look(e.clientX-lx,e.clientY-ly);lx=e.clientX;ly=e.clientY});
-const lend=e=>{if(e.pointerId!==lid)return;if(e.type==="pointerup"&&flight()&&lookStart&&!lookStart.moved&&performance.now()-lookStart.t<350)CustomBattle.touchPlace(e.clientX,e.clientY);lid=null;lookStart=null};l.addEventListener("pointerup",lend);l.addEventListener("pointercancel",lend);l.addEventListener("lostpointercapture",lend);
+const lend=e=>{if(e.pointerId!==lid)return;
+// a quick flick on the look side: up jumps, down crouches or slides (the view turn the flick caused is undone)
+if(e.type==="pointerup"&&lookStart&&!flight()&&performance.now()-lookStart.t<260){const fx=e.clientX-lookStart.x,fy=e.clientY-lookStart.y;if(Math.abs(fy)>70&&Math.abs(fx)<Math.abs(fy)*.6){Aim.touchLook(-lookStart.ax,-lookStart.ay);if(fy<0){key("Space",1);setTimeout(()=>key("Space",0),90)}else{set("ControlLeft",true);setTimeout(()=>set("ControlLeft",false),160)}}}if(e.type==="pointerup"&&flight()&&lookStart&&!lookStart.moved&&performance.now()-lookStart.t<350)CustomBattle.touchPlace(e.clientX,e.clientY);lid=null;lookStart=null};l.addEventListener("pointerup",lend);l.addEventListener("pointercancel",lend);l.addEventListener("lostpointercapture",lend);
 // a button can also steer the view: fire buttons keep aiming while the thumb drags
 const bind=(id,dn,up,steer)=>{const b=$(id);let pid=null,px=0,py=0;
 resets.push(()=>{pid=null;b.classList.remove("on","lk")});
@@ -385,7 +390,7 @@ function resetTouch(){
  clearKeys();jend();lid=null;lookStart=null;for(const k in held)held[k]=false;resets.forEach(f=>f());ep.classList.remove("open");Aim.reset();
 }
 addEventListener("blur",resetTouch);addEventListener("pagehide",resetTouch);addEventListener("orientationchange",resetTouch);
-document.addEventListener("visibilitychange",()=>{if(document.hidden)resetTouch()});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){resetTouch();if(state==="play"&&!menuOpen&&!PT.on)try{pauseGame()}catch(e){}}}); // backgrounded or locked: pause (solo only)
 const controlsActive=()=>document.body.classList.contains("playing")||(CustomBattle.active&&state==="play"&&!menuOpen);
 new MutationObserver(()=>{if(!controlsActive())resetTouch()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
 let lastPlay=false,lastFlight=false;
@@ -395,6 +400,8 @@ const sw=$("tsw");const want=slot===1?"GUN":"KNIFE";if(sw.textContent!==want)sw.
 if(!(slot===0))$("tad").style.opacity=.35;else $("tad").style.opacity="";
 if(playing&&!lastPlay){ep.classList.remove("open");$("tcr").classList.remove("lk");set("ControlLeft",false)}
 if(!playing&&lastPlay)resetTouch();
+// reload by itself when the magazine runs dry
+if(playing&&slot===0&&A.mag<=0&&A.rl<=0&&!(S.opt&&S.opt.autoRl===false)){key("KeyR",1);key("KeyR",0)}
 const flying=flight();if(flying!==lastFlight){resetTouch();$("tjp").lastChild.textContent=flying?"UP":"JUMP";$("tcr").lastChild.textContent=flying?"DOWN":"CROUCH";lastFlight=flying}
 lastPlay=playing;
 },150);
