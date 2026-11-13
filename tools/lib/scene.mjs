@@ -29,6 +29,9 @@ export async function renderView(page, { map, view, tier, seed = 777, png = true
     const hash = str => { let h = 2166136261; for (const ch of str) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
     if (window.__built !== key + seed) {
       window.__reseed(hash(key));
+      // the title showreel adds its own actors (bots, runners) that clearEnts does not own; which segment is playing depends on load
+      // timing, so stop it first or the numbers and pictures change with how long the page took to boot
+      try { Title.end(); } catch (e) {}
       try { clearEnts(); } catch (e) {}
       buildWorld(key, seed, lv ? { waves: true, level: lv } : {});
       window.__built = key + seed;
