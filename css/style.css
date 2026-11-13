@@ -250,7 +250,7 @@ body.touch #radar{pointer-events:auto}
 #hdir i{position:absolute;left:-60px;top:-150px;width:120px;height:46px;border-radius:50% 50% 0 0/100% 100% 0 0;background:radial-gradient(60% 100% at 50% 0%,rgba(239,68,68,.95),transparent 85%)}
 #hdir{transform:rotate(var(--r,0deg))}#hdir.on{animation:hdir .9s ease-out}@keyframes hdir{from{opacity:1}to{opacity:0}}
 #scopeov{inset:0;opacity:0;transform:scale(1.07);overflow:hidden;--sr:0;--sa:0;--rc:#fff;--tint:transparent;transition:opacity .12s,transform .24s cubic-bezier(.32,.72,0,1)}
-body.scoping #scopeov{opacity:1;transform:none}body.scoping #cross{opacity:0}
+body.scoping #scopeov{opacity:1;transform:none}#scopeov .rg{position:absolute;left:50%;top:calc(50% + 30vmin);transform:translateX(-50%);font:600 12px/1 ui-monospace,Menlo,monospace;color:#e5e7eb;text-shadow:0 1px 2px #000;letter-spacing:.04em;white-space:pre}body.scoping #cross{opacity:0}
 #scopeov svg{position:absolute;left:50%;top:50%;width:100vmin;height:100vmin;margin:-50vmin 0 0 -50vmin;overflow:visible}
 #scopeov .ln{stroke:rgba(0,0,0,.8)}
 #scopeov .ln2,#scopeov .ln2 path,#scopeov .ln2 circle{stroke:var(--rc);filter:drop-shadow(0 0 1.2px var(--rc))}
@@ -1133,3 +1133,22 @@ body:not(.playing):not(.paused) #sunfx{filter:opacity(.7)}
 #stagefx b{margin-top:10px;font-size:clamp(1.8rem,6.5vw,4.2rem);font-weight:900;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 30px rgba(255,120,80,.5)}
 #stagefx em{margin-top:12px;font-style:normal;font-size:.9rem;letter-spacing:.24em;text-transform:uppercase;color:var(--ac2,#ffb36b)}
 @media (prefers-reduced-motion:reduce){#stagefx .sn small,#stagefx .sn b,#stagefx .sn em{transform:none}}
+
+/* HUD extras (js/07 HX): floating damage numbers, reload ring, low ammo, kill-streak banner */
+.dn{position:fixed;z-index:30;pointer-events:none;font:800 15px/1 system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px #000,0 0 6px rgba(0,0,0,.5);transform:translate(-50%,-50%);opacity:0;font-variant-numeric:tabular-nums}
+.dn.hs{color:#ffd24a;font-size:18px}
+.dn.go{animation:dnr .75s ease-out forwards}
+@keyframes dnr{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}15%{opacity:1;transform:translate(-50%,-90%) scale(1.15)}100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),-260%) scale(.9)}}
+@keyframes dnl{0%{opacity:1}100%{opacity:0}}
+body.lite .dn.go{animation:dnl .65s steps(1,end) forwards}
+body:not(.playing) .dn{display:none}
+#rlr{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px 0 0 -20px;opacity:0;transition:opacity .12s;overflow:visible;pointer-events:none}
+#rlr.on{opacity:.9}
+#rlr circle{fill:none;stroke:rgba(255,255,255,.92);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:113.1;stroke-dashoffset:calc(113.1px * (1 - var(--p,0)));transform:rotate(-90deg);transform-origin:22px 22px;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
+#ammo.low #am{color:#ff5a5a}
+#stb{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:31;pointer-events:none;text-align:center;font:900 26px/1.1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#ffd24a;text-shadow:0 2px 6px rgba(0,0,0,.7);opacity:0;white-space:nowrap}
+#stb small{display:block;margin-top:4px;font-size:11px;font-weight:700;letter-spacing:.2em;color:#fff;opacity:.85}
+#stb.on{animation:stb 1.8s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes stb{0%{opacity:0;transform:translateX(-50%) scale(1.4)}12%{opacity:1;transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-8px)}}
+body.lite #stb.on{animation:dnl 1.8s steps(1,end) forwards}
+@media (prefers-reduced-motion:reduce){.dn.go{animation:dnl .65s steps(1,end) forwards!important}#stb.on{animation:dnl 1.8s steps(1,end) forwards!important}}

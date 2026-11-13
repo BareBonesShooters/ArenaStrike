@@ -198,11 +198,13 @@ soft(o,th.night?.5:.42,.22);gt.needsUpdate=true}
 // rolls slowly in soft banks, and is tinted relative to the fog colour, so blackout and corruption darken or redden it along with the fog.
 // It starts a couple of metres out, so the floor at your own feet stays clear, and it thickens with the distance the view ray travels inside the layer, so looking down on it from above stays clear. Only tiers with the sky effects get it (Low and Potato keep plain fog).
 // camP: three r128 only sends cameraPosition to Phong/Standard/shader materials, never to Lambert, so these shaders get the camera from their own uniform
-const MISTU={mistT:{value:new T.Color(1,1,1)},mistP:{value:new T.Vector3(3,0,0)},mistH:{value:3},camP:{value:cam.position},lampK:{value:0}};
+const MISTU={mistT:{value:new T.Color(1,1,1)},mistP:{value:new T.Vector3(3,0,0)},mistH:{value:3},camP:{value:cam.position},lampK:{value:0},cloudK:{value:0}};
 // fog runs after the colour-space step, so the colour here is in the output space: linear light when drawing into the post chain, sRGB when
 // drawing straight to the screen. Fog is blended in a gamma-2 space either way (the GLSL compiler folds the test), so haze looks the same on
 // every tier and as light as it did before the Three.js upgrade (blending in linear light makes distant haze look thicker and paler)
 const FOGF=`#ifdef USE_FOG
+// drifting cloud shadows (Medium and up, daytime outdoor maps): two slow sine fields at world scale darken the lit colour in soft patches
+if(cloudK>0.){float cn=sin(vWP.x*.11+fogT*.06)*sin(vWP.z*.093-fogT*.04)+.6*sin((vWP.x-vWP.z)*.17+fogT*.07)*sin((vWP.x+vWP.z)*.13);gl_FragColor.rgb*=1.-smoothstep(.05,.8,cn)*cloudK;}
 float fogFactor=smoothstep(fogNear,fogFar,vFogDepth);
 bool fogLin=linearToOutputTexel(vec4(.25)).r<.3;if(fogLin)gl_FragColor.rgb=sqrt(max(gl_FragColor.rgb,0.));
 vec3 vd=normalize(vWP-camP);float sA=pow(max(dot(vd,normalize(sunD)),0.),5.);
@@ -229,7 +231,7 @@ mat.onBeforeCompile=sh=>{
 if(prev)prev(sh);
 sh.uniforms.sunD=Sky.u.sunDir;sh.uniforms.sunC=Sky.u.sunCol;sh.uniforms.fogT=Sky.u.time;Object.assign(sh.uniforms,MISTU);
 sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;").replace("#include <project_vertex>","#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;");
-sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 sunD,sunC,mistT,mistP,camP;uniform float fogT,mistH,lampK;").replace("#include <fog_fragment>",FOGF)};
+sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 sunD,sunC,mistT,mistP,camP;uniform float fogT,mistH,lampK,cloudK;").replace("#include <fog_fragment>",FOGF)};
 mat.customProgramCacheKey=()=>"fx"+tag}
 
 function buildWorld(key,seed,opt){
@@ -434,7 +436,14 @@ if(house(hx,hz,((Math.round(Math.atan2(q.x-hx,q.z-hz)/(PI/2))%4)+4)%4))ok++}
 let side=1;RDP.forEach((q,i)=>{if(i%11===5&&Math.hypot(q.x,q.z)>14){side=-side;lamp(q.x-q.tz*4.8*side,q.z+q.tx*4.8*side)}});
 for(let k=0,ok=0;k<24&&ok<(opt.sparse?2:4);k++){const q=RDP[Math.floor(rng()*RDP.length)],sg=rng()<.5?-1:1;if(Math.hypot(q.x,q.z)<20)continue;if(car(q.x-q.tz*5*sg,q.z+q.tx*5*sg,Math.abs(q.tx)>Math.abs(q.tz)?0:1,1))ok++}
 // benches ring the plaza
-for(let k=0,ok=0;k<16&&ok<4;k++){const a=rng()*6.283;if(bench(Math.cos(a)*12.6,Math.sin(a)*12.6,Math.abs(Math.sin(a))>Math.abs(Math.cos(a))?0:1))ok++}}
+for(let k=0,ok=0;k<16&&ok<4;k++){const a=rng()*6.283;if(bench(Math.cos(a)*12.6,Math.sin(a)*12.6,Math.abs(Math.sin(a))>Math.abs(Math.cos(a))?0:1))ok++}
+// cover along the lanes: every so often, just off the road edge, waist-high (sandbags, a concrete barrier) and head-high (a short wall) pieces
+// run parallel to the road, alternating sides, so a fight down a street has something to duck behind
+{let n=0;RDP.forEach((q,i)=>{if(i%9!==4||Math.hypot(q.x,q.z)<15||n>=(opt.sparse?6:12))return;const sg=(i/9|0)&1?1:-1,x=q.x-q.tz*5.4*sg,z=q.z+q.tx*5.4*sg,rot=Math.abs(q.tx)>Math.abs(q.tz)?0:1,k=n%3;
+if(k===0?sandbags(x,z,rot):k===1?barrier(x,z,rot):wall(x,z,rot,rr(2.6,3.4),1.85))n++})}
+// a landmark in the middle of the plaza: a stepped plinth and an obelisk with a lit cap, visible from across the map and a solid piece of cover
+if(free(0,0,2.4,1)){const wc=th.wall,dk=lerpC(wc,0x000000,.18);blk(0,0,3,.5,3,dk,.6);blk(0,0,2.2,1.1,2.2,wc,.62);blk(0,0,1.1,5.2,1.1,lerpC(wc,0xffffff,.08),.62);
+P("box",0,5.35,0,1.35,.3,1.35,th.trim,0,1);P("cone",0,6.1,0,.85,1.2,.85,th.trim,PI/4,.9);P("ico",0,5.65,0,.5,.5,.5,th.lamp,0,1,glow)}}
 place(opt.sparse?2:(RDP.length?4:11),house,10);place(pc(opt.sparse?10:22),(x,z)=>tree(x,z),8);
 place(pc(RDP.length?1:5),car,8);place(pc(RDP.length?2:8),lamp,6);place(pc(7),(x,z,r)=>crate(x,z,rr(1.1,1.5),1+(rng()<.4?1:0)),6);place(pc(5),barrel,6);place(pc(3),barrelGroup,7);place(pc(4),barrier,6);place(pc(3),sandbags,6);place(pc(2),tires,6);place(pc(8),rock,6);place(pc(RDP.length?1:4),bench,6);
 place(pc(4),(x,z,r)=>fence(x,z,r&1,rr(5,9)),8);place(pc(5),(x,z,r)=>wall(x,z,r&1,rr(3,5),rr(1.2,2.2)),8);
@@ -472,6 +481,7 @@ const sm=solid.mesh(smat);sm.castShadow=true;sm.receiveShadow=true;grp.add(sm);
 if(glow.p.length){const gmesh=glow.mesh(WORLD.glowM=new T.MeshBasicMaterial({vertexColors:true}));grp.add(gmesh)}
 sc.add(grp);WORLD.group=grp;WORLD.theme=key;WORLD.seed=seed;
 if(!ruin)bakeGround(gt,th,!LOD.sh);else if(!LOD.sh)sun.intensity*=.35
+MISTU.cloudK.value=0;if(!ruin&&!opt.level&&!opt.parkour&&!opt.empty&&S.gfx<=2&&!(th.night>.3))try{Atmos.build(grp,th)}catch(e){}
 // spawn points (farthest-point sampling over free ground)
 const cand=[];for(let i=0;i<400&&cand.length<60;i++){const [x,z]=P2(8);if(free(x,z,1.3)&&!blocked(x,z,0,1.2))cand.push([x,z])}
 const sp=[];if(cand.length){sp.push(cand[0]);while(sp.length<14&&sp.length<cand.length){let bi=-1,bd=-1;cand.forEach((c,i)=>{let m=1e9;for(const s of sp)m=Math.min(m,Math.hypot(c[0]-s[0],c[1]-s[1]));if(m>bd){bd=m;bi=i}});sp.push(cand[bi]);cand.splice(bi,1)}}
@@ -496,3 +506,24 @@ if(WORLD.dust){const dv=WORLD.dv||{vy:.15,top:6.8},a=WORLD.dust.geometry.attribu
 if(WORLD.flames)for(const c of WORLD.flames){const f=.9+.1*Math.sin(t*9+c.ph)+.06*Math.sin(t*23+c.ph*3);c.fl.scale.set(f,.8+.4*f,f);c.halo.material.opacity=.5+.3*f;if(!c.fixed){c.g.position.y=c.y+Math.sin(t*.8+c.ph)*.12;c.g.rotation.y=t*.2+c.ph}}}
 
 
+
+// ---------- atmosphere (Medium and up, outdoor daytime maps): cloud shadows drifting over the ground and soft light shafts toward the sun ----------
+// two draw calls in all: one ground-hugging sheet of dark blotches that scrolls with the wind, one instanced set of crossed glow planes
+const Atmos=(()=>{
+let shaftT=null;
+function tex(){
+if(!shaftT){const c=document.createElement("canvas");c.width=64;c.height=256;const x=c.getContext("2d");
+const v=x.createLinearGradient(0,0,0,256);v.addColorStop(0,"rgba(255,255,255,0)");v.addColorStop(.25,"rgba(255,255,255,.9)");v.addColorStop(.7,"rgba(255,255,255,.6)");v.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=v;x.fillRect(0,0,64,256);
+x.globalCompositeOperation="destination-in";const h=x.createLinearGradient(0,0,64,0);h.addColorStop(0,"rgba(0,0,0,0)");h.addColorStop(.5,"rgba(0,0,0,1)");h.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=h;x.fillRect(0,0,64,256);
+shaftT=new T.CanvasTexture(c)}}
+function build(grp,th){
+tex();
+MISTU.cloudK.value=Tune.n("gfx.cloudSh",.55,0,.9)*(th.snow?.7:1);
+const N=6,sm=new T.InstancedMesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:shaftT,color:th.sun&&th.sun.c!=null?th.sun.c:0xfff2d0,transparent:true,depthWrite:false,blending:T.AdditiveBlending,opacity:Tune.n("gfx.shaft",.32,0,.7),side:T.DoubleSide,fog:false}),N*2);
+sm.name="atmosShaft";sm.frustumCulled=false;sm.raycast=()=>{};grp.add(sm);
+const r=mkRng(((WORLD.seed|0)+77)>>>0||1),q=new T.Quaternion(),q2=new T.Quaternion(),m=new T.Matrix4(),up=new T.Vector3(0,1,0),sd=new T.Vector3(),p=new T.Vector3(),s=new T.Vector3(),ax=new T.Vector3();let placed=false;
+const place=()=>{sd.copy(Sky.u.sunDir.value).normalize();if(sd.y<.15)sd.y=.15;sd.normalize();q.setFromUnitVectors(up,sd);
+for(let i=0;i<N;i++){const a=r()*6.283,d=8+r()*26,len=16+r()*12,w=2.2+r()*2.6;p.set(Math.cos(a)*d,0,Math.sin(a)*d).addScaledVector(sd,len*.5);s.set(w,len,1);
+for(let k=0;k<2;k++){ax.copy(sd);q2.setFromAxisAngle(ax,k*Math.PI/2+a).multiply(q);m.compose(p,q2,s);sm.setMatrixAt(i*2+k,m)}}sm.instanceMatrix.needsUpdate=true;placed=true};
+WORLD.lvAnim=WORLD.lvAnim||[];WORLD.lvAnim.push(()=>{if(!placed)place()})}
+return{build}})();

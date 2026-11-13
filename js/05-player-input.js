@@ -311,7 +311,7 @@ rd.domElement.addEventListener("mousedown",e=>{if(!isGame())return;if(!Aim.locke
 addEventListener("mouseup",e=>{if(e.button===2){if(!(S.opt&&S.opt.scopeToggle!==false))rmb=false}else{if(slot===1&&knifeCharging){const c=knifeCharge;knifeCharging=false;knifeCharge=0;if(knifeCD<=0){if(c>=.35)throwKnife(c);else stab()}}firing=false}});
 // one gun/knife swap per scroll gesture: trackpads and free-spinning wheels fire dozens of wheel events, which used to flip the weapon back and forth
 let wheelAcc=0,wheelT=0;
-rd.domElement.addEventListener("wheel",e=>{if(!isGame())return;e.preventDefault();if(mode==="parkour")return;
+rd.domElement.addEventListener("wheel",e=>{if(!isGame())return;e.preventDefault();if(mode==="parkour")return;if(Scope.wheel(e))return;
 const now=performance.now();if(now-wheelT<320){wheelT=now;return}
 wheelAcc+=(e.deltaMode===1?e.deltaY*33:e.deltaY);if(Math.abs(wheelAcc)<40)return;
 wheelAcc=0;wheelT=now;slot=slot?0:1;knifeCharging=false;knifeCharge=0;VM.swap()},{passive:false});

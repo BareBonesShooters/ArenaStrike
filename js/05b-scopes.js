@@ -48,53 +48,95 @@ scout:`<g class="rt">${cross(22,100,3.2)}${cross(3,22,.8)}</g>`,
 mark:`<g class="rt">${cross(30,100,3)}${cross(3,30,.7)}<g class="rtd">${dots(3,8,1.5)}</g></g>`,
 amr:`<g class="rt">${cross(34,100,3.4)}${cross(3,34,.7)}${[8,16,24,32].map((d,i)=>L(100-5-i*1.5,100+d,100+5+i*1.5,100+d,.8)+L(100-5-i*1.5,100-d,100+5+i*1.5,100-d,.8)+L(100+d,100-5-i*1.5,100+d,100+5+i*1.5,.8)+L(100-d,100-5-i*1.5,100-d,100+5+i*1.5,.8)).join("")}</g>`,
 beam:`<g class="ln2" fill="none" stroke-linecap="round">${cross(4,100,.7)}<circle cx="100" cy="100" r="11" stroke-width="1"/><circle cx="100" cy="100" r="30" stroke-width=".6" stroke-dasharray="2 4"/>${L(100,100-30,100,100-34,1.4)}${L(100,100+30,100,100+34,1.4)}${L(100-30,100,100-34,100,1.4)}${L(100+30,100,100+34,100,1.4)}</g><circle class="dt" cx="100" cy="100" r="1.4"/>`};
-let el=null,key="",on=false;
+let el=null,key="",on=false,rgEl=null,rgT=0,zi=0;const _f=new T.Vector3();
+// mouse-wheel zoom steps on the long scopes (multiples of the scope's own magnification)
+const ZL={scout:[1,1.7],mark:[1,1.6,2.4],amr:[1,1.8,3],rail:[1,1.6],beam:[1,1.6]};
+const zoomN=g=>(ZL[scopeOf(g).k]||[1]).length,zoomLv=g=>(ZL[scopeOf(g).k]||[1])[Math.min(zi,zoomN(g)-1)],effFov=g=>scopeOf(g).fov/zoomLv(g);
 function render(g){
 el=el||document.getElementById("scopeov");if(!el)return;
 const s=scopeOf(g),k=s.k+"|"+g.id;if(k===key)return;key=k;
 el.dataset.k=s.k;el.style.setProperty("--rc",s.c);
-el.innerHTML=`${s.pip?"":`<svg viewBox="0 0 200 200" aria-hidden="true">${SV[s.k]||SV.iron}</svg>`}<u class="nm">${s.n}</u>`}
+el.innerHTML=`${s.pip?"":`<svg viewBox="0 0 200 200" aria-hidden="true">${SV[s.k]||SV.iron}</svg>`}<u class="nm">${s.n}</u>${s.pip?'<b class="rg"></b>':""}`;zi=0;rgEl=el.querySelector(".rg")}
 // the sight picture is up once the aim has mostly arrived; the name card shows for a moment on each new aim
 function frame(g,scoped,fov){
 render(g);const a=!!scoped&&VM.ads>.65;
+// distance readout under a lens scope: how far the aim point is (wall or enemy), refreshed ten times a second
+if(a&&rgEl&&(rgT-=1/60)<=0){rgT=.1;try{cam.getWorldDirection(_f);const o=cam.position;let d=rayWorld(o.x,o.y,o.z,_f.x,_f.y,_f.z,400);rc.set(o,_f);const tg=gatherTargets();const h=tg.length?rc.intersectObjects(tg,false)[0]:null;if(h&&h.distance<d)d=h.distance;rgEl.textContent=d>=399?"--- m":Math.round(d)+" m"+(zoomN(g)>1?"  ·  "+zoomLv(g).toFixed(1)+"x":"")}catch(e){}}
 if(a!==on){on=a;document.body.classList.toggle("scoping",a);if(a&&el){el.classList.remove("nm-on");void el.offsetWidth;el.classList.add("nm-on")}}
 return a}
 
 // ---------- lens scopes: a second, zoomed camera renders into a small texture that is the glass of the 3D scope on the gun ----------
-const RS=c=>`<style>.ln{stroke:rgba(0,0,0,.8)}.ln2,.ln2 path,.ln2 circle{stroke:${c}}.ln2 path.th{stroke-width:2.6}.dt{fill:${c}}.fl{fill:#16181d;stroke:rgba(255,255,255,.5);stroke-width:.8}.fw{fill:${c};stroke:#000;stroke-width:.9}.rt path{stroke:${c};fill:none}.rtd circle{fill:${c}}</style>`;
+const RS=c=>`<style>.ln{stroke:rgba(0,0,0,.8)}.ln2,.ln2 path,.ln2 circle{stroke:${c}}.ln2 path.th{stroke-width:2.6}.dt{fill:${c}}.fl{fill:#16181d;stroke:rgba(255,255,255,.5);stroke-width:.8}.fw{fill:${c};stroke:#000;stroke-width:.9}.rt path{stroke:${c};fill:none}.rtd circle{fill:${c}}.rm{stroke:${c}}.rmt{fill:${c};font-family:sans-serif}</style>`;
 const ret={};let rt=null,zc=null,picM=null,picOn=false;
 // the reticle is drawn once per scope kind (SVG to canvas to texture), cropped to the lens and finished with a soft edge shadow
-function retTex(s){
-if(ret[s.k])return ret[s.k];
-const c=document.createElement("canvas");c.width=c.height=512;const x=c.getContext("2d"),t=new T.CanvasTexture(c);ret[s.k]=t;
+function retTex(s,g){
+const z=g?zoomLv(g):1,rk=s.k+"|"+(g?g.id:"")+"|"+z;if(ret[rk])return ret[rk];
+const c=document.createElement("canvas");c.width=c.height=512;const x=c.getContext("2d"),t=new T.CanvasTexture(c);ret[rk]=t;
 const ru=s.r*2,img=new Image();
 img.onload=()=>{x.clearRect(0,0,512,512);x.save();x.beginPath();x.arc(256,256,256,0,6.2832);x.clip();
 if(s.tint){x.fillStyle=s.tint;x.fillRect(0,0,512,512)}
 x.drawImage(img,0,0,512,512);
 const g=x.createRadialGradient(256,256,140,256,256,256);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(.82,"rgba(0,0,0,.16)");g.addColorStop(1,"rgba(0,0,0,.6)");x.fillStyle=g;x.fillRect(0,0,512,512);x.restore();t.needsUpdate=true};
-img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${100-ru} ${100-ru} ${ru*2} ${ru*2}" width="512" height="512">${RS(s.c)}${SV[s.k]||""}</svg>`);
+// range marks: where a shot lands at 50, 100 and 150 m, from the gun's own bullet drop (js/07b-bullets.js) at this zoom
+let mk="";if(g&&typeof Bul!=="undefined"){const upr=2*ru/(s.fov/z*Math.PI/180);for(const d of[50,100,150]){const y=Bul.dropAt(g,d)/d*upr;if(y<1.2||y>ru*.9)continue;
+mk+=L(100-4,100+y,100+4,100+y,.7,"rm")+`<text x="${100+5.5}" y="${100+y+1.6}" font-size="4.4" class="rmt">${d}</text>`}}
+img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${100-ru} ${100-ru} ${ru*2} ${ru*2}" width="512" height="512">${RS(s.c)}${SV[s.k]||""}${mk}</svg>`);
 return t}
+// the lens picture is stored sRGB-encoded like the main view (no banding in dark scenes) and goes through the same post chain (it is drawn with
+// the gun, before the output step and colour grade); resolution and multisampling follow the quality tier
+let rtK=-1,ringT=null;
 function ensure(){
-if(rt)return;
-const n=S.gfx>=3?320:448;
-rt=new T.WebGLRenderTarget(n,n,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,depthBuffer:true});
-zc=new T.PerspectiveCamera(20,1,cam.near,cam.far);
-picM=new T.MeshBasicMaterial({map:rt.texture,color:0x06090e,toneMapped:false})}
+const k=S.gfx|0;if(rt&&rtK===k)return;if(rt)rt.dispose();rtK=k;
+const n=[640,512,448,320,256][k]||320;
+rt=new T.WebGLRenderTarget(n,n,{minFilter:T.LinearFilter,magFilter:T.LinearFilter,format:T.RGBAFormat,depthBuffer:true,samples:k<=1?4:k===2?2:0});
+rt.texture.colorSpace=T.SRGBColorSpace;
+if(!zc)zc=new T.PerspectiveCamera(20,1,cam.near,cam.far);
+if(!picM)picM=new T.MeshBasicMaterial({map:rt.texture,color:0x06090e,toneMapped:false});else{picM.map=rt.texture;picM.needsUpdate=true}
+if(!ringT){const c=document.createElement("canvas");c.width=c.height=256;const x=c.getContext("2d");x.fillStyle="#000";x.fillRect(0,0,256,256);x.globalCompositeOperation="destination-out";
+const gr=x.createRadialGradient(128,128,96,128,128,127);gr.addColorStop(0,"rgba(0,0,0,1)");gr.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=gr;x.fillRect(0,0,256,256);
+ringT=new T.CanvasTexture(c);ringT.wrapS=ringT.wrapT=T.ClampToEdgeWrapping}}
 // called once per gun build: puts the glass (picture plus reticle) into the rear of the gun's own scope tube
 function buildLens(gb,g){
 const s=scopeOf(g);if(!gb||!gb.lens||!s.pip)return;
 ensure();const L=gb.lens,geo=new T.CircleGeometry(L.r,40),grp=new T.Group();
-const p=new T.Mesh(geo,picM),q=new T.Mesh(geo,new T.MeshBasicMaterial({map:retTex(s),transparent:true,depthWrite:false,toneMapped:false}));
-q.position.z=.0007;grp.add(p,q);grp.position.set(L.x||0,L.y,L.z);gb.grp.add(grp);gb.lensG=grp}
+const p=new T.Mesh(geo,picM),q=new T.Mesh(geo,new T.MeshBasicMaterial({map:retTex(s,g),transparent:true,depthWrite:false,toneMapped:false}));
+// scope shadow: a dark ring in front of the glass that drifts with sway and aim lag and closes in while the scope comes up
+const rm=new T.Mesh(geo,new T.MeshBasicMaterial({map:ringT.clone(),transparent:true,depthWrite:false,toneMapped:false}));rm.material.map.needsUpdate=true;rm.position.z=.0011;
+q.position.z=.0007;grp.add(p,q,rm);grp.position.set(L.x||0,L.y,L.z);gb.grp.add(grp);gb.lensG=grp;gb.lensQ=q;gb.ringM=rm;gb.lensGun=g}
 // per frame, after the main view is drawn and before the gun is: show the zoomed picture in the glass while aiming
 function lens(g){
 const s=scopeOf(g),gb=VM.gb,on=!!(s.pip&&gb&&gb.lensG&&VM.ads>.2&&!Death.active);
 if(on!==picOn&&picM){picOn=on;picM.color.setHex(on?0xffffff:0x06090e)}
-if(!on||!rt)return;
-zc.fov=s.fov;zc.near=cam.near;zc.far=cam.far;zc.updateProjectionMatrix();
+if(!on)return;ensure();
+// the reticle follows the zoom level (its range marks move); the shadow ring sits off-centre with sway and lag
+if(gb.lensQ){const t=retTex(s,g);if(gb.lensQ.material.map!==t){gb.lensQ.material.map=t;gb.lensQ.material.needsUpdate=true}}
+if(gb.ringM){const m=gb.ringM.material.map,a=clamp((VM.ads-.2)/.8,0,1),r=1+(1-a)*1.2;m.repeat.set(r,r);
+m.offset.set(.5-.5*r+clamp(lagX-swX*12,-.25,.25),.5-.5*r+clamp(lagY+swY*12,-.25,.25))}
+if(S.gfx>=4&&(fr&1)&&picFresh)return; // Potato redraws the scope every other frame
+picFresh=true;
+zc.fov=effFov(g);zc.near=cam.near;zc.far=cam.far;zc.updateProjectionMatrix();
 zc.position.copy(cam.position);zc.quaternion.copy(cam.quaternion);zc.updateMatrixWorld(true);
 const ac=rd.autoClear;rd.autoClear=true;rd.setRenderTarget(rt);rd.render(sc,zc);rd.setRenderTarget(null);rd.autoClear=ac}
 // mouse speed follows what the lens shows, not the wide main view behind it
-function sensFov(f){const s=scopeOf(typeof cg==="function"?cg():null);return s.pip?f+(s.fov-f)*clamp(VM.ads,0,1):f}
-return{frame,render,buildLens,lens,sensFov,get on(){return on}}})();
+function sensFov(f){const g=typeof cg==="function"?cg():null,s=scopeOf(g);return s.pip?f+((g?effFov(g):s.fov)-f)*clamp(VM.ads,0,1):f}
+// sway while looking through a lens scope: a slow figure-of-eight that moves the aim itself (shots follow it). Hold Shift to hold your breath
+// for up to 3 s (then a 2 s shaky exhale), crouching halves it and moving makes it worse. Also tracks aim lag for the shadow ring.
+let swT=0,br=3,brOut=0,held=false,swX=0,swY=0,lagX=0,lagY=0,lyaw=0,lpit=0,picFresh=false,brTip=0;
+function sway(dt,g,scoped,hold){
+const s=scopeOf(g),on=!!scoped&&s.pip&&VM.ads>.3;
+if(on&&hold&&br>0&&brOut<=0){if(!held)snd("ui",.15,.6);held=true;br-=dt;if(br<=0){brOut=2;held=false}}else{held=false;br=Math.min(3,br+dt*.75)}
+if(brOut>0)brOut-=dt;
+if(on&&!brTip){brTip=1;toast("Hold Shift to hold your breath and steady the scope")}
+const amp=on?Tune.n("scope.sway",.0042,0,.02)*(held?.12:1)*(brOut>0?2:1)*(1-.5*P.crouch)*(1+Math.min(1,Math.hypot(P.vx,P.vz)/4)):0;
+swT+=dt;const tx=(Math.sin(swT*.9)*.7+Math.sin(swT*2.3+1)*.3)*amp,ty=(Math.sin(swT*1.6+2)*.6+Math.cos(swT*.7)*.4)*amp*.8;
+swX+=(tx-swX)*Math.min(1,dt*6);swY+=(ty-swY)*Math.min(1,dt*6);
+if(on){cam.rotation.x+=swY;cam.rotation.y+=swX}
+const dy=angDiff(lyaw,P.yaw),dp=P.pitch-lpit;lyaw=P.yaw;lpit=P.pitch;const kd=Math.exp(-dt*9);lagX=clamp(lagX*kd+dy*.5,-.2,.2);lagY=clamp(lagY*kd-dp*.5,-.2,.2);
+if(!on)picFresh=false;
+return held}
+// wheel while scoped steps the zoom on long scopes; returns true when it used the wheel
+let zT=0;
+function wheel(e){const g=typeof cg==="function"?cg():null;if(!g||!scoped||!scopeOf(g).pip||zoomN(g)<2)return false;const now=performance.now();if(now-zT<110)return true;zT=now;
+const d=(e.deltaMode===1?e.deltaY*33:e.deltaY)<0?1:-1,n=Math.max(0,Math.min(zoomN(g)-1,zi+d));if(n!==zi){zi=n;snd("ui",.25,1+zi*.15)}return true}
+return{frame,render,buildLens,lens,sensFov,sway,wheel,get on(){return on},get breath(){return held}}})();
 

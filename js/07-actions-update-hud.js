@@ -18,18 +18,12 @@ const g=cg(),now=performance.now()/1000;if(now<nextShot)return;if(A.mag<=0){gunS
 nextShot=now+g.t/PU.rate;A.mag--;P.fk=P.fk||{x:0,v:0};P.fk.v+=Tune.n("fx.fovKick",9,0,40)*clamp(.35+g.d/60,.35,1.4)*((g.pel||1)>1?1.3:1);if(mode==="range"){rs--;rNow=0;if(rs<=0)setTimeout(()=>{if(state==="play"&&mode==="range")endGame(true)},1300)}tf("shoot");cam.updateMatrixWorld();
 const tg=gatherTargets(),pel=g.pel||1,acc=new Map(),ax=Aim.x,ay=Aim.y,
 spr=curSpread(g),tf2=Math.tan(cam.fov*.00872665),asp=cam.aspect,mzp=muzzleWorld(),gc=gunCol(g);let lastEnd=null;
+const tgs=tg.slice();
 for(let i=0;i<pel;i++){
 const pa=rnd()*6.2832,pr=i===0&&pel>1?0:Math.sqrt(rnd())*spr;rc.setFromCamera({x:ax+Math.cos(pa)*pr/(tf2*asp),y:ay+Math.sin(pa)*pr/tf2},cam);
-const o=rc.ray.origin,d=rc.ray.direction,dw=rayWorld(o.x,o.y,o.z,d.x,d.y,d.z,90),h=rc.intersectObjects(tg,false)[0],ok=h&&h.distance<dw;
-const end=new T.Vector3().copy(d).multiplyScalar(ok?h.distance:dw).add(o);lastEnd=end;
-if(ok){const u=h.object.userData;
-if(u.remote&&PT.on){Party.applyDmg(u.remote,g.d*gFall(g,h.distance),!!u.head);Fx.burst(end,0xff5a4a,u.head?7:4,4,.06,1.5,16)}
-else if(u.en){if(u.en.fighter){const a=acc.get(u.en)||{n:0,head:0};a.n++;if(u.head)a.head=1;acc.set(u.en,a);Fx.burst(end,0xff5a4a,u.head?7:4,4,.06,1.5,16)}
-// Battle Pass and newly added guns may omit hs; use their rarity's headshot bonus.
-else{const hs=Number.isFinite(g.hs)&&g.hs>0?g.hs:(RM.hs[g.r]||2);hurtE(u.en,g.d*gFall(g,h.distance)*(u.head?hs/2:1),u.head,end)}}
-else if(u.tgt)tgtHit(h.object)}
-else if(dw<90)Gfx.impact(end,gc,g,pel>1&&i>1,d);
-Fx.tracer(mzp,end,gc.col,(pel>1?.012:.022)+g.r*.0035,gc.life);if(!pel&&(g.glow||g.coil||g.r>=4))Fx.tracer(mzp,end,gc.col,.06+g.r*.01,gc.life*.8)}
+const o=rc.ray.origin.clone(),d=rc.ray.direction.clone();
+if(PT.on&&!lastEnd)lastEnd=o.clone().addScaledVector(d,rayWorld(o.x,o.y,o.z,d.x,d.y,d.z,90)); // what other players see
+Bul.fire(o,d,g,mzp,{gc,tg:tgs,mini:pel>1&&i>1,w:(pel>1?.012:.022)+g.r*.0035})}
 if(mode==="range"){if(rNow){rHit++;rCur++;rBest=Math.max(rBest,rCur)}else rCur=0}
 acc.forEach((a,f)=>Party.shoot(f,g,!!a.head,a.n));
 if(PT.on)Party.sendFx(mzp,lastEnd,g);
@@ -173,6 +167,32 @@ swap(){side=-side;snd("ui",.4)},
 kick(k){if(!body)return;body.userData.kick=Math.min(1.5,body.userData.kick+k);setMuzzle(body,true);fl=.05},
 mz(){const gn=body&&body.userData.gun;if(!gn)return null;body.updateMatrixWorld(true);return gn.mf.getWorldPosition(new T.Vector3())},
 head(){body.userData.head.updateWorldMatrix(true,false);return body.userData.head.getWorldPosition(new T.Vector3())}}})();
+// ---------- HUD extras: floating damage numbers, a reload ring on the crosshair, red ammo when the magazine is low, a kill feed and
+// kill-streak banner in solo play. Low and Potato (body.lite) and reduced motion show them without the motion.
+const HX=(()=>{
+const pool=[],v=new T.Vector3();let pi=0,ring=null,amE=null,ks=0,ban=null,banT=0;
+// shotgun pellets and fast bursts on one enemy add into one number instead of a cloud of small ones
+function num(e,p,d,head){
+if(!p||!(d>0))return;const now=performance.now(),j=e&&e._dn;
+if(j&&now-j.t<140&&j.el.isConnected){j.sum+=d;j.t=now;j.head=j.head||head;j.el.textContent=Math.round(j.sum);if(j.head)j.el.classList.add("hs");return}
+v.set(p.x,p.y,p.z).project(cam);if(v.z>1||Math.abs(v.x)>1.1||Math.abs(v.y)>1.1)return;
+pi=(pi+1)%10;let el=pool[pi];if(!el){el=document.createElement("b");document.body.appendChild(el);pool[pi]=el}
+el.className="dn"+(head?" hs":"");el.style.left=((v.x+1)*50).toFixed(2)+"%";el.style.top=((1-v.y)*50).toFixed(2)+"%";
+el.style.setProperty("--dx",((rnd()-.5)*44).toFixed(0)+"px");el.textContent=Math.round(d);void el.offsetWidth;el.classList.add("go");
+if(e)e._dn={el,sum:d,t:now,head}}
+const SOLO={3:"Killing spree",5:"Rampage",8:"Unstoppable",12:"Godlike",20:"Legendary"},HORDE={10:"Monster hunter",25:"Slayer",50:"Exterminator",100:"Legend of the horde"};
+function banner(t,sub){if(!ban){ban=document.createElement("div");ban.id="stb";document.body.appendChild(ban)}
+ban.innerHTML=esc(t)+(sub?"<small>"+esc(sub)+"</small>":"");ban.classList.remove("on");void ban.offsetWidth;ban.classList.add("on");clearTimeout(banT);banT=setTimeout(()=>ban.classList.remove("on"),1900)}
+function kill(e,head){
+if(PT.on)return;ks++;
+if(e.t==="bot"||e.boss||e.elite||e.champion)killFeed(S.name||"You",e.name||(e.t==="bot"?(DF[diff]&&DF[diff].n)||"Bot":"Monster"),slot===1?curKn().n:cg().n,head,true);
+const t=(mode==="waves"?HORDE:SOLO)[ks];if(t)banner(t,ks+" kills without dying")}
+function frame(dt,g){
+if(P.dead>0)ks=0;
+if(!ring){const c=document.getElementById("cross");if(c){c.insertAdjacentHTML("beforeend",'<svg id="rlr" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18"/></svg>');ring=document.getElementById("rlr")}}
+const rl=A.rl>0&&slot===0;if(ring){ring.classList.toggle("on",rl);if(rl)ring.style.setProperty("--p",clamp(1-A.rl/(g.rl*PU.rl),0,1).toFixed(3))}
+amE=amE||document.getElementById("ammo");if(amE)amE.classList.toggle("low",slot===0&&A.rl<=0&&A.mag<=Math.max(1,Math.ceil(g.m*.25)))}
+return{num,kill,frame,banner,get streak(){return ks}}})();
 // crosshair colour: red while the aim point is over an enemy, plus a little aim friction
 function aimProbe(){
 if(!isGame()||P.dead>0||P.em||slot!==0){Aim.setHot(false);return}
@@ -196,8 +216,9 @@ if(lock)P.jb=0;
 if(P.em){P.em.t+=dt;P.vx*=.85;P.vz*=.85;if(P.em.t>3.5)endEmote()}
 if(menuOpen){P.vx*=.8;P.vz*=.8}
 const stand=mode==="range";if(stand){P.vx=P.vz=0}
-movePlayer(dt,{f:menuOpen||stand?0:f,s:menuOpen||stand?0:s,sprint:sprint&&!stand,jump:!stand&&!lock&&!menuOpen&&!!K_.Space,crouch:!stand&&!menuOpen&&!lock&&!!(K_.AltLeft||K_.AltRight||K_.ControlLeft||K_.ControlRight)});
-updateCamera(dt,{f,s});updateFov(dt,g,{f,sprint});TP.frame(dt);
+const lensUp=scoped&&scopeOf(g).pip; // Shift holds your breath under a lens scope instead of sprinting
+movePlayer(dt,{f:menuOpen||stand?0:f,s:menuOpen||stand?0:s,sprint:sprint&&!stand&&!lensUp,jump:!stand&&!lock&&!menuOpen&&!!K_.Space,crouch:!stand&&!menuOpen&&!lock&&!!(K_.AltLeft||K_.AltRight||K_.ControlLeft||K_.ControlRight)});
+updateCamera(dt,{f,s});updateFov(dt,g,{f,sprint});TP.frame(dt);Scope.sway(dt,g,scoped,sprint);
 if(emo&&P.em){const dy=danceHuman(emo,P.em.t,P.em.k,P.yaw+Math.PI);emo.position.set(P.x,P.y+dy,P.z)}
 VM.set(g,I(eq().s),curKn(),I(eq().p));
 cam.getWorldDirection(fwd);const dw=rayWorld(cam.position.x,cam.position.y,cam.position.z,fwd.x,fwd.y,fwd.z,1);
@@ -218,7 +239,7 @@ if(P.prot>0)P.prot-=dt;if(P.rush>0)P.rush-=dt;if(P.grenCD>0)P.grenCD-=dt;
 if(!menuOpen){for(const e of E.slice())e.t==="bot"?botStep(e,dt):monStep(e,dt)}
 for(let i=dying.length-1;i>=0;i--)if(deathStep(dying[i],dt)){dropModel(dying[i].g);dying.splice(i,1)}
 for(const m of rT){const u=m.userData;if(u.hf>0){u.hf-=dt;m.rotation.x=Math.sin(u.hf*40)*u.hf*.8}else m.rotation.x=0;if(u.mv)rangeMove(m,performance.now()/1000)}
-puStep(dt);if(!menuOpen)projStep(dt);
+puStep(dt);if(!menuOpen)projStep(dt);Bul.step(dt);
 // mode flow
 if(PT.on)Party.frame(dt);
 if(!PT.on||PT.coop){
@@ -271,7 +292,7 @@ if(PU.crit)bits.push(`<b>CRIT</b> ${Math.round(PU.crit*100)}%`);
 if(PU.ls!==1)bits.push(`<b>LAST STAND</b> ×${PU.ls.toFixed(2)}`);
 el("boosts").innerHTML=bits.length?bits.join("<br>"):"<span style=\"opacity:.7\">No boosts yet. Fill the XP bar.</span>";
 }
-const g=cg();txt("am",A.rl>0?"Reloading":slot?"Knife":String(A.mag));txt("amx",slot?"":"/ "+g.m);txt("gn",slot?curKn().n:g.n);
+const g=cg();HX.frame(dt,g);txt("am",A.rl>0?"Reloading":slot?"Knife":String(A.mag));txt("amx",slot?"":"/ "+g.m);txt("gn",slot?curKn().n:g.n);
 // waves regeneration indicator
 if(mode==="waves"&&P.dead<=0&&P.hp<P.max&&P.fz<=0){const left=Math.ceil(10-P.sinceHit);
 if(P.sinceHit>=10){txt("regen","Regenerating  +10 HP/s");hide("regen",false);el("regen").classList.add("on")}

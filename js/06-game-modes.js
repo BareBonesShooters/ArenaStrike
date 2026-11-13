@@ -143,7 +143,7 @@ Object.assign(P,{x:s.x,y:0,z:s.z,vx:0,vz:0,vy:0,pitch:0,hp:P.max,dead:0,fz:fz||0
 P.yaw=yaw;endEmote();A.mag=cg().m;A.rl=0;scoped=false;rmb=false;cam.fov=75;cam.updateProjectionMatrix();lastYaw=yaw;lastPitch=0}
 function clearEnts(){
 if(typeof CustomBattle!=="undefined")CustomBattle.stop();
-try{inspClose(true)}catch(e){}try{pkBodyDrop()}catch(e){}try{TP.drop()}catch(e){}
+try{inspClose(true)}catch(e){}try{pkBodyDrop()}catch(e){}try{TP.drop()}catch(e){}try{Bul.clear()}catch(e){}
 E.forEach(e=>dropModel(e.g,e.tag));E=[];dying.forEach(d=>dropModel(d.g));dying=[];
 pu.forEach(p=>dropModel(p.g));pu=[];rT.forEach(m=>dropModel(m));rT=[];projs.forEach(o=>sc.remove(o.m));projs.length=0}
 function beginPlay(){
@@ -234,6 +234,7 @@ function hurtE(e,d,head,pt){
 // Invalid damage must never corrupt HP and leave an untargetable, living enemy.
 if(!Number.isFinite(d)||d<0)return;
 if(e.custom)return CustomBattle.playerDamage(e,d,head,pt);
+if(pt)HX.num(e,pt,d,head);
 if(e.hp<=0||e.em>0||e.phz)return;
 // boss is invulnerable while any of its minion wave is still alive
 if(e.boss){const minions=E.filter(x=>x!==e&&x.t==="mon"&&x.minion&&x.hp>0);if(minions.length){flash("Clear the minions first!",700);snd("ui",.4);return}}
@@ -253,7 +254,7 @@ const i=E.indexOf(e);if(i<0)return;E.splice(i,1);
 if(e.tag){e.g.remove(e.tag);dropModel(e.tag)}
 hurtFlash(e.g,false);dying.push(deathInit(e.g,P.x,P.z,head,e.t==="mon"));
 Fx.burst({x:e.g.position.x,y:e.g.position.y+1,z:e.g.position.z},e.t==="mon"?0x66ff44:0xff4444,18,6,.1,3,18);if(e.t==="mon"){monDeathFx(e);Phase.onKill(e)}
-snd("kill");snd("ktick",.7);hitMark(head,true);HitStop.kill(head?.07:.045);streakSnd();kills++;qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
+snd("kill");snd("ktick",.7);hitMark(head,true);HitStop.kill(head?.07:.045);streakSnd();kills++;HX.kill(e,head);qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
 if(e.t==="mon"){S.coins+=Math.max(1,Math.round((.6+wave*.1)*PU.coin*(e.elite?5:1)*(e.champion?8:1)*LV.coinMul()));if(PU.kh)P.hp=Math.min(P.max,P.hp+PU.kh);const gain=Math.round((8+wave*2+(e.boss?40:e.k===2?18:e.k===1?12:6))*(head?1.25:1)*(e.elite?3:1)*(e.champion?4:1)*LV.xpMul());addXP(gain);LV.onDeath(e)}
 else{S.coins+=1;
 if(mode==="gg"){myS++;ggL=myS;
@@ -398,17 +399,15 @@ bindOwner(g,e);e.tag=tag(d.n,"#ef4444",2.9);g.add(e.tag);g.position.set(o.x,0,o.
 function botBar(e){}
 // bots: a reaction delay after spotting you, a turn rate, short bursts, and an aim error that shrinks while you stay still and grows when you move, jump or are far away
 const REACT={easy:.85,medium:.6,hard:.4,impossible:.25};
+const LEAD={easy:0,medium:.45,hard:.8,impossible:1};
 function botShot(e,d,a,dist,mv){
 const p=e.g.position,ex=P.x-a.x,ez=P.z-a.z,l=Math.hypot(ex,ez)||1,lx=ez/l,lz=-ex/l;
-const R=(1-d.acc)*(.35+dist*.03)+e.err+mv*.09+(P.gr?0:.35),ox=(rnd()+rnd()-1)*R,oy=(rnd()+rnd()-1)*R*.7,ok=Math.abs(ox)<.4&&oy>-.85&&oy<.65;
-const tx=P.x+lx*ox,ty=P.y+1.1-.4*P.crouch+oy,tz=P.z+lz*ox,dx=tx-a.x,dy=ty-a.y,dz=tz-a.z,dl=Math.hypot(dx,dy,dz)||1,len=Math.min(dl+(ok?0:5),90),mzOk=los(p.x,1.35,p.z,a.x,a.y,a.z), // the muzzle sits ahead of the bot: if a wall is between body and muzzle the round dies in that wall
-wall=mzOk?rayWorld(a.x,a.y,a.z,dx/dl,dy/dl,dz/dl,len):0;
-const end=new T.Vector3(a.x+dx/dl*Math.min(len,wall),a.y+dy/dl*Math.min(len,wall),a.z+dz/dl*Math.min(len,wall));
-Fx.tracer(a,end,0xff8866,.03);if(wall<len)Gfx.impact(end,{col:0xffe9a0},{},true,{x:dx/dl,y:dy/dl,z:dz/dl});
-if(!(ok&&wall>=dl-.1)){const c=cam.position,ux=dx/dl,uy=dy/dl,uz=dz/dl,t=clamp((c.x-a.x)*ux+(c.y-a.y)*uy+(c.z-a.z)*uz,0,Math.min(len,wall)),qx=a.x+ux*t-c.x,qy=a.y+uy*t-c.y,qz=a.z+uz*t-c.z,cd=Math.hypot(qx,qy,qz);
-if(cd<1.6&&t<Math.min(len,wall)-.5)snd("whizz",clamp(1.3-cd*.6,.3,1),.9+rnd()*.25)}
-e.err+=.14;snd("sh",clamp(1-dist/70,.12,.55),.8);
-if(ok&&wall>=dl-.1)hit(d.dmg*clamp(1.2-dist/90,.5,1),p)}
+const R=(1-d.acc)*(.35+dist*.03)+e.err+mv*.09+(P.gr?0:.35),ox=(rnd()+rnd()-1)*R,oy=(rnd()+rnd()-1)*R*.7;
+// the round is a real bullet (js/07b-bullets.js): it flies, leads you by difficulty and can be dodged; if a wall is between the bot's body
+// and its muzzle, the round dies in that wall
+if(los(p.x,1.35,p.z,a.x,a.y,a.z))Bul.botFire(a,new T.Vector3(P.x+lx*ox,P.y+1.1-.4*P.crouch+oy,P.z+lz*ox),d.dmg*clamp(1.2-dist/90,.5,1),p,LEAD[diff]==null?.5:LEAD[diff]);
+else Gfx.impact(a.clone(),{col:0xffe9a0},{},true);
+e.err+=.14;snd("sh",clamp(1-dist/70,.12,.55),.8)}
 // cover: look for a spot near the bot that the player can't see (full cover, with a side step that can see the player to peek from)
 // or can only see above crouch height (low cover: crouch to hide, stand to peek). One bot searches per frame at most.
 let cvLast=-1;
@@ -451,6 +450,8 @@ if(e.rl>0){e.rl-=dt;u.rl=1-e.rl/BRL;canFire=false;if(e.rl<=0){e.rl=0;u.rl=0;e.ma
 u.cr=crouch;u.sh=see&&canFire?1:0;
 poseHuman(g,dt,sp,see?1:0);
 e.cd-=dt;
+// scope glint: a bot drawing a bead on you from far away flashes, so a long shot can be seen coming
+if(see&&(u.shS||0)>.85&&dist>Tune.n("bot.glintD",30,10,90)&&LOD.fx>=.3&&(e.gl=(e.gl||0)-dt)<=0){e.gl=.2;const hp=u.head.getWorldPosition(new T.Vector3());hp.x+=ex/dist*.3;hp.z+=ez/dist*.3;Gfx.flare(hp,0xfff4d0,1.1+dist*.01,.12)}
 if(see&&canFire&&(u.shS||0)>.85&&e.cd<=0&&Math.abs(angDiff(g.rotation.y,face))<.3){
 if(!e.burst)e.burst=diff==="easy"?1+(rnd()*2|0):2+(rnd()*3|0);
 e.burst--;e.cd=e.burst>0?d.rate*.5:d.rate*(1.8+rnd()*1.6);
