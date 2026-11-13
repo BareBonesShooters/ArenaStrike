@@ -727,6 +727,8 @@ function settingsHTML(){return`<div class="sec"><h3>Settings</h3>
 <div class="row"><span>Volume</span></div><input type="range" min="0" max="1" step=".05" value="${S.vol}" data-i="vol" aria-label="Volume"><div class="row"><span>Music</span></div><input type="range" min="0" max="1" step=".05" value="${S.mvol}" data-i="mvol" aria-label="Music volume"><div class="row" style="opacity:.8;font-size:12px"><span>Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</span></div>
 ${gfxSel()}
 <div class="row"><span>Aim down sights</span></div><select data-i="scope" aria-label="Aim down sights mode"><option value="toggle"${(S.opt&&S.opt.scopeToggle!==false)?" selected":""}>Toggle (click on / off)</option><option value="hold"${(S.opt&&S.opt.scopeToggle===false)?" selected":""}>Hold (must hold right-click)</option></select>
+<div class="row"><span>Touch aim assist</span></div><select data-i="assist" aria-label="Touch aim assist"><option value="on"${(S.opt&&S.opt.assist===false)?"":" selected"}>On (aim follows a target a little)</option><option value="off"${(S.opt&&S.opt.assist===false)?" selected":""}>Off</option></select>
+<div class="row"><span>Touch auto-fire</span></div><select data-i="autofire" aria-label="Touch auto-fire"><option value="off"${(S.opt&&S.opt.autoFire)?"":" selected"}>Off</option><option value="on"${(S.opt&&S.opt.autoFire)?" selected":""}>On (shoots while the crosshair is on an enemy)</option></select>
 </div>`}
 function pSettings(){
 return`<div class="sec"><h3>This device</h3><div class="row"><div class="l"><b>${esc(S.name)}</b><small>Display name for multiplayer. Everything below saves on this device.</small></div><button class="b" data-a="page" data-v="load">${ico("n-load",16)}Loadout</button></div>
@@ -1037,6 +1039,8 @@ fov(t){S.fov=clamp(Math.round(+t.value||75),60,100);sv();syncSliders()},
 vol(t){setVol(clamp(+t.value,0,1));sv();syncSliders()},
 mvol(t){S.mvol=clamp(+t.value,0,1);Mus.go();sv();syncSliders()},
 gfx(t){Q.pick(t.value);syncSliders();toast(t.value==="auto"?"Graphics set to Auto ("+QL[S.gfx].n+" for "+(HW.name||"this device")+")":"Graphics set to "+QL[S.gfx].n+". Scenery detail updates next match")},
+assist(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.assist=t.value!=="off";sv();toast(S.opt.assist?"Touch aim assist on":"Touch aim assist off")},
+autofire(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.autoFire=t.value==="on";sv();toast(S.opt.autoFire?"Auto-fire on (touch)":"Auto-fire off")},
 scope(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.scopeToggle=t.value!=="hold";sv();toast(S.opt.scopeToggle?"ADS: toggle (click to aim)":"ADS: hold right-click");syncSliders()}};
 const gfxSel=()=>{const v=S.auto?"auto":String(S.gfx);return`<div class="row"><span>Graphics</span></div><select data-i="gfx" aria-label="Graphics quality">${[["auto",S.auto?"Auto ("+QL[S.gfx].n+")":"Auto"],...QL.map((q,i)=>[String(i),q.n])].map(o=>`<option value="${o[0]}"${o[0]===v?" selected":""}>${o[1]}</option>`).join("")}</select>`};
 // the orange fill on a slider is a CSS variable the script keeps in step with its value

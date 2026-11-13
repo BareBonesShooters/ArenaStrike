@@ -196,10 +196,20 @@ amE=amE||document.getElementById("ammo");if(amE)amE.classList.toggle("low",slot=
 return{num,kill,frame,banner,get streak(){return ks}}})();
 // crosshair colour: red while the aim point is over an enemy, plus a little aim friction
 function aimProbe(){
+aimTgt=null;
 if(!isGame()||P.dead>0||P.em||slot!==0){Aim.setHot(false);return}
 cam.updateMatrixWorld();rc.setFromCamera({x:Aim.x,y:Aim.y},cam);
 const o=rc.ray.origin,d=rc.ray.direction,tg=gatherTargets();tg.length=tg.length-rT.length;
-const h=tg.length?rc.intersectObjects(tg,false)[0]:null;Aim.setHot(!!h&&h.distance<rayWorld(o.x,o.y,o.z,d.x,d.y,d.z,90))}
+const h=tg.length?rc.intersectObjects(tg,false)[0]:null,on=!!h&&h.distance<rayWorld(o.x,o.y,o.z,d.x,d.y,d.z,90);Aim.setHot(on);
+if(on&&isTouch())for(const e of E)if(e.hp>0&&e.g.userData.hit.includes(h.object)){aimTgt=e;break}}
+// touch aim assist (phones only, never against other players): while the crosshair is on an enemy it drifts with that enemy a little,
+// so a moving target does not slide off a thumb-steered aim. Optional auto-fire shoots while the crosshair stays on one.
+let aimTgt=null;const isTouch=()=>document.body.classList.contains("touch");
+function aimAssist(dt,g){const e=aimTgt;if(!e||e.hp<=0||PT.on||!isTouch()||(S.opt&&S.opt.assist===false))return;
+const p=e.g.position,dx=cam.position.x-p.x,dz=cam.position.z-p.z,hd=Math.hypot(dx,dz)||1,want=Math.atan2(dx,dz);let er=want-P.yaw;er=Math.atan2(Math.sin(er),Math.cos(er));
+const pw=Math.atan2(p.y+1.1-cam.position.y,hd),ep=pw-P.pitch,k=1-Math.exp(-dt*Tune.n("touch.assist",2.2,0,8));
+if(Math.abs(er)<.15)P.yaw+=er*k;if(Math.abs(ep)<.15)P.pitch=clamp(P.pitch+ep*k*.6,-1.5,1.5);
+if(S.opt&&S.opt.autoFire&&slot===0&&!firing&&A.mag>0)fire()}
 
 // ---------- per-frame game update ----------
 function update(dt){
@@ -235,7 +245,7 @@ if(grenAim)updateGrenPrev();else if(gPrevMesh)clearGrenPrev();
 if(A.rl>0){A.rl-=dt;if(A.rl<=0)A.mag=g.m}
 P.rk*=Math.exp(-dt*10);P.sp*=Math.exp(-dt*8);
 Aim.spread(clamp(curSpread(g)/Math.tan(cam.fov*.00872665)*innerHeight*.5,3,64));
-probeT-=dt;if(probeT<=0){probeT=.05;aimProbe()}
+probeT-=dt;if(probeT<=0){probeT=.05;aimProbe()}aimAssist(dt,g);
 if(P.prot>0)P.prot-=dt;if(P.rush>0)P.rush-=dt;if(P.grenCD>0)P.grenCD-=dt;
 // entities
 if(!menuOpen){for(const e of E.slice())e.t==="bot"?botStep(e,dt):monStep(e,dt)}
