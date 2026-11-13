@@ -21,7 +21,22 @@ Rule for every item: Low and Potato stay cheap. They only get changes that cost 
 | 1.4 | Stop the effect chain being rebuilt on every resize and auto-quality step (causes hitches): resize targets in place. | `Post.size` / `build` in `js/02b-post.js`, `Q.refit` in `js/11-main-loop.js` | 0.5 |
 | 1.5 | Shadow bias scaled to shadow map size (less acne on Medium, less floating shadows on Ultra). Drop the unused MSAA buffer on composer tiers. | `js/02c-light.js`, `js/02-render-audio.js` | 0.5 |
 
-Later, done carefully behind a setting: proper colour management and tone mapping (sRGB output, linear colours, filmic rolloff). Highest ceiling, but every map needs retuning (1–2 days). Phong for the world batch on High/Ultra so the muzzle light and flashlight stop looking blotchy.
+Later: filmic tone mapping on top of the colour management that Phase 1b brings. (Phong for the world batch is no longer needed after Phase 1b.)
+
+## Phase 1b: Upgrade Three.js from r128 to a current release (about 2–4 days)
+
+Done now, before Phase 2, so later effects and lighting are tuned only once.
+
+| # | What | Where | Effort |
+|---|------|-------|--------|
+| 1b.1 | Loading: current Three.js ships only as an ES module. Pin one recent release, vendor it locally, and add a small module loader that imports it, sets the global `T`/`THREE`, then loads the existing classic scripts in their current order. No build step. | `index.html`, new loader in `js/`, `vendor/` | 0.5 |
+| 1b.2 | Post-processing: replace `vendor/three-r128/*` (Copy, LuminosityHighPass, FXAA, SAO, DepthLimitedBlur, UnpackDepthRGBA, SMAA) and the composer/passes with the matching addons from the same release; add the output pass. Retune bloom and SAO. | `js/02b-post.js`, `vendor/` | 0.75 |
+| 1b.3 | Colour and light: adopt the new colour management and physically based light intensities (legacy mode is gone since r165). Retune sun, fill, hemisphere, point/spot lights, fog, mist and the Phase 1 values on every map with the screenshot diff until each map looks as good or better than before. | `js/02c-light.js`, `js/02-render-audio.js`, `js/03-world.js`, theme tables | 1–1.5 |
+| 1b.4 | Shader patches: check and fix the four `onBeforeCompile` patches and the custom `ShaderMaterial`s against the new shader chunks. | `js/03-world.js`, `js/08-parkour-radar.js`, others found by grep | 0.5 |
+| 1b.5 | Clean-up: remove APIs that were renamed or dropped, confirm the viewmodel pass, scopes, sprites, instancing and shadows on every tier. Re-record `npm run perf` only for intended changes. | all | 0.5 |
+
+What it brings: per-pixel shading on Lambert materials (the muzzle flash and flashlight stop looking blotchy without switching to Phong, which removes that later item), better shadows, proper colour management as the default instead of a risky later extra, batched drawing of identical props, and a maintained library.
+Cost: current releases need WebGL 2, so very old WebGL-1-only devices can no longer run the game. Show a clear message on those devices instead of a blank screen.
 
 ## Phase 2: Combat feel (about 4.5 days)
 
@@ -142,6 +157,7 @@ S = under half a day, M = about a day, L = 2+ days. Ranked by impact per effort.
 | Phase | Days | Why this order |
 |-------|------|----------------|
 | 1 Graphics foundation | 3 | Biggest visual jump, cheap, helps every later screenshot |
+| 1b Three.js upgrade | 2–4 | Before more effects are added, so lighting is retuned once |
 | 2 Combat feel | 4.5 | Most of the "feels better" gain |
 | 3 Bots and cover | 3.5 | Needs the crouch from phase 2 |
 | 4 Third person | 3–4 | Reuses body poses from phase 3 |
