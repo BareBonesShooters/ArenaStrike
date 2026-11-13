@@ -186,6 +186,42 @@ What exists today (`touchUI` in `js/11-main-loop.js`, `js/00-mobile.js`, `css/mo
 
 Order: 9a first, then 9b and 9d (they decide how it feels), then 9c, 9e and 9f. Phase 4's third person gets a phone view button there; Phase 8d's settings table holds the touch settings.
 
+## Phase 10: Logo, branding and outdated UI (about 6 days)
+
+What looks dated today, from screenshots of the title screen and lobby:
+- The logo (orange hexagon, white A with a lightning bolt) reads as a generic app icon and has no matching wordmark.
+- The name appears three ways: "Arena Strike 3D", "ARENA.STRIKE" and "Arena Strike logo".
+- `index.html` declares two favicons (the SVG file and an inline one that overrides it), and the canonical URL may point to an old address.
+- The title screen has an unrelated "Case opening" card in the middle, and the "Beta Version 1.6" label is almost invisible.
+- Every panel uses the same frosted-glass style, so nothing stands out. Many small uppercase spaced-out labels. Nav icons come from mixed sources.
+- The lobby has 11 nav buttons in one long list, a plain two-column text list of modes, and a sunglasses glyph as the profile picture.
+
+**10a. Audit (S).** `npm run shots` also captures every menu page (title, lobby, shop, loadout, battle pass, index, quests, leaderboard, settings, pause, end card, HUD, power-up picker) on desktop and phone sizes, so every later step has before/after pictures.
+
+**10b. Logo and name (M).**
+- New logo mark plus a wordmark that still reads at 16 px. Pick one name and use it everywhere.
+- Regenerate the favicon, apple-touch icon, 192/512 and maskable manifest icons, and a social preview image. Remove the duplicate favicon and check the canonical URL.
+- Show 2–3 directions as pictures and choose before building.
+
+**10c. Title screen (S).** A logo lockup with a short intro motion, a readable version label and a clear "press to start". Move case opening off the title screen.
+
+**10d. Type, colour and surfaces (M).**
+- A heading font next to Outfit and a small type scale.
+- Colour tokens.
+- Two or three panel levels (main, secondary, inline) instead of one frosted style everywhere. Fewer uppercase eyebrow labels.
+- Heavy blur only where it helps, and none under `body.lite` or on phones.
+
+**10e. One icon set (S).** Matching SVG icons with one stroke weight for the nav, HUD, touch buttons and settings.
+
+**10f. Lobby (M).**
+- Nav grouped into Play / Collection / Progress / Social / Settings.
+- Modes as cards with a picture per mode and a clear online tag.
+- A profile card that shows your character instead of a glyph.
+
+**10g. Remaining pages (M–L).** Bring the shop, loadout, battle pass, end card, pause, settings and HUD in line with 10d and 10e.
+
+Rules: each step ships with before/after pictures from 10a, works on phones (Phase 9 sizes), and keeps Low/Potato menus cheap. Use the design skills (`impeccable`, `unslop`) and ask Fable for the look. This phase only touches HTML/CSS/UI files, so it can run alongside the gameplay phases. Do 10b (the logo) first: everything else takes its colours from it.
+
 ---
 
 ## Totals and suggested order
@@ -202,5 +238,6 @@ Order: 9a first, then 9b and 9d (they decide how it feels), then 9c, 9e and 9f. 
 | 7 Movement polish | 5 | |
 | 8 Small details | about 12 | 8a can be slotted in early; it is one day of quick wins |
 | 9 Phones and touch | about 7 | 9a and 9b can start any time; they touch different files from Phases 2–7 |
+| 10 Logo, branding, UI | about 6 | Menus and CSS only, so it can run alongside gameplay phases; logo first |
 
 About 43–44 days of work as first estimated; with the tooling, expect roughly 28–30. Each phase ends with `npm run finish` passing, the picture changes reviewed in `shots/report.html` and approved, a commit, and a push only with your OK.
