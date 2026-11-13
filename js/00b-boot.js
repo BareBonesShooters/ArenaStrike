@@ -32,6 +32,15 @@ if (noWebGL2()) {
   // every canvas the game paints holds colours, so canvas textures default to sRGB (the renderer converts them to linear light);
   // a texture that holds data instead (the grass detail multiplier) sets NoColorSpace itself
   class CanvasTexture extends THREE_NS.CanvasTexture { constructor(...a) { super(...a); this.colorSpace = THREE_NS.SRGBColorSpace; } }
+  // additive glows (halos, sparks, auras, mist sprites) were tuned when blending happened in sRGB. Added in linear light, a faint glow at
+  // opacity .18 comes out of the sRGB output step at about .46, so soft halos turned into bright patches that looked like light from nowhere.
+  // When the shader writes linear light (the post chain), their alpha is raised to the power 2.2, which gives back the old brightness.
+  // Drawing straight to the screen already blends in sRGB, and the GLSL compiler folds the test away.
+  const M = THREE_NS.Material.prototype;
+  M.onBeforeCompile = function (sh) {
+    if (this && this.blending === THREE_NS.AdditiveBlending) sh.fragmentShader = sh.fragmentShader.replace("#include <opaque_fragment>", "#include <opaque_fragment>\nif(linearToOutputTexel(vec4(.25)).r<.3)gl_FragColor.a=pow(max(gl_FragColor.a,0.),2.2);");
+  };
+  M.customProgramCacheKey = function () { return this.blending === THREE_NS.AdditiveBlending ? "add" : this.onBeforeCompile.toString(); };
   // the module namespace is frozen, so the game gets a plain object it can extend
   const T = Object.assign({}, THREE_NS, { CanvasTexture, EffectComposer, Pass, FullScreenQuad, RenderPass, ShaderPass, UnrealBloomPass, SAOPass, SMAAPass, OutputPass, FXAAShader, CopyShader });
   window.THREE = T;
