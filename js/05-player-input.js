@@ -64,13 +64,15 @@ if(blocked(tx,tz,b.h+.02,.4)||floorAt(tx,tz,b.h,.4)<b.h-.01)continue;
 P.mantle={sx:P.x,sy:P.y,sz:P.z,tx,ty:b.h,tz,t:0,dur:.24+rise*.09,dx:dirx,dz:dirz};P.vx=P.vz=0;P.vy=0;P.jumping=false;snd("jump",.6,.8);return true}}
 return false}
 function movePlayer(dt,inp){
-// inp: {f,s,sprint,jump,crouch}  — crouch input is now used as slide
+// inp: {f,s,sprint,jump,crouch}. Crouch while moving fast starts a slide; held while slow (or after the slide) it crouches.
+// A slide is a push forward and then low friction: it lasts while crouch is held and you keep speed, and a jump cancels it keeping the momentum
 P.slideCD=Math.max(0,P.slideCD-dt);
-if(inp.crouch&&P.gr&&P.slide<=0&&P.slideCD<=0&&P.dead<=0&&!P.mantle&&Math.hypot(P.vx,P.vz)>4){
-P.slide=.55;P.slideCD=1.1;P.crouch=1;const sn=Math.sin(P.yaw),cs=Math.cos(P.yaw);
-P.vx+=-sn*8;P.vz+=-cs*8;snd("jump",.45,1.4);Fx.burst({x:P.x,y:P.y+.05,z:P.z},0xbfeaff,8,2.2,.06,.1,6)}
-if(P.slide>0){P.slide-=dt;P.crouch=1;if(P.slide<=0)P.crouch=0}
-else P.crouch+=((0)-P.crouch)*Math.min(1,dt*9);
+if(inp.crouch&&!P.cHeld&&P.gr&&P.slide<=0&&P.slideCD<=0&&P.dead<=0&&!P.mantle&&Math.hypot(P.vx,P.vz)>Tune.n("mv.slideMin",5.2,2,9)){
+P.slide=Tune.n("mv.slideT",1.05,.3,2);P.slideCD=.7;P.crouch=1;const sn=Math.sin(P.yaw),cs=Math.cos(P.yaw),b=Tune.n("mv.slideBoost",5.5,0,12);
+P.vx+=-sn*b;P.vz+=-cs*b;snd("jump",.45,1.4);Fx.burst({x:P.x,y:P.y+.05,z:P.z},0xbfeaff,8,2.2,.06,.1,6)}
+P.cHeld=!!inp.crouch;
+if(P.slide>0){P.slide-=dt;P.crouch=1;if(!inp.crouch||Math.hypot(P.vx,P.vz)<MV.walk*.6)P.slide=Math.min(P.slide,0)}
+else P.crouch+=((inp.crouch&&!P.mantle&&P.dead<=0?1:0)-P.crouch)*Math.min(1,dt*9);
 if(P.mantle){const m=P.mantle;m.t+=dt;const k=Math.min(1,m.t/m.dur),e=easeIO(clamp((k-.45)/.55,0,1));
 // Lift above the ledge before moving into it, and check the climb path too.
 const nx=lerp(m.sx,m.tx,e),nz=lerp(m.sz,m.tz,e),ny=lerp(m.sy,m.ty,easeOut(Math.min(1,k/.45)))+Math.sin(k*Math.PI)*.1;
@@ -80,8 +82,14 @@ if(k>=1){P.y=m.ty;P.mantle=null;P.vy=0;P.gr=true;P.vx=m.dx*3.2;P.vz=m.dz*3.2;P.m
 P.mcd=Math.max(0,P.mcd-dt);
 const sn=Math.sin(P.yaw),cs=Math.cos(P.yaw);let mx=-sn*inp.f+cs*inp.s,mz=-cs*inp.f-sn*inp.s;const l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l}
 const base=scoped?MV.scope:inp.sprint&&inp.f>0&&P.crouch<.3?MV.sprint:MV.walk,sp=base*(1-.35*P.crouch)*(P.spd>0||P.rush>0||P.slide>0?1.4:1)*PU.spd*(P.slide>0?1.35:1)*(slot===0?(cg().mv||1):1.05)*(typeof LV!=="undefined"?LV.moveMul():1);
-const ac=1-Math.exp(-(P.gr?MV.accG:MV.accA*(mode==="parkour"&&pkKnifeOn()?2.2:1))*dt*(l>0?1:.85));
-P.vx+=(mx*sp-P.vx)*ac;P.vz+=(mz*sp-P.vz)*ac;
+if(P.slide>0&&P.gr){const f=Math.exp(-dt*Tune.n("mv.slideFric",1.4,.2,6));P.vx*=f;P.vz*=f;
+// a little steering while sliding: bend the velocity toward where you push without adding speed
+if(l>.05){const v=Math.hypot(P.vx,P.vz),k=Math.min(1,dt*2.2),nx=P.vx+(mx*v-P.vx)*k,nz=P.vz+(mz*v-P.vz)*k,nl=Math.hypot(nx,nz)||1;P.vx=nx/nl*v;P.vz=nz/nl*v}}
+else{
+// separate rates: speeding up, stopping (no input) and turning around (pushing against your velocity) each have their own grip
+const vl=Math.hypot(P.vx,P.vz),dot=vl>.5&&l>.05?(P.vx*mx+P.vz*mz)/(vl*l):1,rG=l<.05?Tune.n("mv.stop",17,4,40):dot<-.25?Tune.n("mv.turn",24,4,50):MV.accG;
+const ac=1-Math.exp(-(P.gr?rG:MV.accA*(mode==="parkour"&&pkKnifeOn()?2.2:1))*dt*(l>0?1:.85));
+P.vx+=(mx*sp-P.vx)*ac;P.vz+=(mz*sp-P.vz)*ac}
 // collision with sub-steps so fast movement never tunnels
 const dist=Math.hypot(P.vx,P.vz)*dt,n=Math.max(1,Math.ceil(dist/.22)),sdt=dt/n;let wallHit=false;
 for(let i=0;i<n;i++){
@@ -96,7 +104,8 @@ const press=P.jpress||(inp.jump&&!P.jHeld);P.jpress=false;P.jHeld=!!inp.jump;
 P.jb=Math.max(0,P.jb-dt);if(inp.jump)P.jb=MV.jbuf;
 P.coy=P.gr?MV.coy:Math.max(0,P.coy-dt);
 if(P.gr)P.air=0;
-if(P.jb>0&&P.coy>0){P.vy=MV.jump;P.gr=false;P.coy=0;P.jb=0;P.jumping=true;snd("jump",.7)}
+if(P.jb>0&&P.coy>0){P.vy=MV.jump;P.gr=false;P.coy=0;P.jb=0;P.jumping=true;snd("jump",.7);
+if(P.slide>0){P.slide=0;P.slideCD=.45;P.vx*=1.05;P.vz*=1.05}} // slide-jump: cancel the slide and carry its speed into the air
 // double jump: a fresh press in mid-air gives one more lift of fixed height and turns most of your momentum toward where you push
 else if(press&&!P.gr&&P.coy<=0&&P.air<MV.air&&P.vy<7.2&&P.dead<=0&&P.fz<=0){
 P.air++;P.vy=MV.jump2;P.jumping=false;P.jb=0;
@@ -130,7 +139,10 @@ let dist=want;try{dist=Math.min(want,Math.max(.7,rayWorld(px,hy,pz,bx,by+.0001,b
 cam.position.set(px+bx*dist,Math.max(pkCamY+.35,hy+by*dist+.2),pz+bz*dist);
 cam.rotation.set(P.pitch,P.yaw,0,"YXZ");return}
 P.eye+=((P.dead>0?.5:1.7-.62*P.crouch)-P.eye)*Math.min(1,dt*10);
-P.stepOff*=Math.exp(-dt*13);P.landDip*=Math.exp(-dt*9);
+P.stepOff*=Math.exp(-dt*13);
+// landing and recoil ride on springs: a landing pushes the camera down and it bounces back a little; recoil snaps up and settles
+P.ldS=P.ldS||{x:0,v:0};P.rkS=P.rkS||{x:0,v:0};if(P.landDip>0){P.ldS.v+=P.landDip*Tune.n("cam.land",13,0,40);P.landDip=0}
+const dip=clamp(spring(P.ldS,0,130,11,dt),-.08,.45),rk=spring(P.rkS,P.rk,Tune.n("cam.recoilK",320,60,900),24,dt);
 const spd=Math.hypot(P.vx,P.vz),amp=P.gr&&!lockd&&!P.mantle?Math.min(1,spd/8):0;
 P.bobA+=(amp-P.bobA)*Math.min(1,dt*8);const o=P.bobPh;P.bobPh+=dt*spd*1.15*(P.gr?1:0);
 if(P.bobA>.3&&Math.floor(P.bobPh/Math.PI)!==Math.floor(o/Math.PI))snd("step",(.5+P.bobA*.3)*(1-.65*P.crouch));
@@ -138,11 +150,14 @@ const bobY=Math.sin(P.bobPh*2)*.034*P.bobA,bobX=Math.cos(P.bobPh)*.022*P.bobA,cs
 let lift=0,rollT=-(inp?inp.s:0)*.014*Math.min(1,spd/6);
 if(P.mantle){const k=Math.min(1,P.mantle.t/P.mantle.dur);lift=-Math.sin(k*Math.PI)*.14;rollT+=Math.sin(k*Math.PI)*.025}
 P.roll+=(rollT-P.roll)*Math.min(1,dt*9);
-cam.position.set(P.x+cs*bobX,P.y+P.eye+P.stepOff-P.landDip+bobY+lift,P.z-sn*bobX);
-cam.rotation.set(P.pitch+P.rk-P.landDip*.25+Death.pit,P.yaw,P.roll+Death.rol,"YXZ")}
+cam.position.set(P.x+cs*bobX,P.y+P.eye+P.stepOff-dip+bobY+lift,P.z-sn*bobX);
+cam.rotation.set(P.pitch+rk-dip*.25+Death.pit,P.yaw,P.roll+Death.rol,"YXZ")}
 function updateFov(dt,g,inp){
-const sprinting=inp&&inp.sprint&&inp.f>0&&!scoped&&Math.hypot(P.vx,P.vz)>7.5,tfv=scoped?(scopeOf(g).pip?LENS_BASE:scopeOf(g).fov):sprinting?81:75;
-if(Math.abs(cam.fov-tfv)>.05){cam.fov+=(tfv-cam.fov)*Math.min(1,dt*(scoped?16:7));cam.updateProjectionMatrix()}}
+const sprinting=inp&&inp.sprint&&inp.f>0&&!scoped&&Math.hypot(P.vx,P.vz)>7.5,tfv=scoped?(scopeOf(g).pip?LENS_BASE:scopeOf(g).fov):P.slide>0?75+Tune.n("cam.slideFov",9,0,20):sprinting?75+Tune.n("cam.sprintFov",6,0,15):75;
+// base FOV eases to its target; a spring kick on fire (not while scoped) rides on top
+if(P.fovL!==cam.fov||P.fovB===undefined)P.fovB=cam.fov-(P.fovK||0);P.fovB+=(tfv-P.fovB)*Math.min(1,dt*(scoped?16:7));
+P.fk=P.fk||{x:0,v:0};P.fovK=scoped?0:clamp(spring(P.fk,0,240,20,dt),-1,3.5);if(scoped){P.fk.x=P.fk.v=0}
+const fv=P.fovB+P.fovK;if(Math.abs(cam.fov-fv)>.01){cam.fov=fv;cam.updateProjectionMatrix()}P.fovL=cam.fov}
 
 // ---------- knife swing animations: one keyframed motion per blade (frames are [time,x,y,z,pitch,yaw,roll] offsets from the rest pose) ----------
 const KSTY={"Combat Knife":"slash","Kunai":"jab","Machete":"chop","Karambit":"rake","Katana":"draw","Plasma Blade":"arc","Solar Edge":"spin","Tanto":"thrust","Butterfly":"flip","Cleaver":"cleave","Void Fang":"fang","Star Piercer":"star","Season Blade":"sweep","Echo Kunai":"echo","Apex Edge":"apex"};

@@ -87,7 +87,7 @@ const playing=state==="play",paused=state==="pause";
 if(!playing&&!paused&&state!=="title"&&fr%(S.gfx>2?(SOFT?6:3):2)){return}
 // a paused scene is static, so it only needs an occasional redraw
 if(paused&&fr%(S.gfx>2?4:2)){return}
-if(playing){update(dt*Death.frame(dt));Q.tick(raw)}
+if(playing){update(dt*Death.frame(dt)*HitStop.k(dt));Q.tick(raw)}
 else if(state==="title"){Title.frame(dt,clock)}
 else if(!paused){
 const a=.72+Math.sin(clock*.035)*.075;

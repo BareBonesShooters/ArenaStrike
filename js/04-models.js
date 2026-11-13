@@ -264,7 +264,7 @@ u.arms[0].userData.el.rotation.set(0,0,0);u.arms[1].userData.el.rotation.set(0,0
 const ax=-1.38-(aim||0)*.8+u.kick*.35;
 u.arms[1].rotation.set(ax,0,-.3);u.arms[0].rotation.set(ax+.05,0,.3)}
 u.torso.rotation.x=.06*u.sp+.05*ar;u.torso.rotation.z=Math.sin(u.ph)*.035*u.sp;u.torso.position.y=1.26+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.012-.03*ar;u.head.position.y=1.9+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.016-.03*ar;
-u.head.rotation.x=-(aim||0)*.5;u.head.rotation.z=-Math.sin(u.ph)*.05*u.sp}
+u.head.rotation.x=-(aim||0)*.5;u.head.rotation.z=-Math.sin(u.ph)*.05*u.sp;hitPose(u,dt)}
 // goofy anime run: body tipped far forward, arms streaming straight back, big wobbly legs and a bobbing head
 function narutoPose(m,dt,sp,air){
 const u=m.userData;u.nar=true;
@@ -299,6 +299,12 @@ return dy}
 
 // ---------- monsters ----------
 function mkMon(k){return Post.rim(YardArt.monster(k))}
+// hit reaction: the torso is knocked along the shot (pitch and roll in the model's own frame) and springs back; headshots snap the head back
+function hitReact(m,fx,fz,amt,head){const u=m.userData;if(!u||!u.torso)return;const p=m.position,ry=m.rotation.y;let dx=p.x-fx,dz=p.z-fz;const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
+const K=Tune.n("fx.flinch",1,0,3)*amt,fw=dx*Math.sin(ry)+dz*Math.cos(ry),rt=dx*Math.cos(ry)-dz*Math.sin(ry);
+u.fp=u.fp||{x:0,v:0};u.fr=u.fr||{x:0,v:0};u.hs=u.hs||{x:0,v:0};u.fp.v+=fw*7*K;u.fr.v-=rt*7*K;if(head)u.hs.v-=14*K}
+function hitPose(u,dt){if(!u.fp)return;spring(u.fp,0,160,13,dt);spring(u.fr,0,160,13,dt);spring(u.hs,0,220,15,dt);
+u.torso.rotation.x+=clamp(u.fp.x,-.6,.6);u.torso.rotation.z+=clamp(u.fr.x,-.5,.5);u.head.rotation.x+=clamp(u.hs.x,-.8,.4)}
 function poseMon(m,dt,att){
 const u=m.userData,p=m.position,sc=m.scale.y||1;
 // the walk cycle is driven by the ground actually covered: one leg swing per step length, so the feet stay planted instead of skating
@@ -312,7 +318,10 @@ u.legs[0].rotation.x=sw;u.legs[1].rotation.x=-sw;
 u.bob=L*(Math.cos(sw)-1); // body sinks as the legs spread, so the planted foot stays on the ground
 u.kick=Math.max(0,u.kick-dt*3.2);const lift=-1.15-Math.sin(u.kick*Math.PI)*.9;
 u.arms[0].rotation.set(lift+Math.cos(u.ph)*.11*a+br*.03,0,.1);u.arms[1].rotation.set(lift-Math.cos(u.ph)*.11*a+br*.03,0,-.1);
-u.torso.rotation.set(.1+.07*clamp(u.v/4,0,1)+Math.abs(Math.cos(u.ph))*.03*a+br*.012,Math.sin(u.ph)*.15*a,0);u.head.rotation.z=Math.sin(u.ph)*.06*a+Math.sin(u.br*.6)*.035}
+// lean into turns: roll toward the inside of the turn, more at speed
+if(u.ry===undefined)u.ry=m.rotation.y;let dy=m.rotation.y-u.ry;dy=Math.atan2(Math.sin(dy),Math.cos(dy));u.ry=m.rotation.y;
+u.ln=(u.ln||0)+((dt>0?clamp(-dy/dt*u.v*.035,-.32,.32):0)-(u.ln||0))*Math.min(1,dt*8);
+u.torso.rotation.set(.1+.07*clamp(u.v/4,0,1)+Math.abs(Math.cos(u.ph))*.03*a+br*.012,Math.sin(u.ph)*.15*a,u.ln);u.head.rotation.z=Math.sin(u.ph)*.06*a+Math.sin(u.br*.6)*.035-u.ln*.5;u.head.rotation.x=0;hitPose(u,dt)}
 
 // ---------- death: accelerating fall away from the shooter, limp limbs on springs, thud, then sink ----------
 const DQ={q:new T.Quaternion(),n:new T.Vector3()};

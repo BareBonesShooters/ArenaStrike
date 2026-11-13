@@ -30,6 +30,8 @@ s.buffer=NB;f.type="highpass";f.frequency.value=fq;g.gain.setValueAtTime(Math.ma
 s.connect(f);f.connect(g);g.connect(MG);s.start(t);s.stop(t+d)}
 const SND={
 sh:(v,r)=>{hiss(.09,.26*v,900*r);tone(190*r,.11,"sawtooth",.13*v,60)},
+ktick:(v,r)=>{tone(2300*r,.05,"square",.07*v,1800*r);tone(3400*r,.04,"sine",.06*v,0,.035)},
+whizz:(v,r)=>{nz(.16,.32*v,"bandpass",4200*r,0,1100*r,5);tone(2400*r,.12,"sine",.05*v,900*r)},
 hit:v=>tone(900,.05,"square",.06*v,600),
 head:v=>{tone(1300,.07,"square",.07*v,900);tone(1900,.05,"sine",.05*v,1500,.03)},
 rl:v=>{tone(300,.08,"triangle",.08*v,200);tone(420,.1,"triangle",.09*v,300,.5)},
@@ -413,6 +415,13 @@ im.frustumCulled=false;im.instanceMatrix.setUsage(T.DynamicDrawUsage);
 const pr=[],m4=new T.Matrix4(),q=new T.Quaternion(),v3=new T.Vector3(),s3=new T.Vector3(),cl=new T.Color(),zero=new T.Matrix4().makeScale(0,0,0);
 for(let i=0;i<MAX;i++){pr.push({l:0,m:.9,x:0,y:0,z:0,vx:0,vy:0,vz:0,s:.1,g:14});im.setMatrixAt(i,zero);im.setColorAt(i,cl.setHex(0xffffff))}
 sc.add(im);let cur=0;
+// spray: particles leave a surface along its normal n, spread over the tangent plane, e.g. sparks off a wall and dust drifting out of it
+function spray(p,nx,ny,nz,col,n,spd,size,grav,spread){const s=spread==null?.8:spread;
+for(let i=0,nn=Math.max(1,Math.round((n||8)*LOD.fx));i<nn;i++){const o=pr[cur=(cur+1)%MAX],sp=(spd||5)*(.35+rnd()*.65);
+let rx=rnd()*2-1,ry=rnd()*2-1,rz=rnd()*2-1;const dn=rx*nx+ry*ny+rz*nz;rx-=dn*nx;ry-=dn*ny;rz-=dn*nz; // random tangent
+o.x=p.x+nx*.03;o.y=p.y+ny*.03;o.z=p.z+nz*.03;o.vx=(nx+rx*s)*sp;o.vy=(ny+ry*s)*sp;o.vz=(nz+rz*s)*sp;
+o.l=o.m=.25+rnd()*.35;o.s=(size||.05)*(.6+rnd()*.8);o.g=grav==null?14:grav;im.setColorAt(cur,cl.setHex(col))}
+if(im.instanceColor)im.instanceColor.needsUpdate=true}
 function burst(p,col,n,spd,size,up,grav){
 for(let i=0,nn=Math.max(2,Math.round((n||14)*LOD.fx));i<nn;i++){const o=pr[cur=(cur+1)%MAX],a=rnd()*6.283,e=rnd()*2-.4,sp=(spd||5)*(.3+rnd()*.7);
 o.x=p.x;o.y=p.y;o.z=p.z;o.vx=Math.cos(a)*sp*(1-Math.abs(e)*.3);o.vz=Math.sin(a)*sp*(1-Math.abs(e)*.3);o.vy=e*sp+(up||0);
@@ -428,10 +437,16 @@ im.instanceMatrix.needsUpdate=true}
 const TR=[],tg=new T.BoxGeometry(1,1,1);let tc=0;
 for(let i=0;i<28;i++){const m=new T.Mesh(tg,new T.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0,blending:T.AdditiveBlending,depthWrite:false}));m.visible=false;m.frustumCulled=false;m.raycast=()=>{};sc.add(m);TR.push({m,l:0})}
 const a3=new T.Vector3();
+// a tracer is a short streak that flies from the muzzle to the hit point (a few frames of travel), then fades where it ended
 function tracer(a,b,col,w,life){const o=TR[tc=(tc+1)%TR.length],m=o.m,len=a.distanceTo(b);if(len<.3)return;
-m.position.copy(a).add(b).multiplyScalar(.5);m.lookAt(b);const t=w||.022;m.scale.set(t,t,len);m.material.color.setHex(col||0xffe9a0).multiplyScalar(Post.hot);m.material.opacity=.9;m.visible=true;o.l=o.ml=life||.09}
-function tracers(dt){for(const o of TR){if(o.l<=0)continue;o.l-=dt;if(o.l<=0){o.m.visible=false;continue}o.m.material.opacity=o.l/(o.ml||.09)*.9}}
-return{burst,step,tracer,tracers,clear(){for(const o of pr)o.l=0;im.instanceMatrix.needsUpdate=true;TR.forEach(o=>{o.l=0;o.m.visible=false});try{Gfx.clear()}catch(e){}}}})();
+o.a=(o.a||new T.Vector3()).copy(a);o.b=(o.b||new T.Vector3()).copy(b);o.len=len;o.t=0;o.ft=Math.max(.035,Math.min(.16,len/Tune.n("fx.tracerSpd",260,60,900)));o.sl=Math.min(len,1.6+len*.12);o.w=w||.022;
+m.material.color.setHex(col||0xffe9a0).multiplyScalar(Post.hot);m.material.opacity=.9;m.visible=true;o.l=o.ml=life||.09;place(o,0)}
+function place(o,h){const m=o.m,hd=Math.min(1,h),tl=Math.max(0,hd-o.sl/o.len),L=(hd-tl)*o.len;if(L<.01){m.visible=false;return}m.visible=true;
+a3.lerpVectors(o.a,o.b,(hd+tl)/2);m.position.copy(a3);m.lookAt(o.b);m.scale.set(o.w,o.w,L)}
+function tracers(dt){for(const o of TR){if(o.l<=0)continue;o.t+=dt;
+if(o.t<o.ft){place(o,o.t/o.ft);continue}
+o.l-=dt;if(o.l<=0){o.m.visible=false;continue}place(o,1);o.m.material.opacity=o.l/(o.ml||.09)*.9}}
+return{burst,spray,step,tracer,tracers,clear(){for(const o of pr)o.l=0;im.instanceMatrix.needsUpdate=true;TR.forEach(o=>{o.l=0;o.m.visible=false});try{Gfx.clear()}catch(e){}}}})();
 // ---------- combat graphics: muzzle and impact flares, shock rings, glowing ground cracks, lightning, spawn portals, claw slashes ----------
 const Gfx=(()=>{
 const FL=[],RG=[],TF=[];let ready=false,fi=0,ri=0,crG=null;
@@ -463,8 +478,19 @@ const geo=new T.BufferGeometry();geo.setAttribute("position",new T.Float32Buffer
 const ln=new T.Line(geo,new T.LineBasicMaterial({color:c?col:0xffffff,transparent:true,opacity:1,blending:T.AdditiveBlending,depthWrite:false,fog:false}));ln.frustumCulled=false;ln.raycast=()=>{};sc.add(ln);add({o:ln,l:.22,m:.22,k:"slash"})}
 flare({x,y,z},col,2.4*s,.16)}
 function splat(p,col){flare(p,col,1.5,.2);ring(p.x,Math.max(.1,p.y),p.z,col,.1,1,.25,.6);Fx.burst(p,col,7,3.5,.07,1.5,12);snd("splat",clamp(1-Math.hypot(p.x-P.x,p.z-P.z)/40,.15,.6))}
-function impact(p,gc,g,mini){if(LOD.fx<.3)return;flare(p,gc.col,mini?.4:.8+(g.glow||g.coil?.5:0),.09);Fx.burst(p,gc.col,mini?2:5,mini?3:4.5,.04,1.5,14);
-if(!mini&&LOD.fx>.5)Fx.burst(p,0x8a8f98,2,1.1,.17,.7,-1.5)}
+// the world is made of axis-aligned boxes, so the hit face is the floor/top if the point sits on a surface, otherwise the box side facing the shot
+function surfN(p,d){const fl=floorAt(p.x,p.z,p.y+.15);if(Math.abs(fl-p.y)<.06||p.y<.06)return[0,1,0];
+const ax=Math.abs(d.x),az=Math.abs(d.z);return ax>az?[-Math.sign(d.x),0,0]:[0,0,-Math.sign(d.z)]}
+function impact(p,gc,g,mini,d){if(LOD.fx<.3)return;flare(p,gc.col,mini?.4:.8+(g.glow||g.coil?.5:0),.09);
+if(!d){Fx.burst(p,gc.col,mini?2:5,mini?3:4.5,.04,1.5,14);return}
+const n=surfN(p,d);Fx.spray(p,n[0],n[1],n[2],gc.col,mini?2:6,mini?3:5.5,.035,16,.9);
+if(!mini&&LOD.fx>.5){Fx.spray(p,n[0],n[1],n[2],0x8a8f98,3,1.2,.15,-1.2,.6);mark(p,n)}}
+// bullet marks: one instanced pool (one draw call, created on the first mark), oldest replaced first; Medium and up only
+let MK=null,mi=0;const mkM=new T.Matrix4(),mkQ=new T.Quaternion(),mkV=new T.Vector3(),mkS=new T.Vector3(),mkZ=new T.Vector3(0,0,1),mkN=new T.Vector3();
+function mark(p,n){if(LOD.fx<.75)return;if(!MK){MK=new T.InstancedMesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:SOFTDOT,color:0x15120f,transparent:true,opacity:.75,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}),96);
+MK.frustumCulled=false;MK.raycast=()=>{};mkM.makeScale(0,0,0);for(let i=0;i<96;i++)MK.setMatrixAt(i,mkM);sc.add(MK)}
+if(MK.parent!==sc)sc.add(MK);mkN.set(n[0],n[1],n[2]);mkQ.setFromUnitVectors(mkZ,mkN);const s=.09+rnd()*.05;
+mkV.set(p.x+n[0]*.012,p.y+n[1]*.012,p.z+n[2]*.012);mkS.set(s,s,1);MK.setMatrixAt(mi=(mi+1)%96,mkM.compose(mkV,mkQ,mkS));MK.instanceMatrix.needsUpdate=true}
 function step(dt){
 for(const o of FL){if(o.l<=0)continue;o.l-=dt;if(o.l<=0){o.s.visible=false;continue}const k=o.l/o.m;o.s.material.opacity=Math.min(1,k*1.4);o.s.scale.setScalar(o.z*(1+(1-k)*.5));if(o.vy)o.s.position.y+=o.vy*dt}
 for(const o of RG){if(o.l<=0)continue;o.l-=dt;if(o.l<=0){o.m.visible=false;continue}const k=1-o.l/o.mx,r=o.r0+(o.r1-o.r0)*(1-Math.pow(1-k,2));o.m.scale.set(r,r,1);o.m.material.opacity=(1-k)*o.op}
@@ -473,7 +499,7 @@ if(o.k==="crack"){const op=k>.85?1:Math.min(1,k*1.3)*(.75+.25*Math.sin(o.l*18));
 else if(o.k==="col"){o.o.material.opacity=.65*k;o.o.scale.set(1+(1-k)*.4,1,1+(1-k)*.4)}
 else if(o.k==="bolt")o.o.material.opacity=(Math.random()<.45?1:.35)*Math.min(1,k*2);
 else o.o.material.opacity=k}}
-function clear(){for(const o of FL){o.l=0;if(o.s)o.s.visible=false}for(const o of RG){o.l=0;o.m.visible=false}for(const o of TF)drop(o);TF.length=0}
+function clear(){if(MK){mkM.makeScale(0,0,0);for(let i=0;i<96;i++)MK.setMatrixAt(i,mkM);MK.instanceMatrix.needsUpdate=true}for(const o of FL){o.l=0;if(o.s)o.s.visible=false}for(const o of RG){o.l=0;o.m.visible=false}for(const o of TF)drop(o);TF.length=0}
 return{flare,ring,crack,column,bolt,slash,splat,impact,step,clear}})();
 const SPC={};const spm=c=>SPC[c]||(SPC[c]=new T.MeshBasicMaterial({color:c}));
 const gunCol=g=>g.coil?{col:0xa5d8ff,life:.16}:g.glow?{col:g.r>=5?0xf0abfc:0x67e8f9,life:.12}:g.multi?{col:0xffa24a,life:.1}:g.scope&&g.d>=100?{col:0xfff1b0,life:.16}:g.pel>1?{col:0xffd070,life:.08}:{col:0xffe9a0,life:.09};
@@ -499,6 +525,7 @@ if(e.corr)Fx.burst({x:q.x,y:q.y+1,z:q.z},0xb050ff,14,6,.1,3,16);snd(e.corr?"cdie
 // ---------- hud helpers ----------
 const flash=(t,ms)=>{const m=$("msg");m.textContent=t;m.classList.remove("pop");void m.offsetWidth;m.classList.add("pop");clearTimeout(flash.t);flash.t=setTimeout(()=>{m.textContent="";m.classList.remove("pop")},ms||1600)};
 let hmT=0,dmgT=0;
-const hitMark=head=>{const h=$("hm");h.classList.toggle("hd",!!head);h.style.opacity=1;clearTimeout(hmT);hmT=setTimeout(()=>h.style.opacity=0,110)};
+// hitmarker pops out and settles; a kill shows a bigger, longer one
+const hitMark=(head,kill)=>{const h=$("hm");h.classList.toggle("hd",!!head);h.classList.remove("pop","kl");void h.offsetWidth;h.classList.add(kill?"kl":"pop");h.style.opacity=1;clearTimeout(hmT);hmT=setTimeout(()=>h.style.opacity=0,kill?260:120)};
 const dmgFlash=()=>{const d=$("dmg");d.style.opacity=1;clearTimeout(dmgT);dmgT=setTimeout(()=>d.style.opacity=0,140)};
 function toast(t,ms){const c=$("toasts"),d=document.createElement("div");d.className="toast";d.textContent=t;c.appendChild(d);setTimeout(()=>{d.classList.add("out");setTimeout(()=>d.remove(),400)},ms||2600);while(c.children.length>4)c.firstChild.remove()}

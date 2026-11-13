@@ -14,7 +14,7 @@ function fire(){
 if(CustomBattle.active&&!CustomBattle.canShoot)return;
 if(!isGame()||P.fz>0||P.dead>0||rL>0||P.em||mode==="parkour")return;if(slot===1)return stab();if(A.rl>0)return;
 const g=cg(),now=performance.now()/1000;if(now<nextShot)return;if(A.mag<=0){gunSnd(g,"dry");nextShot=now+.25;reload();return}if(mode==="range"&&rs<=0)return;
-nextShot=now+g.t/PU.rate;A.mag--;if(mode==="range"){rs--;rNow=0;if(rs<=0)setTimeout(()=>{if(state==="play"&&mode==="range")endGame(true)},1300)}tf("shoot");cam.updateMatrixWorld();
+nextShot=now+g.t/PU.rate;A.mag--;P.fk=P.fk||{x:0,v:0};P.fk.v+=Tune.n("fx.fovKick",9,0,40)*clamp(.35+g.d/60,.35,1.4)*((g.pel||1)>1?1.3:1);if(mode==="range"){rs--;rNow=0;if(rs<=0)setTimeout(()=>{if(state==="play"&&mode==="range")endGame(true)},1300)}tf("shoot");cam.updateMatrixWorld();
 const tg=gatherTargets(),pel=g.pel||1,acc=new Map(),ax=Aim.x,ay=Aim.y,
 spr=curSpread(g),tf2=Math.tan(cam.fov*.00872665),asp=cam.aspect,mzp=muzzleWorld(),gc=gunCol(g);let lastEnd=null;
 for(let i=0;i<pel;i++){
@@ -27,7 +27,7 @@ else if(u.en){if(u.en.fighter){const a=acc.get(u.en)||{n:0,head:0};a.n++;if(u.he
 // Battle Pass and newly added guns may omit hs; use their rarity's headshot bonus.
 else{const hs=Number.isFinite(g.hs)&&g.hs>0?g.hs:(RM.hs[g.r]||2);hurtE(u.en,g.d*gFall(g,h.distance)*(u.head?hs/2:1),u.head,end)}}
 else if(u.tgt)tgtHit(h.object)}
-else if(dw<90)Gfx.impact(end,gc,g,pel>1&&i>1);
+else if(dw<90)Gfx.impact(end,gc,g,pel>1&&i>1,d);
 Fx.tracer(mzp,end,gc.col,(pel>1?.012:.022)+g.r*.0035,gc.life);if(!pel&&(g.glow||g.coil||g.r>=4))Fx.tracer(mzp,end,gc.col,.06+g.r*.01,gc.life*.8)}
 if(mode==="range"){if(rNow){rHit++;rCur++;rBest=Math.max(rBest,rCur)}else rCur=0}
 acc.forEach((a,f)=>Party.shoot(f,g,!!a.head,a.n));

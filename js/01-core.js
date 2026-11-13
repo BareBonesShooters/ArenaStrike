@@ -20,6 +20,10 @@ const $=id=>document.getElementById(id),T=THREE,rnd=Math.random;
 // (r128 lit per vertex, so a lamp beside a big wall barely showed), so lamps are trimmed overall by gfx.pointK to keep night maps moody.
 const LU=v=>v*Math.PI*Tune.n("gfx.lightK",1,.3,3),PLD=.25,PLR=(range,dec)=>range*(1.3-.29*dec),PLK=(range,dec)=>Math.PI*(.54-.06*dec)*Math.pow(range,PLD)*Tune.n("gfx.pointK",.7,.2,4);
 const pk=a=>a[Math.floor(rnd()*a.length)],clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
+// damped spring shared by recoil, landing, flinch and camera: s={x,v} moves toward target; k = stiffness, c = damping. Steps are capped so a slow frame can't blow it up
+const spring=(s,t,k,c,dt)=>{dt=Math.min(dt,.05);s.v+=((t-s.x)*k-s.v*c)*dt;s.x+=s.v*dt;return s.x};
+// hit-stop: the game world nearly freezes for a few hundredths of a second on a kill, so kills land with weight. Offline only (it would desync online play)
+const HitStop=(()=>{let t=0;return{kill(s){if(typeof PT!=="undefined"&&PT.on)return;t=Math.max(t,s*Tune.n("fx.hitStop",1,0,3))},k(raw){if(t<=0)return 1;t-=raw;return .06},clear(){t=0}}})();
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cleanName=s=>String(s||"").replace(/[^\p{L}\p{N} _.\-]/gu,"").trim().slice(0,12);
 const hex6=c=>"#"+("000000"+c.toString(16)).slice(-6);

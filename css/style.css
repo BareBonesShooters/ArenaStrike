@@ -277,6 +277,9 @@ body.scoping #scopeov{opacity:1;transform:none}body.scoping #cross{opacity:0}
 #hm{position:absolute;left:-14px;top:-14px;width:28px;height:28px;opacity:0;transition:opacity .1s}
 #hm::before,#hm::after{content:"";position:absolute;left:13px;top:-2px;width:2px;height:32px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);transform:rotate(45deg)}
 #hm::after{transform:rotate(-45deg)}#hm.hd::before,#hm.hd::after{background:#f43f5e}
+#hm.pop{animation:hmPop .12s ease-out}#hm.kl{animation:hmKill .26s ease-out}#hm.kl::before,#hm.kl::after{background:#f43f5e;width:3px}
+@keyframes hmPop{from{transform:scale(1.45)}to{transform:scale(1)}}@keyframes hmKill{0%{transform:scale(1.9) rotate(0)}40%{transform:scale(1.15) rotate(8deg)}100%{transform:scale(1.25) rotate(0)}}
+@media (prefers-reduced-motion:reduce){#hm.pop,#hm.kl{animation:none}}
 
 #toasts{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:var(--z-toast);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
 .toast{padding:10px 18px;border-radius:99px;background:rgba(10,16,32,.86);border:1px solid var(--rim);font-weight:600;font-size:.92rem;box-shadow:var(--shadow);animation:tin .32s var(--ease);transition:opacity .25s ease-out,transform .25s ease-out}

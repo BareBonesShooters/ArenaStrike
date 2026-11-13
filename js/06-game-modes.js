@@ -30,6 +30,13 @@ function steer(e,tx,tz,dt,spd,near,far,strafe){
 const p=e.g.position,ex=tx-p.x,ez=tz-p.z,dist=Math.hypot(ex,ez)||1,ux=ex/dist,uz=ez/dist,fw=dist>far?1:dist<near?-.7:0,st=strafe*e.sd;
 let vx=ux*fw-uz*st,vz=uz*fw+ux*st;
 if(e.esc>0){e.esc-=dt;const c=Math.cos(e.ea),s=Math.sin(e.ea);if(!fw&&!st){vx=ux;vz=uz}const nx=vx*c-vz*s,nz=vx*s+vz*c;vx=nx;vz=nz}
+if(e.t==="mon"&&!e.boss){
+// hordes: push away from close neighbours so they spread out instead of stacking in one file, then ease the velocity toward the wanted one,
+// so monsters build up speed and swing wide through turns
+let sx=0,sz=0;const R=(e.rad||.5)*1.2;
+for(const o of E){if(o===e||o.t!=="mon"||o.hp<=0||!o.g)continue;const q=o.g.position,dx=p.x-q.x,dz=p.z-q.z,rr=R+(o.rad||.5)*1.2,d2=dx*dx+dz*dz;if(d2<rr*rr&&d2>1e-4){const d=Math.sqrt(d2),w=(rr-d)/rr;sx+=dx/d*w;sz+=dz/d*w}}
+const ks=Tune.n("mon.sep",1.3,0,4);vx+=sx*ks;vz+=sz*ks;const m=Math.hypot(vx,vz);if(m>1){vx/=m;vz/=m}
+const k=1-Math.exp(-dt*Tune.n("mon.accel",4.5,1,20));e.svx=(e.svx||0)+(vx-(e.svx||0))*k;e.svz=(e.svz||0)+(vz-(e.svz||0))*k;vx=e.svx;vz=e.svz}
 const want=Math.hypot(vx,vz),mv=want>.05?stepEnt(p,vx*spd,vz*spd,dt,e.rad||.5):false;
 // snap monster feet to floor so they don't float or sink into stairs
 const fl=floorAt(p.x,p.z,p.y+1.2);if(Math.abs((p.y||0)-fl)>.02&&!e.em)p.y=fl;
@@ -237,6 +244,7 @@ else if(PU.crit>0&&rnd()<PU.crit){d*=2;wasCrit=true}
 if(e.t==="mon")d=LV.toMon(e,d,head);
 if(!Number.isFinite(d))return;
 e.hp-=d;if(e.t==="mon")monBar(e);if(e.t==="bot")botBar(e);snd(head?"head":"hit");hitMark(head);hurtFlash(e.g,true);e.hf=.09;e.alert=1;
+{const big=d>=(e.hpMax||100)*.28;hitReact(e.g,P.x,P.z,big?1.6:1,head);if(big&&e.t==="mon"&&e.hp>0)e.stg=Math.max(e.stg||0,.35)}
 if(wasCrit)critFx(pt||{x:e.g.position.x,y:e.g.position.y+1.2,z:e.g.position.z});
 else if(pt){Fx.burst(pt,e.t==="mon"?0x77ff55:0xff5a4a,head?9:5,4,.07,1.5,16);Gfx.flare(pt,e.t==="mon"?0xb7ff7a:0xff8a7a,head?1.5:.9,.1)}
 if(e.hp<=0)killE(e,head)}
@@ -245,7 +253,7 @@ const i=E.indexOf(e);if(i<0)return;E.splice(i,1);
 if(e.tag){e.g.remove(e.tag);dropModel(e.tag)}
 hurtFlash(e.g,false);dying.push(deathInit(e.g,P.x,P.z,head,e.t==="mon"));
 Fx.burst({x:e.g.position.x,y:e.g.position.y+1,z:e.g.position.z},e.t==="mon"?0x66ff44:0xff4444,18,6,.1,3,18);if(e.t==="mon"){monDeathFx(e);Phase.onKill(e)}
-snd("kill");streakSnd();kills++;qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
+snd("kill");snd("ktick",.7);hitMark(head,true);HitStop.kill(head?.07:.045);streakSnd();kills++;qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
 if(e.t==="mon"){S.coins+=Math.max(1,Math.round((.6+wave*.1)*PU.coin*(e.elite?5:1)*(e.champion?8:1)*LV.coinMul()));if(PU.kh)P.hp=Math.min(P.max,P.hp+PU.kh);const gain=Math.round((8+wave*2+(e.boss?40:e.k===2?18:e.k===1?12:6))*(head?1.25:1)*(e.elite?3:1)*(e.champion?4:1)*LV.xpMul());addXP(gain);LV.onDeath(e)}
 else{S.coins+=1;
 if(mode==="gg"){myS++;ggL=myS;
@@ -396,7 +404,9 @@ const R=(1-d.acc)*(.35+dist*.03)+e.err+mv*.09+(P.gr?0:.35),ox=(rnd()+rnd()-1)*R,
 const tx=P.x+lx*ox,ty=P.y+1.1-.4*P.crouch+oy,tz=P.z+lz*ox,dx=tx-a.x,dy=ty-a.y,dz=tz-a.z,dl=Math.hypot(dx,dy,dz)||1,len=Math.min(dl+(ok?0:5),90),mzOk=los(p.x,1.35,p.z,a.x,a.y,a.z), // the muzzle sits ahead of the bot: if a wall is between body and muzzle the round dies in that wall
 wall=mzOk?rayWorld(a.x,a.y,a.z,dx/dl,dy/dl,dz/dl,len):0;
 const end=new T.Vector3(a.x+dx/dl*Math.min(len,wall),a.y+dy/dl*Math.min(len,wall),a.z+dz/dl*Math.min(len,wall));
-Fx.tracer(a,end,0xff8866,.03);if(wall<len)Fx.burst(end,0xffe9a0,3,3,.05,1,12);
+Fx.tracer(a,end,0xff8866,.03);if(wall<len)Gfx.impact(end,{col:0xffe9a0},{},true,{x:dx/dl,y:dy/dl,z:dz/dl});
+if(!(ok&&wall>=dl-.1)){const c=cam.position,ux=dx/dl,uy=dy/dl,uz=dz/dl,t=clamp((c.x-a.x)*ux+(c.y-a.y)*uy+(c.z-a.z)*uz,0,Math.min(len,wall)),qx=a.x+ux*t-c.x,qy=a.y+uy*t-c.y,qz=a.z+uz*t-c.z,cd=Math.hypot(qx,qy,qz);
+if(cd<1.6&&t<Math.min(len,wall)-.5)snd("whizz",clamp(1.3-cd*.6,.3,1),.9+rnd()*.25)}
 e.err+=.14;snd("sh",clamp(1-dist/70,.12,.55),.8);
 if(ok&&wall>=dl-.1)hit(d.dmg*clamp(1.2-dist/90,.5,1),p)}
 function botStep(e,dt){
@@ -440,7 +450,9 @@ if(e.boss)return bossStep(e,dt);if(e.em>0)return emergeStep(e,dt,ex,ez);
 if(e.hf>0){e.hf-=dt;if(e.hf<=0)hurtFlash(g,false)}
 if(P.fz>0||rL>0||menuOpen){poseMon(g,dt);return}
 if(e.frz&&Phase.frozen(e,dist,dt))return;
-g.rotation.y=turnTo(g.rotation.y,Math.atan2(ex,ez),dt*8);
+{// face where they walk; turn to the player only when close or standing
+const hv=Math.hypot(e.svx||0,e.svz||0),walk=hv>.45&&dist>2.8;g.rotation.y=turnTo(g.rotation.y,walk?Math.atan2(e.svx,e.svz):Math.atan2(ex,ez),dt*(walk?5:8))}
+if(e.stg>0)e.stg-=dt;
 if(P.dead>0){poseMon(g,dt);return}
 if(e.hop){Nav.hopStep(e,dt);return}
 const gh=!!e.ghost,ly0=p.y-(e.yo||0)-(e.hv||0);p.y=ly0;const rng=gh||e.k===1||e.k===5;
@@ -450,7 +462,10 @@ e.vt-=dt;if(e.vt<=0){e.vt=.18+rnd()*.1;e.vis=los(p.x,p.y+.35,p.z,P.x,p.y+.35,P.z
 e.hc-=dt;let tx=P.x,tz=P.z,nr=0,fr=rng?10:1.4,sd=rng&&dist<12?.8:0;
 if(gh)nr=5.5;
 if(!e.vis){const w=Nav.next(p.x,p.z);if(w){tx=w.x;tz=w.z;fr=.1;sd=0;if(w.hop&&e.hc<=0&&Math.hypot(w.x-p.x,w.z-p.z)<1.35){Nav.hopStart(e,w.x,w.z,w.y,w.rise,.5+w.rise*.12);return}}}
-const sp=steer(e,tx,tz,dt,gh?e.spd*1.05:e.spd,e.vis?nr:0,fr,sd);
+else if(!rng&&!gh&&dist<7&&dist>1.5){
+// surround: each melee monster keeps its own side of the player (within 75 degrees of where it comes from), so a pack closes in from several sides instead of queuing
+if(e.sa===undefined)e.sa=rnd()*6.283;const th=Math.atan2(-ex,-ez);let da=e.sa-th;da=Math.atan2(Math.sin(da),Math.cos(da));const a=th+clamp(da,-1.3,1.3),r=1.25;tx=P.x+Math.sin(a)*r;tz=P.z+Math.cos(a)*r}
+const sp=steer(e,tx,tz,dt,(gh?e.spd*1.05:e.spd)*(e.stg>0?.3:1),e.vis?nr:0,fr,sd);
 // wedged for ~3 s with a long way to go: burrow under and come up further along the route
 e.pt-=dt;if(e.pt<=0){e.pt=.5;e.stk=Math.hypot(p.x-e.px,p.z-e.pz)<.18&&dist>(rng?10.5:2.4)&&!e.wu?e.stk+1:0;e.px=p.x;e.pz=p.z;if(e.stk>=6)monUnstick(e)}
 // keep feet on floor (steer already snaps; light bob only)
