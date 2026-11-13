@@ -85,10 +85,49 @@ for (const m of MODES) {
 }
 await g.close();
 
+// phone pass: a landscape and a portrait phone. The touch controls must be built, a match must start and run from touch input
+// (a drag on the move pad, a tap on fire), and no menu page may scroll sideways.
+if (!opt("modes") || argv.includes("--phone")) for (const [w, h] of [[844, 390], [390, 844]]) {
+  const name = `phone ${w}x${h}`, fails = [];
+  const pg = await openGame({ tier: 3, width: w, height: h, mobile: true });
+  try {
+    const p = pg.page;
+    const ui = await p.evaluate(() => ({ touch: document.body.classList.contains("touch"), tc: !!document.getElementById("tc"), mob: document.documentElement.classList.contains("mobile-ui") }));
+    if (!ui.touch || !ui.tc) fails.push("touch controls not built " + JSON.stringify(ui));
+    const wide = await p.evaluate(async () => {
+      try { Title.end(); } catch (e) {} state = "lobby"; show("lobby");
+      const out = []; const wait = ms => new Promise(r => setTimeout(r, ms));
+      for (const pgn of ["shop", "settings", "loadout", "quests"]) { try { openPage(pgn); } catch (e) { continue; } await wait(250);
+        const sw = document.documentElement.scrollWidth, iw = innerWidth; if (sw > iw + 2) out.push(`${pgn} page is ${sw}px wide on a ${iw}px screen`); }
+      try { show("lobby"); } catch (e) {} return out; });
+    fails.push(...wide);
+    await p.evaluate(() => { state = "lobby"; startGame0("waves"); });
+    await sleep(400);
+    await p.waitForFunction(() => !(P.fz > 0), null, { timeout: 5000 }).catch(() => {}); // the start countdown freezes the player
+    const fr0 = await p.evaluate(() => fr), x0 = await p.evaluate(() => [P.x, P.z]);
+    const pad = await p.evaluate(() => { const r = document.getElementById("tz"); const b = r.getBoundingClientRect(); return { x: b.left + Math.min(90, b.width * .3), y: b.top + b.height * .7 }; });
+    const cdp = await p.context().newCDPSession(p);
+    const touch = (type, x, y) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints: type === "touchEnd" ? [] : [{ x, y, id: 1 }] });
+    await touch("touchStart", pad.x, pad.y);
+    for (let i = 1; i <= 8; i++) { await touch("touchMove", pad.x, pad.y - i * 8); await sleep(60); }
+    await sleep(500); await touch("touchEnd");
+    const st = await p.evaluate(() => ({ state, fr, x: P.x, z: P.z, err: loopErr, nan: !Number.isFinite(P.x + P.z + cam.position.y) }));
+    if (st.state !== "play") fails.push("phone match not in play: " + st.state);
+    if (st.fr - fr0 < 10) fails.push("loop barely ran on the phone");
+    if (st.err) fails.push("main loop error: " + st.err);
+    if (st.nan) fails.push("player or camera went NaN");
+    if (Math.hypot(st.x - x0[0], st.z - x0[1]) < .3) fails.push("dragging the move pad did not move the player");
+    await p.evaluate(() => quit());
+  } catch (e) { fails.push(e.message.split("\n")[0]); }
+  fails.push(...pg.errors);
+  results.push({ m: name, fails });
+  await pg.close();
+}
+
 const bad = results.filter(r => r.fails.length);
 console.log(`smoke: ${results.length - bad.length}/${results.length} modes passed in ${((Date.now() - t0) / 1000).toFixed(1)}s`);
 for (const r of results) {
-  console.log(`  ${r.fails.length ? "FAIL" : "ok  "} ${r.m.padEnd(8)}${r.fps != null ? ` ${r.fps.toFixed(0)} fps, ${r.enemies} enemies` : ""}`);
+  console.log(`  ${r.fails.length ? "FAIL" : "ok  "} ${r.m.padEnd(16)}${r.fps != null ? ` ${r.fps.toFixed(0)} fps, ${r.enemies} enemies` : ""}`);
   for (const f of r.fails) console.log("         " + f.slice(0, 300));
 }
 process.exit(bad.length ? 1 : 0);

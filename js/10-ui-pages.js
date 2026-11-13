@@ -722,6 +722,8 @@ function settingsHTML(){return`<div class="sec"><h3>Settings</h3>
 <div class="row"><span>Mouse sensitivity</span><span class="sm" data-sv="sens">${S.sens.toFixed(2)}</span></div><input type="range" min=".3" max="2.5" step=".05" value="${S.sens}" data-i="sens" aria-label="Mouse sensitivity">
 <div class="row"><span>Scoped sensitivity</span><span class="sm" data-sv="ssens">${S.ssens.toFixed(2)}</span></div><input type="range" min=".4" max="1.6" step=".05" value="${S.ssens}" data-i="ssens" aria-label="Scoped sensitivity">
 <div class="row"><span>Field of view</span><span class="sm" data-sv="fov">${Math.round(S.fov||75)}°</span></div><input type="range" min="60" max="100" step="1" value="${S.fov||75}" data-i="fov" aria-label="Field of view">
+<div class="row"><span>Frame rate limit</span></div><select data-i="fps" aria-label="Frame rate limit"><option value="0"${+(S.opt&&S.opt.fps)?"":" selected"}>No limit</option><option value="60"${(S.opt&&+S.opt.fps===60)?" selected":""}>60 fps</option><option value="30"${(S.opt&&+S.opt.fps===30)?" selected":""}>30 fps (cooler, longer battery)</option></select>
+<div class="row"><span>Battery saver</span></div><select data-i="bsave" aria-label="Battery saver"><option value="auto"${(!S.opt||!S.opt.bsave||S.opt.bsave==="auto")?" selected":""}>Auto (30 fps when the battery is low)</option><option value="on"${(S.opt&&S.opt.bsave==="on")?" selected":""}>Always on (30 fps)</option><option value="off"${(S.opt&&S.opt.bsave==="off")?" selected":""}>Off</option></select>
 <div class="row"><span>Comfort mode</span></div><select data-i="comfort" aria-label="Comfort mode"><option value="0"${S.comfort?"":" selected"}>Off</option><option value="1"${S.comfort?" selected":""}>On (no camera shake, head bob, FOV kick or screen flashes)</option></select>
 <div class="row"><span>Head bob</span><span class="sm" data-sv="bob">${Math.round((S.bob==null?1:S.bob)*100)}%</span></div><input type="range" min="0" max="1.5" step=".05" value="${S.bob==null?1:S.bob}" data-i="bob" aria-label="Head bob strength">
 <div class="row"><span>Volume</span></div><input type="range" min="0" max="1" step=".05" value="${S.vol}" data-i="vol" aria-label="Volume"><div class="row"><span>Music</span></div><input type="range" min="0" max="1" step=".05" value="${S.mvol}" data-i="mvol" aria-label="Music volume"><div class="row" style="opacity:.8;font-size:12px"><span>Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</span></div>
@@ -1035,6 +1037,8 @@ sens(t){S.sens=clamp(+t.value||1,.3,2.5);sv();syncSliders()},
 ssens(t){S.ssens=clamp(+t.value||1,.4,1.6);sv();syncSliders()},
 bob(t){S.bob=clamp(+t.value,0,1.5);sv();syncSliders()},
 comfort(t){S.comfort=t.value==="1";document.body.classList.toggle("comfort",S.comfort);sv();toast(S.comfort?"Comfort mode on":"Comfort mode off")},
+fps(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.fps=+t.value||0;sv();Q.reset();toast(S.opt.fps?"Frame rate limited to "+S.opt.fps:"No frame rate limit")},
+bsave(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.bsave=t.value;sv();Q.reset();toast(t.value==="on"?"Battery saver on (30 fps)":t.value==="off"?"Battery saver off":"Battery saver: automatic")},
 fov(t){S.fov=clamp(Math.round(+t.value||75),60,100);sv();syncSliders()},
 vol(t){setVol(clamp(+t.value,0,1));sv();syncSliders()},
 mvol(t){S.mvol=clamp(+t.value,0,1);Mus.go();sv();syncSliders()},

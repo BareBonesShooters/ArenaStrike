@@ -25,10 +25,11 @@ export function serve() {
 }
 
 // settings written into the save before the game loads: no tutorial prompt, fixed tier, Auto off
-export async function openGame({ tier = 1, width = 1280, height = 720, seed = 1234, extra = {} } = {}) {
+// mobile: true opens a touch phone (coarse pointer, touch events, ?touch=1), so the touch controls and phone layout are built
+export async function openGame({ tier = 1, width = 1280, height = 720, seed = 1234, extra = {}, mobile = false } = {}) {
   const { srv, url } = await serve();
   const browser = await chromium.launch({ headless: true, args: ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--autoplay-policy=no-user-gesture-required"] });
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1, ...(mobile ? { isMobile: true, hasTouch: true } : {}) });
   const errors = [];
   page.on("pageerror", e => errors.push("pageerror: " + (e.stack || e.message || e)));
   page.on("console", m => { if (m.type() === "error") errors.push("console: " + m.text()); });
@@ -42,7 +43,7 @@ export async function openGame({ tier = 1, width = 1280, height = 720, seed = 12
     } catch (e) {}
     window.__HARNESS = true;
   }, { tier, seed, extra });
-  await page.goto(url + "index.html");
+  await page.goto(url + "index.html" + (mobile ? "?touch=1" : ""));
   await page.waitForFunction(() => typeof startGame0 === "function" && typeof Q === "object" && typeof rd === "object", null, { timeout: 30000 });
   await page.waitForTimeout(800);
   const close = async () => { await browser.close(); srv.close(); };

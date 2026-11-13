@@ -78,8 +78,13 @@ rd.domElement.addEventListener("webglcontextrestored",()=>{
 try{if(S.auto&&S.gfx<QL.length-1){Q.set(S.gfx+1);S.ac=S.gfx;sv();toast("Graphics driver reset. Lowered to "+QL[S.gfx].n)}else Q.set(S.gfx)}catch(e){}});
 
 let lastT=performance.now(),clock=0,loopErr="",fr=0;
+// frame cap: a chosen limit (S.opt.fps 60 or 30), or 30 from the battery saver (always on, or "auto" when the battery is low and not charging).
+// Skipped display refreshes leave the GPU idle, which is what saves heat and battery on phones and 120 Hz screens.
+const Batt={low:false};try{if(navigator.getBattery)navigator.getBattery().then(b=>{const up=()=>{const w=Batt.low;Batt.low=!b.charging&&b.level<=.2;if(Batt.low&&!w&&(!S.opt||S.opt.bsave!=="off"))try{toast("Battery low: frame rate capped at 30 to save power")}catch(e){}};up();b.addEventListener("levelchange",up);b.addEventListener("chargingchange",up)}).catch(()=>{})}catch(e){}
+function fpsCap(){const o=S.opt||{},bs=o.bsave==="on"||(o.bsave!=="off"&&Batt.low);return bs?30:(+o.fps||0)}
 function loop(now){
 requestAnimationFrame(loop);
+const fcap=fpsCap();if(fcap&&now-lastT<1000/fcap-2)return;
 const raw=now-lastT,dt=Math.min(.05,Math.max(0,raw/1000));lastT=now;clock+=dt;fr++;
 try{
 const playing=state==="play",paused=state==="pause";
@@ -87,7 +92,7 @@ const playing=state==="play",paused=state==="pause";
 if(!playing&&!paused&&state!=="title"&&fr%(S.gfx>2?(SOFT?6:3):2)){return}
 // a paused scene is static, so it only needs an occasional redraw
 if(paused&&fr%(S.gfx>2?4:2)){return}
-if(playing){update(dt*Death.frame(dt)*HitStop.k(dt));Q.tick(raw)}
+if(playing){update(dt*Death.frame(dt)*HitStop.k(dt));Q.tick(fcap?Math.max(1,raw-(1000/fcap-1000/60)):raw)}
 else if(state==="title"){Title.frame(dt,clock)}
 else if(!paused){
 const a=.72+Math.sin(clock*.035)*.075;

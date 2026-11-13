@@ -22,7 +22,7 @@ function showMessage(text) {
   d.id = "nogl";
   d.setAttribute("role", "alert");
   d.style.cssText = "position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:#0a1020;color:#e8eef8;font:16px/1.5 system-ui,sans-serif;text-align:center";
-  d.innerHTML = "<div style='max-width:420px'><h2 style='margin:0 0 12px;font-size:22px'>This device can't run Arena Strike 3D</h2><p style='margin:0'>" + text + "</p></div>";
+  d.innerHTML = "<div style='max-width:420px'><h2 style='margin:0 0 12px;font-size:22px'>This device can't run Arena Strike</h2><p style='margin:0'>" + text + "</p></div>";
   document.body.appendChild(d);
 }
 

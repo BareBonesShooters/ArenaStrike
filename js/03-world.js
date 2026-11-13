@@ -50,10 +50,10 @@ ico:new T.IcosahedronGeometry(.5,0).toNonIndexed(),sph:new T.SphereGeometry(.5,1
 // bake: world props get shading baked into their vertex colours at build time, so it costs nothing per frame and Low and Potato get it too:
 // darker near the ground (contact shading), darker on faces that look down (eave and overhang undersides), and a slight tint per flat face
 class Batch{
-constructor(bake){this.p=[];this.n=[];this.c=[];this.i=0;this.k=bake?[Tune.n("gfx.aoGround",.4,0,.8),Tune.n("gfx.aoDown",.22,0,.8),Tune.n("gfx.faceVar",.06,0,.15)]:null}
+constructor(bake){this.p=[];this.n=[];this.c=[];this.w=null;this.i=0;this.k=bake?[Tune.n("gfx.aoGround",.4,0,.8),Tune.n("gfx.aoDown",.22,0,.8),Tune.n("gfx.faceVar",.06,0,.15)]:null}
 add(g,m,col,ao,br){const pa=g.attributes.position,na=g.attributes.normal,nm=NM3.getNormalMatrix(m),K=this.k,o=this.p.length,pi=++this.i,me=m.elements;C0.set(col);
 const dn=K?K[1]*Math.min(1,8/Math.max(Math.hypot(me[0],me[1],me[2]),Math.hypot(me[8],me[9],me[10]))):0;/* eaves and overhangs darken underneath; a whole ceiling or a big slab barely does */const r=C0.r*br,gg=C0.g*br,b=C0.b*br;
-for(let i=0;i<pa.count;i++){V0.set(pa.getX(i),pa.getY(i),pa.getZ(i));let sh=ao+(1-ao)*(V0.y+.5);V0.applyMatrix4(m);this.p.push(V0.x,V0.y,V0.z);const wy=V0.y;
+for(let i=0;i<pa.count;i++){V0.set(pa.getX(i),pa.getY(i),pa.getZ(i));let sh=ao+(1-ao)*(V0.y+.5);if(SWAY){if(!this.w)this.w=new Array(o/3).fill(0);this.w.push(SWAY*(.35+.65*(V0.y+.5)))}else if(this.w)this.w.push(0);V0.applyMatrix4(m);this.p.push(V0.x,V0.y,V0.z);const wy=V0.y;
 V0.set(na.getX(i),na.getY(i),na.getZ(i)).applyMatrix3(nm).normalize();this.n.push(V0.x,V0.y,V0.z);
 if(K){const gy=Math.min(1,Math.max(0,wy/1.4));sh*=1-K[0]*(1-gy)*(1-gy);if(V0.y<0)sh*=1+dn*V0.y}
 this.c.push(r*sh,gg*sh,b*sh)}
@@ -64,7 +64,9 @@ const ax=p[t+3]-p[t],ay=p[t+4]-p[t+1],az=p[t+5]-p[t+2],bx=p[t+6]-p[t],by=p[t+7]-
 let h=Math.imul(pi,73856093)^Math.imul(Math.round(nx/l*4)+9,19349663)^Math.imul(Math.round(ny/l*4)+9,83492791)^Math.imul(Math.round(nz/l*4)+9,40503);h=Math.imul(h^(h>>>15),2246822507);h^=h>>>13;
 const f=1+((h&1023)/511.5-1)*v,w=(((h>>>10)&1023)/511.5-1)*v*.5;
 for(let j=t;j<t+9;j+=3){c[j]*=f*(1+w);c[j+1]*=f;c[j+2]*=f*(1-w)}}}
-mesh(mat){const g=new T.BufferGeometry();g.setAttribute("position",new T.Float32BufferAttribute(this.p,3));g.setAttribute("normal",new T.Float32BufferAttribute(this.n,3));g.setAttribute("color",new T.Float32BufferAttribute(this.c,3));return new T.Mesh(g,mat)}}
+mesh(mat){const g=new T.BufferGeometry();g.setAttribute("position",new T.Float32BufferAttribute(this.p,3));g.setAttribute("normal",new T.Float32BufferAttribute(this.n,3));g.setAttribute("color",new T.Float32BufferAttribute(this.c,3));if(this.w)g.setAttribute("sw",new T.Float32BufferAttribute(this.w,1));return new T.Mesh(g,mat)}}
+// wind: while SWAY is non-zero, pieces added to a batch carry a sway weight (more toward their tops); the solid material bends them in the vertex shader
+let SWAY=0;
 
 // ---------- world: themes ----------
 const THEMES={
@@ -340,11 +342,11 @@ if(th.crystal){const hh=rr(3.5,7);P("cone",x,hh/2,z,1.5,hh,1.5,leaf,rng()*3,.55)
 // tapered trunk with root flares
 P("cyl",x,.7*t,z,.62,1.4*t,.62,th.trunk,0,.55);P("cyl",x,2.05*t,z,.44,1.4*t,.44,th.trunk,0,.6);
 const dk=lerpC(th.trunk,0x000000,.15);for(let i=0;i<3;i++){const a=i*2.09+rng();limb(x+Math.cos(a)*.22,.06,z+Math.sin(a)*.22,a,1.25,.6,.2,dk)}
-if(pine){for(let i=0;i<6;i++){const r=(2.5-i*.36)*t,lc=i&1?lerpC(leaf,0x000000,.1):leaf;P("cone",x,(1.9+i*.72)*t,z,r*1.6,1.35*t,r*1.6,lc,i*.7,.62);if(th.snow)P("cone",x,(2.1+i*.72)*t,z,r*1.1,.7*t,r*1.1,0xf4f8ff,i*.7,.95)}P("cone",x,6.2*t,z,.5*t,.9*t,.5*t,leaf,0,.7)}
+if(LOD.cloud>1)SWAY=.6;if(pine){for(let i=0;i<6;i++){const r=(2.5-i*.36)*t,lc=i&1?lerpC(leaf,0x000000,.1):leaf;P("cone",x,(1.9+i*.72)*t,z,r*1.6,1.35*t,r*1.6,lc,i*.7,.62);if(th.snow)P("cone",x,(2.1+i*.72)*t,z,r*1.1,.7*t,r*1.1,0xf4f8ff,i*.7,.95)}P("cone",x,6.2*t,z,.5*t,.9*t,.5*t,leaf,0,.7)}
 else{for(let i=0;i<3;i++){const a=i*2.09+rng()*.8;limb(x,2.2*t,z,a,.75,1.5*t,.17,th.trunk)}
 const lt=lerpC(leaf,0xffffff,.1),dl=lerpC(leaf,0x000000,.12);P("ico",x,3.9*t,z,3*t,2.5*t,3*t,leaf,rng()*3,.55);P("ico",x+.2*t,4.9*t,z-.1*t,1.9*t,1.6*t,1.9*t,lt,rng()*3,.62);
 for(let i=0;i<5;i++){const a=i*1.257+rng()*.5,r=1.35*t;P("ico",x+Math.cos(a)*r,(3.2+rng()*.7)*t,z+Math.sin(a)*r,(1.6+rng()*.5)*t,(1.4+rng()*.4)*t,(1.6+rng()*.5)*t,i&1?dl:lt,rng()*3,.6)}}
-return true};
+SWAY=0;return true};
 const crateAt=(x,z,s,stack)=>{const h=s*stack,col=pick([0x8b6b3d,0x9a7a48,0x7a5c34]);reg(x,z,s,s,h);
 // Keep crossing straps at different depths, and inset their ends from the lids.
 for(let i=0;i<stack;i++){P("box",x,s*(i+.5),z,s,s,s,col,0,.62);P("box",x,s*(i+.5),z,s+.06,s*.14,s+.06,0x4e3a20,0,.9);P("box",x,s*(i+.5),z,s*.14,s-.02,s+.08,0x4e3a20,0,.9)}return true};
@@ -472,11 +474,15 @@ grp.add(g);WORLD.flames.push({g,fl,halo,y:pedH+ch/2,ph,fixed:1})}
 WORLD.dv={vy:.15,top:6.8};
 mkMotes(grp,Math.max(8,Math.round(320*LOD.dust)),0xd8e4ff,.1,.5,6.5)}
 }
-if(!WORLD.dust&&!opt.parkour){const M=th.motes||{meadow:[0xfff0a8,.13,.75,10,.06],sunset:[0xffa24a,.15,.85,12,.45],frost:[0xffffff,.14,.9,12,-1.1],neon:[0x4ffff0,.12,.85,12,.55],desert:[0xffe6b0,.14,.8,12,.08],autumn:[0xffa84a,.15,.8,12,-.25],toxic:[0x9aff5a,.13,.85,12,.5]}[key];
-if(M){mkMotes(grp,Math.max(10,Math.round(220*LOD.dust)),M[0],M[1],M[2],M[3]);WORLD.dv={vy:M[4],top:M[3]}}}
+if(!WORLD.dust&&!opt.parkour){const M=th.motes||{meadow:[0xfff0a8,.13,.75,10,.06,.15],sunset:[0xffa24a,.15,.85,12,.45],frost:[0xffffff,.14,.9,12,-1.1,.55],neon:[0x4ffff0,.12,.85,12,.55],desert:[0xffe6b0,.12,.8,5,.05,2.4],autumn:[0xffa84a,.15,.8,12,-.25,.8],toxic:[0x9aff5a,.13,.85,12,.5]}[key];
+if(M){mkMotes(grp,Math.max(10,Math.round(220*LOD.dust)),M[0],M[1],M[2],M[3]);WORLD.dv={vy:M[4],top:M[3],wx:M[5]||0}}}
 if(opt.parkour)WORLD.course=PK.build({blk,reg,P,glow,rng,th,key,lerpC,grp,diff:opt.parkour,map:opt.pkmap});
 // finish geometry
-const smat=new T.MeshLambertMaterial({vertexColors:true});if(fxOn)fogFx(smat,"s");
+const smat=new T.MeshLambertMaterial({vertexColors:true});
+const amp0=(Tune.n("gfx.wind",.14,0,.4)*(th.snow?.6:1)).toFixed(3);
+if(solid.w){const amp=+amp0;smat.onBeforeCompile=sh=>{sh.uniforms.windT=Sky.u.time;sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nattribute float sw;uniform float windT;").replace("#include <begin_vertex>",`#include <begin_vertex>
+float wp=windT*1.6+position.x*.21+position.z*.17;transformed.xz+=sw*${amp.toFixed(3)}*vec2(sin(wp)+.4*sin(wp*2.7),.6*cos(wp*1.3));`)}}
+if(fxOn)fogFx(smat,"s"+(solid.w?"w"+amp0:""));
 const sm=solid.mesh(smat);sm.castShadow=true;sm.receiveShadow=true;grp.add(sm);
 if(glow.p.length){const gmesh=glow.mesh(WORLD.glowM=new T.MeshBasicMaterial({vertexColors:true}));grp.add(gmesh)}
 sc.add(grp);WORLD.group=grp;WORLD.theme=key;WORLD.seed=seed;
@@ -502,7 +508,7 @@ YardArt.frame(dt);
 if(WORLD.lvAnim)for(const f of WORLD.lvAnim)try{f(dt,t)}catch(e){}
 Sky.m.position.copy(cam.position);Sky.u.time.value=t;
 for(const l of WORLD.lights)l.intensity=l.userData.base*(.82+.18*Math.sin(t*7+l.userData.ph)*Math.sin(t*2.3+l.userData.ph*2)+(Math.sin(t*31+l.userData.ph)>.97?-.4:0));
-if(WORLD.dust){const dv=WORLD.dv||{vy:.15,top:6.8},a=WORLD.dust.geometry.attributes.position,up=dv.vy>0;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*dv.vy*(1+i%3*.4);if(up){if(y>dv.top)y=.2}else if(y<0)y=dv.top;a.setY(i,y);a.setX(i,a.getX(i)+Math.sin(t*.3+i)*dt*.1)}a.needsUpdate=true}
+if(WORLD.dust){const dv=WORLD.dv||{vy:.15,top:6.8},wx=(dv.wx||0)*(1+.6*Math.max(0,Math.sin(t*.23))*Math.sin(t*.71)),a=WORLD.dust.geometry.attributes.position,up=dv.vy>0;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*dv.vy*(1+i%3*.4);if(up){if(y>dv.top)y=.2}else if(y<0)y=dv.top;a.setY(i,y);let x=a.getX(i)+(Math.sin(t*.3+i)*.1+wx*(1+i%5*.15))*dt;if(x>H)x-=H*2;a.setX(i,x)}a.needsUpdate=true}
 if(WORLD.flames)for(const c of WORLD.flames){const f=.9+.1*Math.sin(t*9+c.ph)+.06*Math.sin(t*23+c.ph*3);c.fl.scale.set(f,.8+.4*f,f);c.halo.material.opacity=.5+.3*f;if(!c.fixed){c.g.position.y=c.y+Math.sin(t*.8+c.ph)*.12;c.g.rotation.y=t*.2+c.ph}}}
 
 

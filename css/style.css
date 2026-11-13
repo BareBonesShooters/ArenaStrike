@@ -806,7 +806,7 @@ body.dthfx canvas#bloom{opacity:.2}
 @media (prefers-reduced-transparency:reduce){canvas#bloom{display:none}}
 
 /* shop revamp: cases and finishers */
-.shtabs{margin-top:14px;padding:4px;width:max-content;max-width:100%;border-radius:99px;background:rgba(0,0,0,.28);border:1px solid var(--hair);gap:4px}
+.shtabs{flex-shrink:0;margin-top:14px;padding:4px;width:max-content;max-width:100%;border-radius:99px;background:rgba(0,0,0,.28);border:1px solid var(--hair);gap:4px}
 .shtabs .b{min-height:42px;padding:0 20px;font-size:.95rem;background:transparent;border-color:transparent;gap:8px;transition:background-color .2s var(--ease),color .2s var(--ease),transform .16s var(--ease)}
 .shtabs .b.on{background:rgba(255,138,61,.22);border-color:rgba(255,138,61,.55);color:#fff}
 .shtabs .gly{width:18px;height:18px;color:currentColor;filter:none}
