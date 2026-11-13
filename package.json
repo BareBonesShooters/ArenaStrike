@@ -13,6 +13,6 @@
     "hooks": "git config core.hooksPath tools/hooks && echo 'pre-commit hook on: npm run check runs before every commit'"
   },
   "devDependencies": {
-    "playwright-core": "1.63.0"
+    "playwright-core": "1.65.0"
   }
 }
