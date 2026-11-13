@@ -2,6 +2,7 @@
 // ---------- actions ----------
 function reload(){const g=cg();if(state!=="play"||menuOpen||A.rl>0||A.mag>=g.m&&mode!=="tut"||P.dead>0||slot!==0)return;A.rl=g.rl*PU.rl;gunSnd(g,"rl",1,A.rl);tf("reload")}
 function muzzleWorld(){
+if(TP.on()){const m=TP.mz();if(m)return m}
 const gb=VM.gb,g=cg(),k=Math.tan(cam.fov*.00872665)/Math.tan(.506145),mz=gb?gb.mz:{x:0,y:.02,z:-g.l/2-g.b-.07};
 return cam.localToWorld(new T.Vector3((.17+mz.x)*k,(-.17+mz.y)*k,-.4+mz.z))}
 // one cone for the bullets and the crosshair: half-angle as a tangent, so it is round on screen at any aspect ratio or zoom
@@ -32,7 +33,7 @@ Fx.tracer(mzp,end,gc.col,(pel>1?.012:.022)+g.r*.0035,gc.life);if(!pel&&(g.glow||
 if(mode==="range"){if(rNow){rHit++;rCur++;rBest=Math.max(rBest,rCur)}else rCur=0}
 acc.forEach((a,f)=>Party.shoot(f,g,!!a.head,a.n));
 if(PT.on)Party.sendFx(mzp,lastEnd,g);
-VM.kick(clamp(.4+g.d*.008,.4,1.2));VM.flash();gunSnd(g,"fire");Gfx.flare(mzp,gc.col,clamp(.45+g.d*(g.pel||1)*.006,.5,1.5),.06);if(!g.glow&&!g.coil&&!g.multi&&LOD.fx>.4)Fx.burst(cam.localToWorld(new T.Vector3(.22,-.14,-.45)),g.pel>1?0xd24a3a:0xd9a441,1,2.4,.045,2.6,20);
+VM.kick(clamp(.4+g.d*.008,.4,1.2));VM.flash();TP.kick(clamp(.4+g.d*.008,.4,1.2));gunSnd(g,"fire");Gfx.flare(mzp,gc.col,clamp(.45+g.d*(g.pel||1)*.006,.5,1.5),.06);if(!g.glow&&!g.coil&&!g.multi&&LOD.fx>.4)Fx.burst(TP.on()?mzp:cam.localToWorld(new T.Vector3(.22,-.14,-.45)),g.pel>1?0xd24a3a:0xd9a441,1,2.4,.045,2.6,20);
 P.rk+=clamp(.006+g.d*.0004,.006,.032);P.pitch+=clamp(.002+g.d*.0001,.002,.008);P.yaw+=(rnd()-.5)*.004;P.sp=Math.min(12,P.sp+(g.pel?4:3.5));
 if(A.mag<=0)reload()}
 function stab(){
@@ -124,6 +125,54 @@ for(let i=0;i<70;i++)conf+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;b
 w.innerHTML=conf+'<div class="t"><small>'+(first?"Course cleared":"Personal record")+'</small><b>'+(first?"First clear!":"New best!")+'</b><span>'+t.toFixed(1)+'s'+(first?"":"  ·  "+(prev-t).toFixed(1)+'s faster')+'</span></div>';
 document.body.appendChild(w);setTimeout(()=>{if(w.isConnected)w.remove()},3700);
 snd("win");setTimeout(()=>snd("win"),450);setTimeout(()=>snd("pick"),900);try{flashScreen("rgba(255,214,90,.9)")}catch(e){}}
+// ---------- third person in the offline modes: your own soldier holding your gun, an over-the-shoulder camera, V to switch, B swaps the shoulder ----------
+// shots still go from the camera through the crosshair (the body is not in any shot list); tracers and the flash start at the body's muzzle.
+// A lens scope (picture-in-picture glass) drops back to first person while you aim; emotes, death and parkour keep their own cameras.
+const TP=(()=>{
+let body=null,key="",dist=null,side=1,sideS=1,cy=null,fl=0,tip=0;
+const kOf=g=>(g.id||g.n)+"|"+eq().p+"|"+eq().s;
+const ok=()=>(state==="play"||state==="pause")&&!PT.on&&!CustomBattle.active&&mode!=="parkour";
+const want=()=>!!S.tp&&ok();
+const on=()=>want()&&!!body&&P.dead<=0&&!P.em&&!(scoped&&slot===0&&scopeOf(cg()).pip);
+function drop(){if(body){sc.remove(body);disposeGeo(body);body=null;key=""}}
+function make(g){drop();const ps=I(eq().p)||PS[0];
+body=mkHuman({body:ps.c,trim:ps.t,style:ps.sty,gun:g,gunSkin:I(eq().s)||SK[0]});
+body.traverse(o=>{if(o.isMesh&&o.material.visible!==false)o.castShadow=true});
+sc.add(body);key=kOf(g);dist=null;cy=null}
+function frame(dt){
+if(!want()){if(body)drop();return}
+const g=cg();if(!body||key!==kOf(g))make(g);
+const u=body.userData,spd=Math.hypot(P.vx,P.vz);
+body.visible=on()&&(dist==null||dist>.8);
+body.position.set(P.x,P.y,P.z);body.rotation.y=P.yaw+Math.PI; // faces the aim; the legs follow the direction of travel
+u.cr=Math.max(P.crouch,P.slide>0?1:0);u.sh=slot===0&&!(spd>7.5&&!firing)?1:0;u.rl=A.rl>0?1-A.rl/(g.rl*PU.rl):0;
+if(u.gun)u.gun.grp.visible=slot===0;
+poseHuman(body,dt,clamp(spd/7,0,1.2),clamp(1+2*P.pitch,-1.5,3.5),!P.gr&&!P.mantle);
+if(fl>0){fl-=dt;if(fl<=0)setMuzzle(body,false)}}
+function cam_(dt,lockd){
+P.eye+=((1.7-.62*P.crouch)-P.eye)*Math.min(1,dt*10);P.stepOff*=Math.exp(-dt*13);
+cy=cy==null||Math.abs(P.y-cy)>6?P.y:cy+(P.y-cy)*Math.min(1,dt*14);
+const cp=Math.cos(P.pitch),bx=Math.sin(P.yaw)*cp,by=-Math.sin(P.pitch),bz=Math.cos(P.yaw)*cp,rx=Math.cos(P.yaw),rz=-Math.sin(P.yaw);
+sideS+=(side-sideS)*Math.min(1,dt*8);
+const hy=cy+P.eye+Tune.n("tp.up",.2,-.3,.8),sd=sideS<0?-1:1,sx=rx*sd,sz=rz*sd;
+// shoulder offset shrinks against a wall on that side, then the camera backs off along the aim line until a wall (three rays: centre, above, below)
+let so=Math.abs(sideS)*Tune.n("tp.side",ads_()?.85:.75,0,1.4);try{so=Math.min(so,Math.max(0,rayWorld(P.x,hy,P.z,sx,0,sz,so+.4)-.28))}catch(e){}
+const px=P.x+sx*so,pz=P.z+sz*so,ads=scoped&&slot===0,w=ads?Tune.n("tp.adsDist",2,.8,3):Tune.n("tp.dist",3.1,1.5,5);
+let d=w;for(const oy of[0,.22,-.22]){try{d=Math.min(d,rayWorld(px,hy+oy,pz,bx,by+.0001,bz,w+.35)-.3)}catch(e){}}
+d=Math.max(.35,d);dist=dist==null||d<dist?d:dist+(d-dist)*Math.min(1,dt*(ads?10:4));
+P.ldS=P.ldS||{x:0,v:0};P.rkS=P.rkS||{x:0,v:0};if(P.landDip>0){P.ldS.v+=P.landDip*Tune.n("cam.land",13,0,40);P.landDip=0}
+const dip=clamp(spring(P.ldS,0,130,11,dt),-.08,.45)*.5,rk=spring(P.rkS,P.rk,Tune.n("cam.recoilK",320,60,900),24,dt);
+const amp=P.gr&&!lockd&&!P.mantle?Math.min(1,spd_()/8):0;P.bobA+=(amp-P.bobA)*Math.min(1,dt*8);const o=P.bobPh;P.bobPh+=dt*spd_()*1.15*(P.gr?1:0);
+if(P.bobA>.3&&Math.floor(P.bobPh/Math.PI)!==Math.floor(o/Math.PI))snd("step",(.5+P.bobA*.3)*(1-.65*P.crouch));
+cam.position.set(px+bx*dist,Math.max(cy+.3,hy+by*dist)-dip,pz+bz*dist);
+cam.rotation.set(P.pitch+rk*.6,P.yaw,0,"YXZ")}
+const spd_=()=>Math.hypot(P.vx,P.vz),ads_=()=>scoped&&slot===0;
+return{ok,on,drop,frame,cam:cam_,
+toggle(){S.tp=S.tp?0:1;sv();if(!S.tp)drop();flash(S.tp?"Third person view":"First person view",800);snd("ui",.6);if(S.tp&&!tip){tip=1;toast("Third person: V switches back, B swaps the shoulder")}},
+swap(){side=-side;snd("ui",.4)},
+kick(k){if(!body)return;body.userData.kick=Math.min(1.5,body.userData.kick+k);setMuzzle(body,true);fl=.05},
+mz(){const gn=body&&body.userData.gun;if(!gn)return null;body.updateMatrixWorld(true);return gn.mf.getWorldPosition(new T.Vector3())},
+head(){body.userData.head.updateWorldMatrix(true,false);return body.userData.head.getWorldPosition(new T.Vector3())}}})();
 // crosshair colour: red while the aim point is over an enemy, plus a little aim friction
 function aimProbe(){
 if(!isGame()||P.dead>0||P.em||slot!==0){Aim.setHot(false);return}
@@ -134,7 +183,7 @@ const h=tg.length?rc.intersectObjects(tg,false)[0]:null;Aim.setHot(!!h&&h.distan
 // ---------- per-frame game update ----------
 function update(dt){
 if(CustomBattle.active){CustomBattle.update(dt);return}
-if(mzT>0){mzT-=dt;mzL.intensity=Math.max(0,mzT/.07)*2.6*PLK(16,2);cam.getWorldDirection(fwd);mzL.position.copy(cam.position).addScaledVector(fwd,1.6)}else if(mzL.intensity)mzL.intensity=0;
+if(mzT>0){mzT-=dt;mzL.intensity=Math.max(0,mzT/.07)*2.6*PLK(16,2);cam.getWorldDirection(fwd);const tm=TP.on()&&TP.mz();if(tm)mzL.position.copy(tm);else mzL.position.copy(cam.position).addScaledVector(fwd,1.6)}else if(mzL.intensity)mzL.intensity=0;
 Aim.frame(dt,scoped);
 const g=cg(),lock=P.fz>0||P.dead>0||rL>0||(mode==="parkour"&&PK.st.celeb>0),K_=K;
 const f=lock?0:(K_.KeyW||K_.ArrowUp?1:0)-(K_.KeyS||K_.ArrowDown?1:0),s=lock?0:(K_.KeyD?1:0)-(K_.KeyA?1:0),sprint=!!(K_.ShiftLeft||K_.ShiftRight);
@@ -148,11 +197,11 @@ if(P.em){P.em.t+=dt;P.vx*=.85;P.vz*=.85;if(P.em.t>3.5)endEmote()}
 if(menuOpen){P.vx*=.8;P.vz*=.8}
 const stand=mode==="range";if(stand){P.vx=P.vz=0}
 movePlayer(dt,{f:menuOpen||stand?0:f,s:menuOpen||stand?0:s,sprint:sprint&&!stand,jump:!stand&&!lock&&!menuOpen&&!!K_.Space,crouch:!stand&&!menuOpen&&!lock&&!!(K_.AltLeft||K_.AltRight||K_.ControlLeft||K_.ControlRight)});
-updateCamera(dt,{f,s});updateFov(dt,g,{f,sprint});
+updateCamera(dt,{f,s});updateFov(dt,g,{f,sprint});TP.frame(dt);
 if(emo&&P.em){const dy=danceHuman(emo,P.em.t,P.em.k,P.yaw+Math.PI);emo.position.set(P.x,P.y+dy,P.z)}
 VM.set(g,I(eq().s),curKn(),I(eq().p));
 cam.getWorldDirection(fwd);const dw=rayWorld(cam.position.x,cam.position.y,cam.position.z,fwd.x,fwd.y,fwd.z,1);
-VM.frame(dt,{dyaw:angDiff(lastYaw,P.yaw),dpitch:P.pitch-lastPitch,speed:Math.hypot(P.vx,P.vz),vy:P.vy,gr:P.gr,scoped,reload:A.rl>0?1-A.rl/g.rl:0,slot,hide:!!P.em||P.dead>0||(mode==="parkour"&&(!pkKnifeOn()||pkView===3)),pull:dw<.95?1-dw/.95:0,knifeCD,charging:knifeCharging,charge:knifeCharge});
+VM.frame(dt,{dyaw:angDiff(lastYaw,P.yaw),dpitch:P.pitch-lastPitch,speed:Math.hypot(P.vx,P.vz),vy:P.vy,gr:P.gr,scoped,reload:A.rl>0?1-A.rl/g.rl:0,slot,hide:!!P.em||P.dead>0||(mode==="parkour"&&(!pkKnifeOn()||pkView===3))||TP.on(),pull:dw<.95?1-dw/.95:0,knifeCD,charging:knifeCharging,charge:knifeCharge});
 if(knifeCD>0)knifeCD=Math.max(0,knifeCD-dt);
 lastYaw=P.yaw;lastPitch=P.pitch;
 Scope.frame(g,scoped,cam.fov);

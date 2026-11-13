@@ -44,5 +44,6 @@ blackout(v){if(v<0)return restore();if(v>0&&!snap&&sc.fog)snap=take();TG=v>0?1:0
 get dark(){return K},
 frame(dt){shadows();
 if(snap){K+=(TG-K)*Math.min(1,dt*1.6);if(TG===0&&K<.01){restore();return}apply(K)}
-if(K>.01){cam.getWorldDirection(fw);flashL.position.copy(cam.position).addScaledVector(fw,.3);flashL.position.y-=.25;flashL.target.position.copy(cam.position).addScaledVector(fw,12);flashL.target.updateMatrixWorld();
+if(K>.01){cam.getWorldDirection(fw);const fo=typeof TP!=="undefined"&&TP.on()?TP.head():cam.position; // third person: the torch is on your head
+flashL.position.copy(fo).addScaledVector(fw,.3);flashL.position.y-=.25;flashL.target.position.copy(fo).addScaledVector(fw,12);flashL.target.updateMatrixWorld();
 flashL.intensity=K*(state==="play"||state==="pause"?1.7*PLK(34,1.2):0)}else if(flashL.intensity)flashL.intensity=0}}})();

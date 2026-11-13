@@ -390,7 +390,7 @@ const controlsActive=()=>document.body.classList.contains("playing")||(CustomBat
 new MutationObserver(()=>{if(!controlsActive())resetTouch()}).observe(document.body,{attributes:true,attributeFilter:["class"]});
 let lastPlay=false,lastFlight=false;
 setInterval(()=>{const playing=controlsActive();d.classList.toggle("mobile-flight",flight()&&state==="play"&&!menuOpen);
-if(d.dataset.m!==mode)d.dataset.m=mode;
+if(d.dataset.m!==mode)d.dataset.m=mode;d.classList.toggle("tpok",TP.ok());
 const sw=$("tsw");const want=slot===1?"GUN":"KNIFE";if(sw.textContent!==want)sw.textContent=want;
 if(!(slot===0))$("tad").style.opacity=.35;else $("tad").style.opacity="";
 if(playing&&!lastPlay){ep.classList.remove("open");$("tcr").classList.remove("lk");set("ControlLeft",false)}

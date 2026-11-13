@@ -143,7 +143,7 @@ Object.assign(P,{x:s.x,y:0,z:s.z,vx:0,vz:0,vy:0,pitch:0,hp:P.max,dead:0,fz:fz||0
 P.yaw=yaw;endEmote();A.mag=cg().m;A.rl=0;scoped=false;rmb=false;cam.fov=75;cam.updateProjectionMatrix();lastYaw=yaw;lastPitch=0}
 function clearEnts(){
 if(typeof CustomBattle!=="undefined")CustomBattle.stop();
-try{inspClose(true)}catch(e){}try{pkBodyDrop()}catch(e){}
+try{inspClose(true)}catch(e){}try{pkBodyDrop()}catch(e){}try{TP.drop()}catch(e){}
 E.forEach(e=>dropModel(e.g,e.tag));E=[];dying.forEach(d=>dropModel(d.g));dying=[];
 pu.forEach(p=>dropModel(p.g));pu=[];rT.forEach(m=>dropModel(m));rT=[];projs.forEach(o=>sc.remove(o.m));projs.length=0}
 function beginPlay(){

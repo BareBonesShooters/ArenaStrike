@@ -131,6 +131,7 @@ function updateCamera(dt,inp){
 const lockd=P.fz>0||P.dead>0||rL>0;
 if(P.em){const d=3.4,fx2=-Math.sin(P.yaw),fz2=-Math.cos(P.yaw),a=Math.min(1,dt*6),tx=P.x+fx2*d,tz=P.z+fz2*d,ty=P.y+2;
 cam.position.x+=(tx-cam.position.x)*a;cam.position.y+=(ty-cam.position.y)*a;cam.position.z+=(tz-cam.position.z)*a;cam.lookAt(P.x,P.y+1.2,P.z);return}
+if(TP.on()){TP.cam(dt,lockd);return}
 if(mode==="parkour"&&pkView===3&&pkBody){ // over-the-shoulder chase camera on the line behind your aim (it drops as you look up), smooth height, wall-safe
 const cp=Math.cos(P.pitch),bx=Math.sin(P.yaw)*cp,by=-Math.sin(P.pitch),bz=Math.cos(P.yaw)*cp,rx=Math.cos(P.yaw),rz=-Math.sin(P.yaw);
 pkCamY=pkCamY==null||Math.abs(P.y-pkCamY)>6?P.y:pkCamY+(P.y-pkCamY)*Math.min(1,dt*9);
@@ -291,6 +292,8 @@ if(e.code==="KeyP"){pauseGame();return}
 if(e.code==="KeyM"){BigMap.toggle();return}
 if(e.code==="KeyT"){if(mode==="parkour")restartMatch();return}
 if(e.code==="KeyV"&&mode==="parkour"){pkPref=pkPref===3?1:3;pkView=pkPref;flash(pkView===3?"Third person view":"First person view",800);snd("ui",.6);return}
+if(e.code==="KeyV"&&TP.ok()){TP.toggle();return}
+if(e.code==="KeyB"&&TP.on()){TP.swap();return}
 if(e.code==="KeyI"&&mode==="range"){inspStart();return}
 if(e.code==="KeyG"){grenAim=true}
 if(e.code==="Digit1"&&slot!==0&&mode!=="parkour"){slot=0;knifeCharging=false;knifeCharge=0;VM.swap();snd("ui",.6)}
