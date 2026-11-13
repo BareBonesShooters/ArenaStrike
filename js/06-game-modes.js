@@ -252,7 +252,10 @@ if(e.hp<=0)killE(e,head)}
 function killE(e,head){
 const i=E.indexOf(e);if(i<0)return;E.splice(i,1);
 if(e.tag){e.g.remove(e.tag);dropModel(e.tag)}
-hurtFlash(e.g,false);dying.push(deathInit(e.g,P.x,P.z,head,e.t==="mon"));
+hurtFlash(e.g,false);{// deaths vary by weapon: a close shotgun blast throws the body back, a headshot (from anything else) drops it where it stands
+const D=deathInit(e.g,P.x,P.z,head,e.t==="mon"),gw=cg(),dd=Math.hypot(P.x-e.g.position.x,P.z-e.g.position.z);
+if(gw&&gw.pel&&dd<12&&!e.boss){D.sl*=2.4;D.w+=1.6;D.lift=.45*(1-dd/12)*(D.sc||1)}else if(head&&!e.boss){D.w=.3+rnd()*.3;D.sl=.25;D.cr=1;D.hd.v=-2;const na=e.g.userData.arms.length;D.L.forEach((l,i)=>{if(i>=na)l.tx=(i-na)%2?.5:-.9})}
+dying.push(D)}
 Fx.burst({x:e.g.position.x,y:e.g.position.y+1,z:e.g.position.z},e.t==="mon"?0x66ff44:0xff4444,18,6,.1,3,18);if(e.t==="mon"){monDeathFx(e);Phase.onKill(e)}
 snd("kill");snd("ktick",.7);hitMark(head,true);HitStop.kill(head?.07:.045);streakSnd();kills++;HX.kill(e,head);qAdd("kills",1);if(e.t==="mon")qAdd("mk",1);tf("kill");celebrate(e);if(e.boss){bossDeath(e);qAdd("boss",1)}
 if(e.t==="mon"){S.coins+=Math.max(1,Math.round((.6+wave*.1)*PU.coin*(e.elite?5:1)*(e.champion?8:1)*LV.coinMul()));if(PU.kh)P.hp=Math.min(P.max,P.hp+PU.kh);const gain=Math.round((8+wave*2+(e.boss?40:e.k===2?18:e.k===1?12:6))*(head?1.25:1)*(e.elite?3:1)*(e.champion?4:1)*LV.xpMul());addXP(gain);LV.onDeath(e)}
@@ -478,6 +481,7 @@ Fx.burst({x:p.x,y:.2,z:p.z},0x5a4632,10,3,.09,2,10);
 p.x=x;p.z=z;p.y=0;e.yo=0;e.sx=x;e.sz=z;e.px=x;e.pz=z;e.em=1.4;e.fxd=0}
 function monStep(e,dt){
 const g=e.g,p=g.position,ex=P.x-p.x,ez=P.z-p.z,dist=Math.hypot(ex,ez)||1,u=g.userData;
+if(e.sq>0){e.sq-=dt;const q=Math.max(0,e.sq)/.32,s=e.bs||g.scale.x;g.scale.set(s*(1+.16*q),s*(1-.26*q),s*(1+.16*q))}
 if(e.boss)return bossStep(e,dt);if(e.em>0)return emergeStep(e,dt,ex,ez);
 if(e.hf>0){e.hf-=dt;if(e.hf<=0)hurtFlash(g,false)}
 if(P.fz>0||rL>0||menuOpen){poseMon(g,dt);return}
@@ -487,6 +491,7 @@ const hv=Math.hypot(e.svx||0,e.svz||0),walk=hv>.45&&dist>2.8;g.rotation.y=turnTo
 if(e.stg>0)e.stg-=dt;
 if(P.dead>0){poseMon(g,dt);return}
 if(e.hop){Nav.hopStep(e,dt);return}
+if(e.lg)return lungeStep(e,dt,ex,ez);
 const gh=!!e.ghost,ly0=p.y-(e.yo||0)-(e.hv||0);p.y=ly0;const rng=gh||e.k===1||e.k===5;
 if(gh)e.hv=.55+Math.sin(performance.now()/476+e.ph)*.22; // ghosts hover, but they walk the same floor and routes as everything else
 // walk straight at the player while the way is open; otherwise follow the flow field around walls and crates, hopping ledges that are too high to step onto
@@ -503,10 +508,21 @@ e.pt-=dt;if(e.pt<=0){e.pt=.5;e.stk=Math.hypot(p.x-e.px,p.z-e.pz)<.18&&dist>(rng?
 // keep feet on floor (steer already snaps; light bob only)
 // the walking logic works on the true floor height; what you see glides there, so stairs and crates are climbed instead of popped onto
 const fl=floorAt(p.x,p.z,p.y+1.2);e.yo=clamp(((e.yo||0)+(ly0-fl))*Math.exp(-dt*11),-2.6,2.6);p.y=fl+e.yo+(gh?e.hv:u.bob||0);e.cd-=dt;
+// lunge (fast melee types): a crouched, growling tell, then a leap at where you stood .15 s before it ended, so a late sidestep (or moving once it jumps) dodges it
+e.lgc=(e.lgc==null?1+rnd()*2:e.lgc)-dt;if(!rng&&!e.wu&&(e.k===0||e.k===3||e.k===6)&&e.vis&&e.lgc<=0&&dist>3.2&&dist<7.5&&Math.abs(P.y-p.y)<1.2&&!(e.stg>0)){e.lgc=3.5+rnd()*3;e.lg={t:0,tell:Tune.n("mon.lungeTell",.5,.2,1.2)};snd("growl",clamp(1-dist/20,.2,.7),1.15);Gfx.flare({x:p.x,y:1.6*(g.scale.y||1),z:p.z},e.corr?0xc060ff:0xff4a3a,1.4,.45)}
 if(!rng){if(e.wu>0){e.wu-=dt;u.kick=Math.max(u.kick,.7);if(e.wu<=0)monStrike(e)}else if(dist<1.9&&e.cd<=0&&los(p.x,1.2,p.z,P.x,P.y+1.2,P.z)){e.cd=e.k===4?1.2:.9;e.wu=e.k===4?.4:e.k===3?.14:e.k===2?.34:.24;monWind(e)}}
 if(rng&&dist<(gh?28:24)&&e.cd<=0&&los(p.x,1.5,p.z,P.x,P.y+1.4-.5*P.crouch,P.z)){if(gh){e.cd=(e.k===1?1.3:e.k===4?2.8:2.1)+rnd()*.8;u.kick=1;spit(p.x,1.5,p.z,e.dmg*.8,dist,Ghost.CY);Gfx.flare({x:p.x,y:1.5,z:p.z},Ghost.CY,1.6,.2)}else{e.cd=e.k===5?1.4:1.8;u.kick=1;spit(p.x,1.6,p.z,e.dmg*.8,dist,e.corr?0xc060ff:0x66ff44)}}
 if(gh&&(fr&3)===0&&rnd()<.5)Fx.burst({x:p.x+(rnd()-.5)*.8,y:p.y+.4+rnd()*1.4,z:p.z+(rnd()-.5)*.8},Ghost.CY,1,.6,.05,.4,6);
-poseMon(g,dt)}
+// gait per type: poseMon leans the fast ones; each footfall of a heavy one nudges your view when it is close
+u.gk=e.k;const ph0=u.ph||0;poseMon(g,dt);if((e.k===2||e.k===4)&&dist<10&&Math.floor((u.ph||0)/Math.PI)!==Math.floor(ph0/Math.PI)){P.landDip+=Tune.n("mon.stompK",.03,0,.1)*(1-dist/10)*(e.k===4?1.4:1);snd("step",.45*(1-dist/10),.5)}}
+function lungeStep(e,dt,ex,ez){const g=e.g,p=g.position,u=g.userData,l=e.lg,sc=g.scale.y||1;l.t+=dt;
+if(l.t<l.tell){g.rotation.y=turnTo(g.rotation.y,Math.atan2(ex,ez),dt*10);poseMon(g,dt);const k=l.t/l.tell;u.torso.rotation.x+=.55*Math.sin(Math.min(1,k*1.4)*Math.PI*.5);p.y=floorAt(p.x,p.z,p.y+1.2)-.14*k*sc;u.kick=Math.max(u.kick,.5);if(l.t<l.tell-.15){l.tx=P.x;l.tz=P.z}return}
+if(!l.go){l.go=1;l.sx=p.x;l.sz=p.z;l.t0=l.t;const dx=l.tx-p.x,dz=l.tz-p.z,d=Math.hypot(dx,dz)||1,r=Math.min(d+.8,8.5);l.ex=p.x+dx/d*r;l.ez=p.z+dz/d*r;l.dur=r/Tune.n("mon.lungeSpd",13,6,24);snd("claw",.6,1.2);u.kick=1}
+const k=Math.min(1,(l.t-l.t0)/l.dur),nx=l.sx+(l.ex-l.sx)*k,nz=l.sz+(l.ez-l.sz)*k;
+if(!blocked(nx,nz,0,.35)){p.x=nx;p.z=nz}else l.t=l.t0+l.dur;
+p.y=floorAt(p.x,p.z,p.y+1.2)+Math.sin(Math.min(1,k)*Math.PI)*.8*sc;poseMon(g,0);u.legs[0].rotation.x=-.9;u.legs[1].rotation.x=.7;u.arms[0].rotation.x=u.arms[1].rotation.x=-2.3;u.torso.rotation.x=.45;
+if(!l.hit&&Math.hypot(P.x-p.x,P.z-p.z)<1.2+.3*sc&&Math.abs(P.y-p.y)<1.6&&P.dead<=0){l.hit=1;hit(e.dmg*1.15,p);if(P.dead<=0)clawScreen(e.corr)}
+if(k>=1){e.lg=null;e.yo=0;p.y=floorAt(p.x,p.z,p.y+1.2);e.cd=Math.max(e.cd,.7);e.stg=.45;Fx.burst({x:p.x,y:.15,z:p.z},0x5a4632,6,2.5,.08,1.5,10)}}
 
 // ---------- Monster Rush: bosses, power-ups, finishers, effects ----------
 const BN=["Gravemaw","Bonecrusher","The Hollow King","Rotlord","Voidmother"],CN=["Glitchwraith","Null Sovereign","The Unmade","Static Herald"],GN=["Wraith Queen","The Hollow Choir","Specter Prime","Banshee Monarch"],bossName=(c,gh)=>gh?GN[(Math.floor(wave/5)+GN.length*9)%GN.length]:c?"Corrupt "+CN[wave%CN.length]:BN[(Math.floor(wave/5)-1+BN.length*9)%BN.length];
@@ -589,8 +605,11 @@ if(u.arms){u.arms[0].rotation.x=-1.2+Math.sin(t*6)*.5;u.arms[1].rotation.x=-1.2+
 if((fr&2)===0)Fx.burst({x:p.x+(rnd()-.5)*1.4,y:p.y+2.6+(rnd()*.4),z:p.z+(rnd()-.5)*1.4},0xfff1a8,2,1.2,.05,1.5,4);
 if(e.stun<=0&&minionsLeft===0){g.rotation.z=0;if(u.head)u.head.rotation.y=0}
 return}
-if(e.lp){const l=e.lp;l.t+=dt;const k=Math.min(1,l.t/l.dur);p.x=l.sx+(l.tx-l.sx)*k;p.z=l.sz+(l.tz-l.sz)*k;p.y=Math.sin(k*Math.PI)*4.4;poseMon(g,dt);u.arms[0].rotation.x=u.arms[1].rotation.x=-2.6;g.rotation.y=turnTo(g.rotation.y,Math.atan2(l.tx-l.sx,l.tz-l.sz),dt*8);
-if(k>=1){e.lp=null;p.y=0;bossSlam(e,8.2,1);e.atkT=Math.max(e.atkT,1.1)}return}
+if(e.lp){const l=e.lp;if(e.bs==null)e.bs=g.scale.x;
+// boss leap: crouch-squash first, stretch along the arc, squash on landing (monStep springs it back) with a heavy dip in your view
+if(l.pre>0){l.pre-=dt;const q=1-Math.max(0,l.pre)/.3;g.scale.set(e.bs*(1+.12*q),e.bs*(1-.22*q),e.bs*(1+.12*q));poseMon(g,dt);u.torso.rotation.x+=.4*q;return}
+l.t+=dt;const k=Math.min(1,l.t/l.dur);p.x=l.sx+(l.tx-l.sx)*k;p.z=l.sz+(l.tz-l.sz)*k;p.y=Math.sin(k*Math.PI)*4.4;g.scale.set(e.bs*.94,e.bs*(1+.14*Math.sin(k*Math.PI)),e.bs*.94);poseMon(g,dt);u.arms[0].rotation.x=u.arms[1].rotation.x=-2.6;g.rotation.y=turnTo(g.rotation.y,Math.atan2(l.tx-l.sx,l.tz-l.sz),dt*8);
+if(k>=1){e.lp=null;p.y=0;g.scale.setScalar(e.bs);e.sq=.32;{const ld=Math.hypot(P.x-p.x,P.z-p.z);if(ld<24)P.landDip+=.22*(1-ld/24)}bossSlam(e,8.2,1);e.atkT=Math.max(e.atkT,1.1)}return}
 if(e.pz>0){Ghost.phaseStep(e,dt);return}
 if(e.dash>0){e.dash-=dt;const sd_=dt*(e.corr?22:18),dnx=clamp(p.x+e.dx*sd_,-H+2,H-2),dnz=clamp(p.z+e.dz*sd_,-H+2,H-2),rd_=e.rad||1.5;
 if(!blocked(dnx,dnz,0,rd_)){p.x=dnx;p.z=dnz}
@@ -613,7 +632,7 @@ e.leapT-=dt;if(e.leapT<=0&&dist>5){e.leapT=(e.corr?5:8)-e.stage*.8;let lx=clamp(
 // the leap is a short hop, not a trip across the arena: the landing spot stays within LEAP_MAX of where the boss stands
 const ldx=lx-p.x,ldz=lz-p.z,ld=Math.hypot(ldx,ldz);if(ld>LEAP_MAX){lx=p.x+ldx/ld*LEAP_MAX;lz=p.z+ldz/ld*LEAP_MAX}
 if(blocked(lx,lz,0,e.rad||1.5)){const f_=freeSpot(lx,lz);lx=f_.x;lz=f_.z}
-if(los(p.x,1.2,p.z,lx,1.2,lz)){e.lp={t:0,dur:clamp(Math.hypot(lx-p.x,lz-p.z)/LEAP_MAX,.55,1),sx:p.x,sz:p.z,tx:lx,tz:lz};ringFx(lx,lz,8.2,0xff2200,1);snd("jump",.9,.5);u.kick=1}else e.leapT=1.2}
+if(los(p.x,1.2,p.z,lx,1.2,lz)){e.lp={t:0,pre:.3,dur:clamp(Math.hypot(lx-p.x,lz-p.z)/LEAP_MAX,.55,1),sx:p.x,sz:p.z,tx:lx,tz:lz};ringFx(lx,lz,8.2,0xff2200,1.3);snd("jump",.9,.5);u.kick=1}else e.leapT=1.2}
 if(e.atkT<=0){const r_=rnd(),adv=e.corr||e.stage>=1||wave>=10;e.at=(e.lvDef&&LV.bossPick(e,dist))||(dist<9&&r_<.55?"slam":r_<.22?"dash":r_<.42?"nova":(r_<.64&&adv)?"meteor":"volley");e.wind=LV.WIND[e.at]||.55;if(e.at==="slam")ringFx(p.x,p.z,8.2,0xff2200,.8);u.kick=1;
 if(e.ghostB&&e.phCD<=0&&(rnd()<.3||!los(p.x,1.2,p.z,P.x,P.y+1.2,P.z))){e.at="phase";e.wind=.9;Ghost.fade(g,.35);ringFx(p.x,p.z,5,0x6ff3ff,.9);snd("phase",.8)}
 else if(e.corr&&e.blCD<=0&&rnd()<.3){e.at="blink";e.wind=.7;ringFx(p.x,p.z,4,0xd070ff,.7);snd("lose",.5)}}}

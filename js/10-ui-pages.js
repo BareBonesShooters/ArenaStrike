@@ -717,6 +717,7 @@ return"<table><tr><th>#</th><th>Player</th><th>Wins</th><th>Kills</th></tr>"+row
 function settingsHTML(){return`<div class="sec"><h3>Settings</h3>
 <div class="row"><span>Mouse sensitivity</span><span class="sm" data-sv="sens">${S.sens.toFixed(2)}</span></div><input type="range" min=".3" max="2.5" step=".05" value="${S.sens}" data-i="sens" aria-label="Mouse sensitivity">
 <div class="row"><span>Scoped sensitivity</span><span class="sm" data-sv="ssens">${S.ssens.toFixed(2)}</span></div><input type="range" min=".4" max="1.6" step=".05" value="${S.ssens}" data-i="ssens" aria-label="Scoped sensitivity">
+<div class="row"><span>Head bob</span><span class="sm" data-sv="bob">${Math.round((S.bob==null?1:S.bob)*100)}%</span></div><input type="range" min="0" max="1.5" step=".05" value="${S.bob==null?1:S.bob}" data-i="bob" aria-label="Head bob strength">
 <div class="row"><span>Volume</span></div><input type="range" min="0" max="1" step=".05" value="${S.vol}" data-i="vol" aria-label="Volume"><div class="row"><span>Music</span></div><input type="range" min="0" max="1" step=".05" value="${S.mvol}" data-i="mvol" aria-label="Music volume"><div class="row" style="opacity:.8;font-size:12px"><span>Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</span></div>
 ${gfxSel()}
 <div class="row"><span>Aim down sights</span></div><select data-i="scope" aria-label="Aim down sights mode"><option value="toggle"${(S.opt&&S.opt.scopeToggle!==false)?" selected":""}>Toggle (click on / off)</option><option value="hold"${(S.opt&&S.opt.scopeToggle===false)?" selected":""}>Hold (must hold right-click)</option></select>
@@ -1024,6 +1025,7 @@ document.addEventListener("input",e=>{const t=e.target,f=t.dataset&&t.dataset.i&
 const INP={
 sens(t){S.sens=clamp(+t.value||1,.3,2.5);sv();syncSliders()},
 ssens(t){S.ssens=clamp(+t.value||1,.4,1.6);sv();syncSliders()},
+bob(t){S.bob=clamp(+t.value,0,1.5);sv();syncSliders()},
 vol(t){setVol(clamp(+t.value,0,1));sv();syncSliders()},
 mvol(t){S.mvol=clamp(+t.value,0,1);Mus.go();sv();syncSliders()},
 gfx(t){Q.pick(t.value);syncSliders();toast(t.value==="auto"?"Graphics set to Auto ("+QL[S.gfx].n+" for "+(HW.name||"this device")+")":"Graphics set to "+QL[S.gfx].n+". Scenery detail updates next match")},
@@ -1038,6 +1040,7 @@ document.querySelectorAll('[data-i="sens"]').forEach(i=>{if(+i.value!==S.sens)i.
 document.querySelectorAll('[data-i="vol"]').forEach(i=>{if(+i.value!==S.vol)i.value=S.vol});document.querySelectorAll('[data-i="mvol"]').forEach(i=>{if(+i.value!==S.mvol)i.value=S.mvol});
 document.querySelectorAll('[data-sv="sens"]').forEach(s=>s.textContent=S.sens.toFixed(2));document.querySelectorAll('[data-sv="ssens"]').forEach(s=>s.textContent=S.ssens.toFixed(2));
 document.querySelectorAll('[data-i="gfx"]').forEach(s=>{const v=S.auto?"auto":String(S.gfx);if(s.value!==v)s.value=v;s.options[0].textContent=S.auto?"Auto ("+QL[S.gfx].n+")":"Auto"});
+document.querySelectorAll('[data-sv="bob"]').forEach(s=>s.textContent=Math.round((S.bob==null?1:S.bob)*100)+"%");document.querySelectorAll('[data-i="bob"]').forEach(i=>{if(+i.value!==S.bob&&S.bob!=null)i.value=S.bob});
 document.querySelectorAll('[data-sv="vol"]').forEach(s=>s.textContent=Math.round(S.vol*100)+"%");document.querySelectorAll('[data-sv="mvol"]').forEach(s=>s.textContent=Math.round(S.mvol*100)+"%");
 paintRanges();
 const adsT=!(S.opt&&S.opt.scopeToggle===false);document.querySelectorAll('[data-a="ads"]').forEach(b=>{const on=(b.dataset.v==="toggle")===adsT;b.classList.toggle("on",on);b.setAttribute("aria-pressed",on)});

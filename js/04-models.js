@@ -263,6 +263,9 @@ u.legs[0].rotation.set(sw*fz*wk-.55*ar*(1-cr)-.95*cr,0,-sw*fx*.7*wk);u.legs[1].r
 u.legs[0].position.y=u.legs[1].position.y=.9-drop;u.arms[0].position.y=u.arms[1].position.y=1.56-drop;
 if(u.hb){u.hb.scale.y=1-.29*cr;u.hb.position.y=.88-.22*cr}
 u.kick*=Math.max(0,1-dt*14);
+// torso lag: when the body turns, the torso trails behind and catches up; aimS eases in and out of aiming; it drives idle motion
+{const ry=m.rotation.y;if(u.pry===undefined)u.pry=ry;let dy=ry-u.pry;dy=Math.atan2(Math.sin(dy),Math.cos(dy));u.pry=ry;u.tlag=clamp(((u.tlag||0)-dy)*Math.exp(-dt*7),-.45,.45);
+u.aimS=(u.aimS||0)+((aim?1:0)-(u.aimS||0))*Math.min(1,dt*4);u.it=(u.it==null?rnd()*20:u.it)+dt}
 const hd=u.hold;
 if(hd){
 // both hands stay on the gun: it rides in a rig that tilts with aim and recoil
@@ -276,7 +279,12 @@ u.arms[0].userData.el.rotation.set(0,0,0);u.arms[1].userData.el.rotation.set(0,0
 const ax=-1.38-(aim||0)*.8+u.kick*.35;
 u.arms[1].rotation.set(ax,0,-.3);u.arms[0].rotation.set(ax+.05,0,.3)}
 u.torso.rotation.x=.06*u.sp+.05*ar+.22*cr;u.torso.rotation.z=Math.sin(u.ph)*.035*u.sp;u.torso.position.y=1.26-drop+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.012-.03*ar;u.head.position.y=1.9-drop*1.04+Math.abs(Math.sin(u.ph))*.04*u.sp+br*.016-.03*ar;
-u.head.rotation.x=-(aim||0)*.5;u.head.rotation.z=-Math.sin(u.ph)*.05*u.sp;hitPose(u,dt)}
+u.head.rotation.x=-(aim||0)*.5;u.head.rotation.z=-Math.sin(u.ph)*.05*u.sp;
+// standing still: weight shifts from foot to foot and, when not aiming, the head scans left and right with pauses; each shot kicks the shoulder back
+{const idl=(1-Math.min(1,u.sp*3))*(1-cr)*(1-ar),ws=Math.sin(u.it*.8);
+u.torso.rotation.y=u.tlag*.8+u.kick*.1;u.torso.rotation.x-=u.kick*.1;u.torso.rotation.z+=ws*.035*idl;u.torso.position.x=ws*.025*idl;
+u.head.rotation.y=u.tlag*.4+clamp(Math.sin(u.it*.37)*1.7,-1,1)*.5*idl*(1-u.aimS);u.head.position.x=ws*.03*idl;u.legs[0].rotation.z+=ws*.05*idl;u.legs[1].rotation.z+=ws*.05*idl}
+hitPose(u,dt)}
 // goofy anime run: body tipped far forward, arms streaming straight back, big wobbly legs and a bobbing head
 function narutoPose(m,dt,sp,air){
 const u=m.userData;u.nar=true;
@@ -333,7 +341,9 @@ u.arms[0].rotation.set(lift+Math.cos(u.ph)*.11*a+br*.03,0,.1);u.arms[1].rotation
 // lean into turns: roll toward the inside of the turn, more at speed
 if(u.ry===undefined)u.ry=m.rotation.y;let dy=m.rotation.y-u.ry;dy=Math.atan2(Math.sin(dy),Math.cos(dy));u.ry=m.rotation.y;
 u.ln=(u.ln||0)+((dt>0?clamp(-dy/dt*u.v*.035,-.32,.32):0)-(u.ln||0))*Math.min(1,dt*8);
-u.torso.rotation.set(.1+.07*clamp(u.v/4,0,1)+Math.abs(Math.cos(u.ph))*.03*a+br*.012,Math.sin(u.ph)*.15*a,u.ln);u.head.rotation.z=Math.sin(u.ph)*.06*a+Math.sin(u.br*.6)*.035-u.ln*.5;u.head.rotation.x=0;hitPose(u,dt)}
+// gait per type (u.gk is the monster type): fast ones (1, 3) lean hard into the run, heavy ones (2, 4) roll their weight from side to side
+const fast=u.gk===1||u.gk===3,heavy=u.gk===2||u.gk===4;
+u.torso.rotation.set(.1+.07*clamp(u.v/4,0,1)+(fast?.3*clamp(u.v/6,0,1):0)+Math.abs(Math.cos(u.ph))*.03*a+br*.012,Math.sin(u.ph)*.15*a,u.ln+(heavy?Math.sin(u.ph)*.1*a:0));u.head.rotation.z=Math.sin(u.ph)*.06*a+Math.sin(u.br*.6)*.035-u.ln*.5;u.head.rotation.x=0;hitPose(u,dt)}
 
 // ---------- death: accelerating fall away from the shooter, limp limbs on springs, thud, then sink ----------
 const DQ={q:new T.Quaternion(),n:new T.Vector3()};
@@ -355,7 +365,8 @@ else{d.land=d.t;d.w=0}}
 d.sl*=Math.exp(-dt*3.5);const nx=p.x+d.f.x*d.sl*dt,nz=p.z+d.f.z*d.sl*dt;
 if(!blocked(nx,nz,0,.3)){p.x=nx;p.z=nz}else d.sl=0}
 DQ.n.set(d.f.z,0,-d.f.x);DQ.q.setFromAxisAngle(DQ.n,d.th);g.quaternion.copy(DQ.q).multiply(d.yaw);
-const fl=floorAt(p.x,p.z,d.y0+1.2);p.y=fl+Math.max(0,d.y0-fl)*Math.max(0,1-d.t*6)+d.thick*Math.sin(Math.min(d.th,1.5707));
+const fl=floorAt(p.x,p.z,d.y0+1.2);p.y=fl+Math.max(0,d.y0-fl)*Math.max(0,1-d.t*6)+d.thick*Math.sin(Math.min(d.th,1.5707))
+-(d.cr?.32*d.sc*Math.min(1,d.t*4)*(1-Math.sin(Math.min(d.th,1.5707))):0)+(d.lift?d.lift*Math.max(0,Math.sin(Math.min(1,d.t*3)*Math.PI)):0); // cr: crumple (sinks at the knees first), lift: a shotgun blast's hop
 for(const l of d.L){l.vx+=((l.tx-l.x)*70-l.vx*7)*dt;l.vz+=((l.tz-l.z)*70-l.vz*7)*dt;l.x+=l.vx*dt;l.z+=l.vz*dt;l.m.rotation.x=l.x;l.m.rotation.z=l.z}
 if(u.head){const h=d.hd;h.v+=((h.t-h.x)*50-h.v*6)*dt;h.x+=h.v*dt;u.head.rotation.x=h.x}
 if(u.torso){const t=d.tr;t.v+=((t.t-t.x)*40-t.v*6)*dt;t.x+=t.v*dt;u.torso.rotation.x=t.x}

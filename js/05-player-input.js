@@ -61,7 +61,7 @@ if(!b.nc&&Math.abs(px-b.x)<b.w/2&&Math.abs(pz-b.z)<b.d/2){const rise=b.h-P.y;if(
 let tx=clamp(P.x+dirx*1.05,b.x-b.w/2+.34,b.x+b.w/2-.34),tz=clamp(P.z+dirz*1.05,b.z-b.d/2+.34,b.z+b.d/2-.34);
 if(b.w<.8)tx=b.x;if(b.d<.8)tz=b.z;
 if(blocked(tx,tz,b.h+.02,.4)||floorAt(tx,tz,b.h,.4)<b.h-.01)continue;
-P.mantle={sx:P.x,sy:P.y,sz:P.z,tx,ty:b.h,tz,t:0,dur:.24+rise*.09,dx:dirx,dz:dirz};P.vx=P.vz=0;P.vy=0;P.jumping=false;snd("jump",.6,.8);return true}}
+P.mantle={sx:P.x,sy:P.y,sz:P.z,tx,ty:b.h,tz,t:0,dur:.24+rise*.09,dx:dirx,dz:dirz};P.vx=P.vz=0;P.vy=0;P.jumping=false;snd("jump",.6,.8);snd("step",.9,.7);return true}}
 return false}
 function movePlayer(dt,inp){
 // inp: {f,s,sprint,jump,crouch}. Crouch while moving fast starts a slide; held while slow (or after the slide) it crouches.
@@ -78,6 +78,7 @@ if(P.mantle){const m=P.mantle;m.t+=dt;const k=Math.min(1,m.t/m.dur),e=easeIO(cla
 const nx=lerp(m.sx,m.tx,e),nz=lerp(m.sz,m.tz,e),ny=lerp(m.sy,m.ty,easeOut(Math.min(1,k/.45)))+Math.sin(k*Math.PI)*.1;
 if(blockedMove(P.x,P.z,nx,P.z,ny,.4)||blockedMove(nx,P.z,nx,nz,ny,.4)){P.mantle=null;P.mcd=.2;return}
 P.x=nx;P.z=nz;P.y=ny;
+if(!m.h2&&k>.55){m.h2=1;snd("step",.7,.85)} // second hand plants on the ledge
 if(k>=1){P.y=m.ty;P.mantle=null;P.vy=0;P.gr=true;P.vx=m.dx*3.2;P.vz=m.dz*3.2;P.mcd=.35;P.landDip=.07;snd("land",.5)}return}
 P.mcd=Math.max(0,P.mcd-dt);
 const sn=Math.sin(P.yaw),cs=Math.cos(P.yaw);let mx=-sn*inp.f+cs*inp.s,mz=-cs*inp.f-sn*inp.s;const l=Math.hypot(mx,mz);if(l>1){mx/=l;mz/=l}
@@ -89,7 +90,9 @@ else{
 // separate rates: speeding up, stopping (no input) and turning around (pushing against your velocity) each have their own grip
 const vl=Math.hypot(P.vx,P.vz),dot=vl>.5&&l>.05?(P.vx*mx+P.vz*mz)/(vl*l):1,rG=l<.05?Tune.n("mv.stop",17,4,40):dot<-.25?Tune.n("mv.turn",24,4,50):MV.accG;
 const ac=1-Math.exp(-(P.gr?rG:MV.accA*(mode==="parkour"&&pkKnifeOn()?2.2:1))*dt*(l>0?1:.85));
-P.vx+=(mx*sp-P.vx)*ac;P.vz+=(mz*sp-P.vz)*ac}
+P.vx+=(mx*sp-P.vx)*ac;P.vz+=(mz*sp-P.vz)*ac;
+// air-strafe: in the air, pushing sideways bends your path toward the push without adding speed, so a jump can curve around cover
+if(!P.gr&&l>.05&&vl>2){const nv=Math.hypot(P.vx,P.vz),cr=(P.vx*mz-P.vz*mx)/(nv||1),k=Math.min(1,dt*Tune.n("mv.airTurn",2.4,0,8)*Math.abs(cr)),tx=P.vx+(mx*nv-P.vx)*k,tz=P.vz+(mz*nv-P.vz)*k,tl=Math.hypot(tx,tz)||1;P.vx=tx/tl*nv;P.vz=tz/tl*nv}}
 // collision with sub-steps so fast movement never tunnels
 const dist=Math.hypot(P.vx,P.vz)*dt,n=Math.max(1,Math.ceil(dist/.22)),sdt=dt/n;let wallHit=false;
 for(let i=0;i<n;i++){
@@ -144,15 +147,17 @@ P.stepOff*=Math.exp(-dt*13);
 // landing and recoil ride on springs: a landing pushes the camera down and it bounces back a little; recoil snaps up and settles
 P.ldS=P.ldS||{x:0,v:0};P.rkS=P.rkS||{x:0,v:0};if(P.landDip>0){P.ldS.v+=P.landDip*Tune.n("cam.land",13,0,40);P.landDip=0}
 const dip=clamp(spring(P.ldS,0,130,11,dt),-.08,.45),rk=spring(P.rkS,P.rk,Tune.n("cam.recoilK",320,60,900),24,dt);
-const spd=Math.hypot(P.vx,P.vz),amp=P.gr&&!lockd&&!P.mantle?Math.min(1,spd/8):0;
+// head-bob strength is a setting (0 = off); scoped aim keeps only a trace of it
+const spd=Math.hypot(P.vx,P.vz),bobK=(S.bob==null?1:S.bob)*(scoped?.25:1),amp=P.gr&&!lockd&&!P.mantle?Math.min(1,spd/8):0;
 P.bobA+=(amp-P.bobA)*Math.min(1,dt*8);const o=P.bobPh;P.bobPh+=dt*spd*1.15*(P.gr?1:0);
 if(P.bobA>.3&&Math.floor(P.bobPh/Math.PI)!==Math.floor(o/Math.PI))snd("step",(.5+P.bobA*.3)*(1-.65*P.crouch));
-const bobY=Math.sin(P.bobPh*2)*.034*P.bobA,bobX=Math.cos(P.bobPh)*.022*P.bobA,cs=Math.cos(P.yaw),sn=Math.sin(P.yaw);
-let lift=0,rollT=-(inp?inp.s:0)*.014*Math.min(1,spd/6);
-if(P.mantle){const k=Math.min(1,P.mantle.t/P.mantle.dur);lift=-Math.sin(k*Math.PI)*.14;rollT+=Math.sin(k*Math.PI)*.025}
+const bobY=Math.sin(P.bobPh*2)*.034*P.bobA*bobK,bobX=Math.cos(P.bobPh)*.022*P.bobA*bobK,cs=Math.cos(P.yaw),sn=Math.sin(P.yaw);
+let lift=0,mp=0,rollT=-(inp?inp.s:0)*.014*Math.min(1,spd/6);
+// mantle: the view dips toward the ledge as the arms take the weight, then rises over it
+if(P.mantle){const k=Math.min(1,P.mantle.t/P.mantle.dur);lift=-Math.sin(k*Math.PI)*.14;rollT+=Math.sin(k*Math.PI)*.025;mp=-Math.sin(Math.min(1,k*1.4)*Math.PI)*Tune.n("cam.mantleDip",.12,0,.3)}
 P.roll+=(rollT-P.roll)*Math.min(1,dt*9);
 cam.position.set(P.x+cs*bobX,P.y+P.eye+P.stepOff-dip+bobY+lift,P.z-sn*bobX);
-cam.rotation.set(P.pitch+rk-dip*.25+Death.pit,P.yaw,P.roll+Death.rol,"YXZ")}
+cam.rotation.set(P.pitch+rk-dip*.25+mp+Death.pit,P.yaw,P.roll+Death.rol,"YXZ")}
 function updateFov(dt,g,inp){
 const sprinting=inp&&inp.sprint&&inp.f>0&&!scoped&&Math.hypot(P.vx,P.vz)>7.5,tfv=scoped?(scopeOf(g).pip?LENS_BASE:scopeOf(g).fov):P.slide>0?75+Tune.n("cam.slideFov",9,0,20):sprinting?75+Tune.n("cam.sprintFov",6,0,15):75;
 // base FOV eases to its target; a spring kick on fire (not while scoped) rides on top

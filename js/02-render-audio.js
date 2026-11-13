@@ -509,7 +509,11 @@ Gfx.crack(x,z,col,1.9,corr?9:6);Gfx.ring(x,.1,z,col,.4,corr?4.4:3,.9,.8);setTime
 Fx.burst({x,y:.2,z},corr?0x6a1a8a:0x5a4632,corr?14:10,3,.1,3,12);
 if(corr){Gfx.column(x,z,0xc060ff,16,1.3);Gfx.flare({x,y:.6,z},0xe0a0ff,5,.9,.6);if(rnd()<.5)Gfx.bolt(x+(rnd()-.5)*3,z+(rnd()-.5)*3,0xd9a0ff,true)}
 snd(corr?"rift":"dig",clamp(1.1-Math.hypot(x-P.x,z-P.z)/60,.2,.9))}
-function emergeDone(e){const p=e.g.position;Gfx.ring(p.x,.12,p.z,e.corr?0xb050ff:0xc8a070,.3,2.2,.45,.6);Fx.burst({x:p.x,y:.3,z:p.z},0x5a4632,12,3.5,.1,3,12);
+let roarT=0;
+// a monster breaking the surface: dirt thrown up, arms raised, and a roar (one per .7 s, so a whole wave does not roar at once)
+function emergeDone(e){const p=e.g.position,dd=Math.hypot(P.x-p.x,P.z-p.z);Fx.spray({x:p.x,y:.2,z:p.z},0,1,0,0x5a4632,8,5,.12,14,.7);e.g.userData.kick=1;
+const now=performance.now();if(now-roarT>700&&dd<45){roarT=now;snd("roar",clamp(.55-dd/70,.1,.5),e.k===2||e.k===4?.72:e.k===1||e.k===3?1.3:1)}
+Gfx.ring(p.x,.12,p.z,e.corr?0xb050ff:0xc8a070,.3,2.2,.45,.6);Fx.burst({x:p.x,y:.3,z:p.z},0x5a4632,12,3.5,.1,3,12);
 snd("mrise",clamp(1-Math.hypot(P.x-p.x,P.z-p.z)/50,.15,.8));if(e.elite){Gfx.flare({x:p.x,y:1.2,z:p.z},0xffc233,5,.5);snd("elite",.7)}}
 function monWind(e){const g=e.g,p=g.position,col=e.corr?0xc060ff:0xff4a3a;Gfx.flare({x:p.x,y:2.1*(g.scale.y||1),z:p.z},col,1.8,.32);Gfx.ring(p.x,.1,p.z,col,.3,1.7,.3,.6);snd("mwind",clamp(1-Math.hypot(P.x-p.x,P.z-p.z)/30,.1,.7))}
 function clawScreen(corr){const d=document.createElement("div");d.className="claw"+(corr?" cc":"");d.innerHTML="<i></i><i></i><i></i>";document.body.appendChild(d);setTimeout(()=>d.remove(),520)}
