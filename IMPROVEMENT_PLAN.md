@@ -150,6 +150,42 @@ S = under half a day, M = about a day, L = 2+ days. Ranked by impact per effort.
 - Loading screen with real progress, map name and a control tip. S
 - Lower input latency: low-latency canvas where supported, coalesced mouse events. S
 
+## Phase 9: Phones and touch screens (about 7 days)
+
+What exists today (`touchUI` in `js/11-main-loop.js`, `js/00-mobile.js`, `css/mobile.css`): a floating left joystick, a right-side look area, about 15 buttons, light vibration, fullscreen with landscape lock on first touch, a "turn your phone sideways" screen, and the `SOFT` low-power path. Main gaps: the joystick is on/off (it presses W/A/S/D) instead of analog, aiming with a thumb has no help, the layout is fixed, and iPhones can't go fullscreen from Safari.
+
+**9a. Testing first (S)**
+- `npm run shots` and `npm run smoke` get phone runs: landscape 844x390 and 932x430 plus a small 667x375 screen with `?touch=1`. They check that no buttons overlap each other or the HUD, every button is at least 44 px and inside the safe area, and that each mode plays with touch input. Pictures of the HUD go into the report.
+- A way to open the local server on a real phone over Wi-Fi, for feel checks.
+
+**9b. Aiming and movement (the biggest gain)**
+- Analog joystick: speed follows how far the thumb pushes; push past the ring to lock sprint. M
+- Touch aim assist: aim slows near enemies, gently follows a moving target while you drag, and snaps lightly onto a close target when AIM is pressed. Strength set by difficulty and a setting; off online, or kept the same for everyone. M
+- Look curve for thumbs: small drags precise, fast swipes turn quickly; separate horizontal, vertical and aiming sensitivity. S
+- Optional auto-fire: shoots when the crosshair is on an enemy, for one-thumb play. S
+- Optional gyro aiming (tilt the phone to fine-tune aim); iOS asks for permission on first use. M
+
+**9c. Layout and buttons**
+- Layout editor: drag and resize every button, opacity slider, left-handed preset, reset; saved per device. M
+- Fewer buttons on screen: reload happens automatically when empty, swipe up on the right side to jump and down to crouch/slide, mode-only buttons appear only in their mode, rarely used ones (emote, scoreboard, map) move into one small menu. S
+- Clearer press feedback (button pop, ring on fire), and a HUD size setting for small phones. S
+
+**9d. Phone performance and battery**
+- Phones start one tier lower and the auto tier also lowers render resolution first; 30 / 60 frame cap option; "battery saver" switch (30 fps, Potato effects). S
+- Pause and free the GPU when the app is in the background or the phone locks; resume cleanly. S
+- Check memory: texture sizes and shadow maps on phones, so iOS does not reload the page. S
+
+**9e. iPhone and Android details**
+- Add-to-home-screen app (manifest, icon, landscape, standalone) so iPhones get true fullscreen; a one-time hint explaining it on iPhone. S
+- Sound starts on the first touch on iOS; no text selection, long-press menus or double-tap zoom during play; notch and home-bar safe areas everywhere. S
+- Vibration on hits, kills and damage on Android (iPhones don't support vibration in the browser). S
+- Game controller support (Gamepad API) for phones and tablets with a controller. M
+
+**9f. Menus on phones**
+- Larger tap targets, menus that fit short landscape screens and also work in portrait, bottom sheets instead of small pop-ups, readable text sizes. M
+
+Order: 9a first, then 9b and 9d (they decide how it feels), then 9c, 9e and 9f. Phase 4's third person gets a phone view button there; Phase 8d's settings table holds the touch settings.
+
 ---
 
 ## Totals and suggested order
@@ -165,5 +201,6 @@ S = under half a day, M = about a day, L = 2+ days. Ranked by impact per effort.
 | 6 HUD, maps, atmosphere | 4 | |
 | 7 Movement polish | 5 | |
 | 8 Small details | about 12 | 8a can be slotted in early; it is one day of quick wins |
+| 9 Phones and touch | about 7 | 9a and 9b can start any time; they touch different files from Phases 2–7 |
 
 About 43–44 days of work as first estimated; with the tooling, expect roughly 28–30. Each phase ends with `npm run finish` passing, the picture changes reviewed in `shots/report.html` and approved, a commit, and a push only with your OK.
