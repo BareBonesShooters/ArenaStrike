@@ -36,7 +36,7 @@ P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
 {const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1]){const lx=sg*((d+.9)/2)*.97;P("box",x+lx*c2,h+.06,z-lx*s2,.4,.08,w+.95,dk,r2,.85,null,0,-sg*ang)}}
 {let q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dk,ry,.9);
 for(const s of[-1,1]){q=L(s*w/3.2,d/2+.09);P("box",q[0],1.5,q[1],.06,.7,.05,dk,ry,1);P("box",q[0],1.5,q[1],.8,.06,.05,dk,ry,1);
-q=L(s*w/3.2,d/2+.12);P("box",q[0],1.1,q[1],1,.08,.2,dk,ry,.9);P("box",q[0],1.14,q[1],1,.05,.22,snow,ry,.9);q=L(s*w/3.2+s*.55,d/2+.1);P("box",q[0],1.5,q[1],.28,.82,.06,0x6a3a2a,ry,.9,null,0,s*.06)}}
+q=L(s*w/3.2,d/2+.12);P("box",q[0],1.1,q[1],1,.08,.2,dk,ry,.9);P("box",q[0],1.14,q[1],1.04,.05,.22,snow,ry,.9);q=L(s*w/3.2+s*.55,d/2+.1);P("box",q[0],1.5,q[1],.28,.82,.06,0x6a3a2a,ry,.9,null,0,s*.06)}}
 P("gab",x,h+1.55,z,d+1.2,1.1,w+1.2,snow,ry+PI/2,.9);
 for(let t=-w/2+.4;t<w/2-.2;t+=.7)for(const s of[-1,1]){const q=L(t,s*(d/2+.15));P("cone",q[0],h-.3,q[1],.07,.6,.07,0xdff6ff,ry,.9,null,PI,0)}
 let q=L(0,d/2+.03);P("box",q[0],1,q[1],1,2,.1,0x3a2a1c,ry,.9);

@@ -420,7 +420,7 @@ if(edgeGlow)for(const [a,b,ww,dd] of[[0,d/2+.01,w,.07],[0,-d/2-.01,w,.07],[w/2+.
 else for(const [a,b,ww,dd] of[[0,d/2+.03,w+.1,.1],[0,-d/2-.03,w+.1,.1],[w/2+.03,0,.1,d+.1],[-w/2-.03,0,.1,d+.1]])P("box",x+a,hh-.22,z+b,ww,.18,dd,dk(c1),0,1);
 dress(x,z,w,d,hh,hh+.1)};
 const stairs=(ex,ez,dx,dz,h0,h1,wd)=>{const n=Math.ceil((h1-h0)/.5);for(let i=0;i<n;i++){const k=.45+(n-1-i)*.9,cx=ex-dx*k,cz=ez-dz*k,sh=h0+(h1-h0)*(i+1)/n;blk(cx,cz,dx?.9:wd,sh,dx?wd:.9,c2,.75);
-if(rich)P("box",cx+dx*.42,sh+.02,cz+dz*.42,dx?.1:wd+.04,.05,dx?wd+.04:.1,DS==="ice"?0xf6fafd:dk(c2),0,1)}}; // tread nosing on each step
+if(rich&&i<n-1)P("box",cx+dx*.42,sh+.02,cz+dz*.42,dx?.1:wd+.04,.05,dx?wd+.04:.1,DS==="ice"?0xf6fafd:dk(c2),0,1)}}; // tread nosing on each step but the top one, whose edge the platform's lip already covers (a nosing there lies flush with the lip and flickers)
 const low=(x,z,w,d,hh)=>{blk(x,z,w,hh,d,wc3,.65);P("box",x,hh+.06,z,w+.1,.12,d+.1,PAL?c2:th.trim,0,1);dress(x,z,w,d,hh,hh+.12)};
 const pillar=(x,z,hh)=>{blk(x,z,1.7,hh,1.7,lerpC(c1,0x000000,.15),.6);P("box",x,.3,z,2.1,.6,2.1,c2,0,.8);P("box",x,hh+.2,z,2.1,.4,2.1,c2,0,.8);
 if(edgeGlow)P("box",x,hh*.6,z,.12,hh*.5,1.76,gl,0,1,glow);else{P("box",x+.9,hh*.62,z,.22,.32,.22,gl,0,1,glow);P("box",x-.9,hh*.62,z,.22,.32,.22,gl,0,1,glow)} // lantern pair instead of a neon strip
@@ -429,7 +429,7 @@ if(v===0){ // keep: two-tier fortress, corner bunkers, ring of cover
 deck(0,0,17,17,1.6);deck(0,0,8,8,3.2);
 stairs(8.5,0,-1,0,0,1.6,3);stairs(-8.5,0,1,0,0,1.6,3);stairs(0,8.5,0,-1,0,1.6,3);stairs(0,-8.5,0,1,0,1.6,3);
 stairs(4,5.5,0,-1,1.6,3.2,2.4);stairs(-4,-5.5,0,1,1.6,3.2,2.4);
-for(const sx of[-1,1])for(const sz of[-1,1]){deck(sx*27,sz*24,7,7,1.9);stairs(sx*27-sx*3.5,sz*24,-sx,0,0,1.9,3);pillar(sx*17,sz*17,3.6)}
+for(const sx of[-1,1])for(const sz of[-1,1]){deck(sx*27,sz*24,7,7,1.9);stairs(sx*27-sx*3.5,sz*24,sx,0,0,1.9,3);pillar(sx*17,sz*17,3.6)}
 for(let i=0;i<8;i++){const a=i*PI/4+PI/8;low(Math.cos(a)*14.5,Math.sin(a)*14.5,i&1?1.1:3.4,i&1?3.4:1.1,1.2)}}
 else if(v===1){ // crossing: high hub and four walkways with stairs at the ends
 deck(0,0,9,9,3);deck(15,0,18,3.6,3);deck(-15,0,18,3.6,3);deck(0,15,3.6,18,3);deck(0,-15,3.6,18,3);

@@ -50,7 +50,8 @@ q=L(0,d/2+.75);P("box",q[0],.14,q[1],2.6,.12,1.4,lerpC(lc,0x000000,.1),ry,.8);
 for(const s of[-1,1]){q=L(s*1.15,d/2+1.3);P("box",q[0],1.2,q[1],.16,2.2,.16,dark,ry,.75);reg(q[0],q[1],.22,.22,2.3,1)}
 q=L(0,d/2+.8);P("box",q[0],2.4,q[1],1.7,.1,2.9,roof,ry+PI/2,.8,null,0,.22);
 // stone chimney up the side wall
-for(let i=0;i<7;i++){q=L(-w/2-.32,-d*.15);P("box",q[0],.3+i*.62,q[1],.7-(i>4?.12:0),.6,.9-(i>4?.12:0),i&1?lerpC(c.th.wall,0xffffff,.16):c.th.wall,ry,.65)}q=L(-w/2-.32,-d*.15);P("box",q[0],4.65,q[1],.8,.12,1,dark,ry,.8);reg(q[0],q[1],rot&1?.9:.7,rot&1?.7:.9,4.7,1);
+// set out past the round side logs (they reach w/2+.07) so no log pokes through it; courses meet edge to edge in one dark stone colour (overlapping courses of different shades flicker where their faces share a plane)
+for(let i=0;i<7;i++){q=L(-w/2-.46,-d*.15);P("box",q[0],.31+i*.62,q[1],.7-(i>4?.12:0),.62,.9-(i>4?.12:0),c.th.wall,ry,.65)}q=L(-w/2-.46,-d*.15);P("box",q[0],4.65,q[1],.8,.12,1,dark,ry,.8);reg(q[0],q[1],rot&1?.9:.7,rot&1?.7:.9,4.7,1);
 // woodpile by the wall
 q=L(w/2+.45,d*.1);for(let i=0;i<3;i++)P("cyl",q[0],.2+i*.32,q[1],.32,1.3,.32,i&1?end:lc,ry+PI/2,.7,null,0,PI/2);return true};
 // jack-o'-lantern with a glowing face

@@ -34,11 +34,11 @@ const stilt=(x,z,rot)=>{const W=3.6,D=3.2;if(!free(x,z,4.6))return false;
 const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
 reg(x,z,rot&1?D:W,rot&1?W:D,2,0);
 for(const [a,b] of[[-W/2+.3,-D/2+.3],[W/2-.3,-D/2+.3],[-W/2+.3,D/2-.3],[W/2-.3,D/2-.3],[0,-D/2+.3],[0,D/2-.3]]){const q=L(a,b);P("cyl",q[0],1,q[1],.34,2,.34,wood[1],0,.6)}
-const dk=L(0,0);P("box",dk[0],1.95,dk[1],W,.2,D,wood[0],ry,.8);
+const dk=L(0,0);P("box",dk[0],1.95,dk[1],W+.04,.2,D+.04,wood[0],ry,.8);
 for(let j=0;j<3;j++){const q=L(0,D/2+.45+j*.9),h=1.5-j*.5;blk(q[0],q[1],rot&1?.9:W*.45,h,rot&1?W*.45:.9,wood[2],.6)}
 const bk=L(0,-D/2+.1);P("box",bk[0],3.1,bk[1],W,2.2,.18,wood[2],ry,.7);
 for(const s of[-1,1]){const q=L(s*(W/2-.1),0);P("box",q[0],3.1,q[1],.18,2.2,D,wood[2],ry,.7)}
-for(let i=0;i<4;i++){const q=L(0,-D/2+.22);P("box",q[0],2.3+i*.55,q[1],W+.02,.05,.2,wood[1],ry,.8)}
+for(let i=0;i<4;i++){const q=L(0,-D/2+.22);P("box",q[0],2.3+i*.55,q[1],W-.38,.05,.2,wood[1],ry,.8)}
 const rf=L(0,0);P("cone",rf[0],4.9,rf[1],5.4,1.6,5.4,pick([0x9a8a46,0x7a6a34]),0,.6);
 return true};
 // toxic waste barrel: yellow drum with a glowing green lid; some lie tipped over
