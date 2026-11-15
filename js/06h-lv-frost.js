@@ -2,7 +2,7 @@
 // Level 5 · Frozen Pass: a snowbound mountain pass with frozen lakes, log cabins, snowy pines and a blizzard.
 // Monsters are frost ghouls and yetis. Boss: Rimefang, a huge white yeti whose Icicle Rain freezes you in place.
 LV.reg({
-id:"frost",n:"Frozen Pass",tag:"Cold enough to stop a heart",mod:"blizzard",pack:3,
+id:"frost",deck:"ice",n:"Frozen Pass",tag:"Cold enough to stop a heart",mod:"blizzard",pack:3,
 theme:{sky:[0x9ec8e8,0xcfe6f4,0xffffff],cloud:.7,cc:[1,1,1],stars:0,sun:{c:0xdfeeff,i:.75,d:[.7,.2,.5]},hemi:[0xcfe6ff,0xeef6ff,.9],fog:[0xe6f2fb,35,150],
 gr:{base:"#e8f0f6",v:["#e0eaf2","#eef5fa","#dce8f1","#f2f7fb"],path:"#c8d8e6",edge:"#b4c8d8",plaza:"#dde8f0"},roads:false,
 wall:0xdde8f0,trim:0x8aa0b4,house:[0x6a4a34,0x5a3e2a,0x7a5838],roof:[0xf4f8fc,0xeaf2f8],leaf:[0x1e4a34],trunk:0x4a3420,mount:[0xb8c8d8,0xd8e6f0],snow:1,win:0xffd890,lamp:0xffe0a0,night:0,
@@ -23,9 +23,19 @@ const pine=(x,z)=>{if(!free(x,z,1.4))return false;reg(x,z,.5,.5,2.2,1);P("cyl",x
 for(let i=0;i<3;i++){const r=2.1-i*.6,y=1.6+i*1.3;P("cone",x,y,z,r,1.6,r,col,rng()*3,.6);P("cone",x,y+.55,z,r*.55,.6,r*.55,snow,0,.4)}return true};
 // log cabin with a thick white snow roof, icicles along the eaves and a smoking chimney
 const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=rot&1?w:d;if(!free(x,z,Math.max(sw,sd)/2+1.2))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
-reg(x,z,sw,sd,h+2.4,1);const lc=pick(logs);
-for(let i=0;i<6;i++)P("box",x,.25+i*.46,z,w,.42,d,i%2?lc:c.lerpC(lc,0x000000,.15),ry,.6);
-P("gab",x,h+1.1,z,d+.9,2.2,w+.9,0x3a2a24,ry+PI/2,.75);
+reg(x,z,sw,sd,h+.05);
+// walkable roof, same stepped bands as the Haunted Hollow cabins (lowest band reaches half the eave)
+{const nb=8,len=w+.45,sp=d+.9;for(let k=0;k<nb;k++){const ac=k?Math.min(d,sp*(1-k/nb)):d+.45,tp=h+.05+Math.max(.06,2.2*(k+.5)/nb)+.3;reg(x,z,rot&1?ac:len,rot&1?len:ac,tp)}}
+const lc=pick(logs),dk=c.lerpC(lc,0x000000,.3),end=c.lerpC(lc,0xffffff,.18),roof=0x3a2a24;
+// same log-cabin joinery as Haunted Hollow: plinth, stacked logs with round ends past the corners, framed and shuttered windows, door header, roof edge boards
+P("box",x,.12,z,w+.3,.24,d+.3,0x4a4440,ry,.7);
+for(let i=0;i<6;i++){const y=.42+i*.42;P("box",x,y,z,w,.4,d,i%2?lc:c.lerpC(lc,0x000000,.15),ry,.6);
+for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=L(a+Math.sign(a)*.12,b+Math.sign(b)*.12);P("cyl",q[0],y,q[1],.4,.4,.4,i%2?end:c.lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
+P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
+{const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1]){const lx=sg*((d+.9)/2)*.97;P("box",x+lx*c2,h+.06,z-lx*s2,.4,.08,w+.95,dk,r2,.85,null,0,-sg*ang)}}
+{let q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dk,ry,.9);
+for(const s of[-1,1]){q=L(s*w/3.2,d/2+.09);P("box",q[0],1.5,q[1],.06,.7,.05,dk,ry,1);P("box",q[0],1.5,q[1],.8,.06,.05,dk,ry,1);
+q=L(s*w/3.2,d/2+.12);P("box",q[0],1.1,q[1],1,.08,.2,dk,ry,.9);P("box",q[0],1.14,q[1],1,.05,.22,snow,ry,.9);q=L(s*w/3.2+s*.55,d/2+.1);P("box",q[0],1.5,q[1],.28,.82,.06,0x6a3a2a,ry,.9,null,0,s*.06)}}
 P("gab",x,h+1.55,z,d+1.2,1.1,w+1.2,snow,ry+PI/2,.9);
 for(let t=-w/2+.4;t<w/2-.2;t+=.7)for(const s of[-1,1]){const q=L(t,s*(d/2+.15));P("cone",q[0],h-.3,q[1],.07,.6,.07,0xdff6ff,ry,.9,null,PI,0)}
 let q=L(0,d/2+.03);P("box",q[0],1,q[1],1,2,.1,0x3a2a1c,ry,.9);

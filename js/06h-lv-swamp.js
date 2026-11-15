@@ -2,7 +2,7 @@
 // Level 6 · Toxic Bog: a sickly swamp under a green sky. Stilt huts, dead mangroves, toxic barrels and glowing pools.
 // Monsters are bog mutants whose hits poison you. Boss: Mother Mire, who calls up acid geysers under your feet.
 LV.reg({
-id:"swamp",n:"Toxic Bog",tag:"Don't breathe the air",mod:"blight",pack:2,
+id:"swamp",deck:"wood",n:"Toxic Bog",tag:"Don't breathe the air",mod:"blight",pack:2,
 theme:{light:{fill:.55,cool:.27,bounce:.24},sky:[0x2c3316,0x4a5a2a,0xa8b43a],cloud:.4,cc:[.7,.8,.5],stars:0,sun:{c:0xd8e060,i:.45,d:[.6,.25,.5]},hemi:[0x7aa050,0x2a2c18,.7],fog:[0x4a5a30,18,100],
 gr:{base:"#2e3320",v:["#2a2e1a","#363a20","#33301c","#2a3a22"],path:"#4a4228",edge:"#262a18",plaza:"#4a4630"},roads:false,
 wall:0x3a3a26,trim:0x2a2a18,house:[0x4a3a22,0x3e3020,0x5a4628],roof:[0x3a3a22,0x4a4428],leaf:[0x4a6a2a],trunk:0x3a3024,mount:[0x2e3a24,0x3a4a2e],win:0xd8ff40,lamp:0xc8ff40,night:.4,

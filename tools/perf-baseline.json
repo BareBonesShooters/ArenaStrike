@@ -1,96 +1,96 @@
 {
  "note": "Made by npm run perf -- --approve. Frame times are from the machine that recorded them.",
- "made": "2026-11-13",
+ "made": "2026-11-14",
  "data": {
   "ultra meadow eye": {
-   "calls": 64,
-   "tris": 147474,
-   "ms": 0.19
+   "calls": 66,
+   "tris": 139384,
+   "ms": 0.17
   },
   "ultra meadow overview": {
-   "calls": 64,
-   "tris": 147474,
-   "ms": 0.27
+   "calls": 66,
+   "tris": 139384,
+   "ms": 0.33
   },
   "ultra ruin eye": {
    "calls": 135,
    "tris": 46604,
-   "ms": 0.25
+   "ms": 0.23
   },
   "ultra ruin overview": {
    "calls": 133,
    "tris": 46600,
-   "ms": 0.37
+   "ms": 0.34
   },
   "ultra lv:hollow eye": {
-   "calls": 56,
-   "tris": 79558,
-   "ms": 0.17
+   "calls": 54,
+   "tris": 113526,
+   "ms": 0.12
   },
   "ultra lv:hollow overview": {
-   "calls": 53,
-   "tris": 79552,
-   "ms": 0.14
+   "calls": 52,
+   "tris": 113522,
+   "ms": 0.12
   },
   "ultra lv:forge eye": {
-   "calls": 39,
-   "tris": 41182,
+   "calls": 49,
+   "tris": 104178,
    "ms": 0.12
   },
   "ultra lv:forge overview": {
-   "calls": 40,
-   "tris": 41184,
-   "ms": 0.11
+   "calls": 49,
+   "tris": 104178,
+   "ms": 0.83
   },
   "high meadow eye": {
-   "calls": 42,
-   "tris": 89002,
-   "ms": 0.1
+   "calls": 44,
+   "tris": 84339,
+   "ms": 0.13
   },
   "high meadow overview": {
-   "calls": 42,
-   "tris": 89002,
-   "ms": 0.1
+   "calls": 44,
+   "tris": 84339,
+   "ms": 0.11
   },
   "high ruin eye": {
    "calls": 72,
    "tris": 24543,
-   "ms": 0.14
+   "ms": 0.13
   },
   "high ruin overview": {
    "calls": 71,
    "tris": 24541,
-   "ms": 1.58
+   "ms": 1.15
   },
   "high lv:hollow eye": {
-   "calls": 43,
-   "tris": 48064,
+   "calls": 41,
+   "tris": 66708,
    "ms": 0.09
   },
   "high lv:hollow overview": {
    "calls": 42,
-   "tris": 48062,
+   "tris": 66710,
    "ms": 0.08
   },
   "high lv:forge eye": {
-   "calls": 28,
-   "tris": 21690,
+   "calls": 37,
+   "tris": 62262,
    "ms": 0.08
   },
   "high lv:forge overview": {
-   "calls": 29,
-   "tris": 21692,
+   "calls": 37,
+   "tris": 62262,
    "ms": 0.07
   },
   "medium meadow eye": {
-   "calls": 29,
-   "tris": 83033,
-   "ms": 0.07
+   "calls": 31,
+   "tris": 78159,
+   "ms": 0.11
   },
   "medium meadow overview": {
-   "calls": 29,
-   "tris": 83033,
-   "ms": 0.06
+   "calls": 31,
+   "tris": 78159,
+   "ms": 0.07
   },
   "medium ruin eye": {
    "calls": 47,
@@ -100,62 +100,62 @@
   "medium ruin overview": {
    "calls": 46,
    "tris": 21376,
-   "ms": 0.09
+   "ms": 0.08
   },
   "medium lv:hollow eye": {
    "calls": 27,
-   "tris": 37749,
+   "tris": 59637,
    "ms": 0.05
   },
   "medium lv:hollow overview": {
    "calls": 26,
-   "tris": 37747,
+   "tris": 59635,
    "ms": 0.04
   },
   "medium lv:forge eye": {
-   "calls": 15,
-   "tris": 18345,
+   "calls": 22,
+   "tris": 60527,
    "ms": 0.04
   },
   "medium lv:forge overview": {
-   "calls": 16,
-   "tris": 18347,
-   "ms": 0.03
+   "calls": 22,
+   "tris": 60527,
+   "ms": 0.04
   },
   "low meadow eye": {
    "calls": 17,
-   "tris": 41046,
-   "ms": 0.04
+   "tris": 39014,
+   "ms": 0.06
   },
   "low meadow overview": {
    "calls": 17,
-   "tris": 41046,
-   "ms": 0.03
+   "tris": 39014,
+   "ms": 0.04
   },
   "low ruin eye": {
    "calls": 54,
    "tris": 14460,
-   "ms": 0.08
+   "ms": 0.07
   },
   "low ruin overview": {
    "calls": 49,
    "tris": 14326,
-   "ms": 0.07
+   "ms": 0.06
   },
   "low lv:hollow eye": {
-   "calls": 20,
-   "tris": 19440,
+   "calls": 21,
+   "tris": 18290,
    "ms": 0.04
   },
   "low lv:hollow overview": {
-   "calls": 19,
-   "tris": 19438,
+   "calls": 22,
+   "tris": 18292,
    "ms": 0.03
   },
   "low lv:forge eye": {
    "calls": 10,
    "tris": 11090,
-   "ms": 0.02
+   "ms": 0.03
   },
   "low lv:forge overview": {
    "calls": 10,
@@ -164,38 +164,38 @@
   },
   "potato meadow eye": {
    "calls": 17,
-   "tris": 37578,
+   "tris": 35223,
    "ms": 0.04
   },
   "potato meadow overview": {
    "calls": 17,
-   "tris": 37578,
-   "ms": 0.03
+   "tris": 35223,
+   "ms": 0.04
   },
   "potato ruin eye": {
    "calls": 42,
    "tris": 11460,
-   "ms": 0.08
+   "ms": 0.07
   },
   "potato ruin overview": {
    "calls": 42,
    "tris": 11460,
-   "ms": 0.07
+   "ms": 0.06
   },
   "potato lv:hollow eye": {
-   "calls": 22,
-   "tris": 14358,
+   "calls": 21,
+   "tris": 15436,
    "ms": 0.04
   },
   "potato lv:hollow overview": {
-   "calls": 22,
-   "tris": 14358,
+   "calls": 21,
+   "tris": 15436,
    "ms": 0.03
   },
   "potato lv:forge eye": {
    "calls": 10,
    "tris": 8770,
-   "ms": 0.03
+   "ms": 0.02
   },
   "potato lv:forge overview": {
    "calls": 10,

@@ -3,7 +3,7 @@
 // stands at the centre, with giant carved heads, vine-wrapped columns, torches and stone snakes around it.
 // Monsters are vine stalkers that leap at you. Boss: The Thorn Idol, a living stone idol whose root spikes burst through the ground.
 LV.reg({
-id:"temple",n:"Overgrown Temple",tag:"The jungle swallowed the old gods",mod:"giants",pack:-1,
+id:"temple",deck:"stone",n:"Overgrown Temple",tag:"The jungle swallowed the old gods",mod:"giants",pack:-1,
 theme:{sky:[0x2a8a7a,0x9ad8a0,0xf0d080],cloud:.6,cc:[1,1,.95],stars:0,sun:{c:0xffd060,i:.85,d:[.4,.7,.3]},hemi:[0xb8e0a0,0x3a5a2a,.8],fog:[0x5a9a8a,30,140],
 gr:{base:"#3f6a32",v:["#4a7a3a","#355a2a","#5a6a34","#6a5a36"],path:"#b0a894",edge:"#2e4a24",plaza:"#8a8a74"},roads:false,
 wall:0x7a7a6a,trim:0x4a5a3a,house:[0x8a8a7a,0x7a7860],roof:[0x4a6a30,0x3a5a28],leaf:[0x2f7a2a,0x3f8a34,0x2a6a22],trunk:0x5a4028,mount:[0x3a6a4a,0x4a7a5a],win:0xffd060,lamp:0xffc040,

@@ -2,7 +2,7 @@
 // Level 2 · Scorched Dunes: a sun-baked desert town at noon. Low sand mounds, adobe houses, saguaro cacti and bleached bones.
 // Monsters are mummy husks that dig out of the sand. Boss: The Dune Pharaoh, who calls down sandstorms.
 LV.reg({
-id:"dunes",n:"Scorched Dunes",tag:"The sand remembers",mod:"heatwave",pack:0,
+id:"dunes",deck:"sand",n:"Scorched Dunes",tag:"The sand remembers",mod:"heatwave",pack:0,
 theme:{sky:[0x1c4f9a,0x6fa6d8,0xf2e0a8],cloud:0,cc:[1,.96,.86],stars:0,sun:{c:0xfff1c0,i:.95,d:[.3,.9,.35]},hemi:[0xcfe6ff,0xd8b77c,.85],fog:[0xf0dcaa,60,200],
 gr:{base:"#d8b77c",v:["#cfae70","#e2c48f","#c9a468","#dcbc82"],path:"#c4a06a",edge:"#a88656",plaza:"#e4cc98"},roads:false,
 wall:0xd9b98a,trim:0x8a6a44,house:[0xdcab88,0xcb9676,0xe3b592],roof:[0xb98b6a,0xa87858],leaf:[0x6f8a4a],trunk:0x5a4028,mount:[0xc9a070,0xd9b47e],win:0x2a1a10,lamp:0xffd080,night:0,

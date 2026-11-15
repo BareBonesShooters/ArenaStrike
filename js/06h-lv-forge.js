@@ -2,7 +2,7 @@
 // Level 7 · Molten Forge: a smoky forge built on black basalt, with lava channels and a volcano outside the walls.
 // Monsters are cinder imps and magma golems that burst into flame when they die. Boss: Furnace Colossus, whose Lava Wave rings must be jumped.
 LV.reg({
-id:"forge",n:"Molten Forge",tag:"The mountain is bleeding fire",mod:"firestorm",pack:1,
+id:"forge",deck:"metal",n:"Molten Forge",tag:"The mountain is bleeding fire",mod:"firestorm",pack:1,
 theme:{light:{fill:.55,cool:.27,bounce:.24},sky:[0x14100e,0x5a1a10,0xff7a2a],cloud:.6,cc:[.42,.28,.24],stars:.2,sun:{c:0xff7a3a,i:1.05,d:[.5,.18,.6]},hemi:[0xffa06a,0x4a2a1c,.95],fog:[0x5a2414,35,150],
 gr:{base:"#3a2c24",v:["#30241e","#44342a","#4a3424","#3a2a20"],path:"#3a2a20",edge:"#150f0c",plaza:"#2e2622"},roads:false,
 wall:0x4a3a34,trim:0x2a1e1a,house:[0x2e2624,0x3a2e2a,0x262020],roof:[0x1a1412,0x221a18],leaf:[0x2a1a10],trunk:0x1a1210,mount:[0x140e0c,0x1e1614],win:0xff8a2a,lamp:0xff7a2a,night:.35,
@@ -71,6 +71,20 @@ reg(x,z,rot&1?D:W,rot&1?W:D,2.2,1);
 const bd=L(0,-.2);P("box",bd[0],1.2,bd[1],W,2.4,.12,wood,ry,.7);
 for(let i=0;i<4;i++){const q=L(-1+i*.66,.1);P("cyl",q[0],1.1,q[1],.07,2.2,.07,0x5a5a60,ry,.7,null,0,.12);P("pyr",q[0],2.3,q[1],.16,.4,.16,0x8a8a90,ry,1)}
 return true};
+const RICH=(typeof S==="undefined"?0:S.gfx)<=2; // pipes, braziers and smelter stacks only on Medium and up
+// overhead steam pipe run on two A-frame supports, with banded joints, a red valve wheel and a glowing hot seam
+const pipes=(x,z,rot)=>{const len=rr(7,11);if(!free(x,z,len/2+.6))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs],y=2.7;
+for(const e of[-1,1]){const q=L(e*(len/2-.6),0);reg(q[0],q[1],.5,.5,y+.3,1);for(const s of[-1,1]){const t=L(e*(len/2-.6),s*.45);P("box",t[0],y/2,t[1],.16,y+.2,.16,iron,ry,.8,null,s*.18,0)}P("box",q[0],y-.3,q[1],.2,.16,1.1,iron,ry,.8)}
+P("cyl",x,y,z,.46,len,.46,0x4a403a,ry+PI/2,.75,null,0,PI/2);P("cyl",x,y+.55,z,.3,len,.3,0x3a3430,ry+PI/2,.75,null,0,PI/2);
+for(let i=0;i<4;i++){const q=L(-len/2+.6+i*(len-1.2)/3,0);P("cyl",q[0],y,q[1],.56,.14,.56,0x2a2420,ry+PI/2,.8,null,0,PI/2)}
+{const q=L(len*.15,0);P("box",q[0],y,q[1],.06,.06,.56,0xff5a14,ry+PI/2,1,glow);const v=L(-len*.2,0);P("cyl",v[0],y+.42,v[1],.08,.3,.08,iron,ry,.8);P("cyl",v[0],y+.6,v[1],.4,.05,.4,0xa8281c,ry,.8)}return true};
+// iron brazier: three legs, a glowing bowl of coals and a soft flame halo
+const brazier=(x,z)=>{if(!free(x,z,.9))return false;reg(x,z,.8,.8,1.2,1);for(let i=0;i<3;i++){const a=i*2.094;P("box",x+Math.cos(a)*.3,.45,z+Math.sin(a)*.3,.07,.9,.07,iron,0,.8,null,Math.sin(a)*.2,-Math.cos(a)*.2)}
+P("cyl",x,1,z,.9,.28,.9,0x2a2420,0,.8);P("cyl",x,1.15,z,.72,.06,.72,0xff7a1a,0,1,glow);P("cone",x,1.45,z,.36,.6,.36,0xffb040,0,1,glow);c.halo(x,1.6,z,0xff8a2a,2.2,.55);c.light(x,1.7,z,0xff7a2a,1,10,true);return true};
+// smelter stacks rising past the far wall: tall brick chimneys with a hot glowing rim and a smoke plume (scenery only, outside the arena)
+if(RICH){let sd=917;const sr=()=>(sd=(sd*16807)%2147483647)/2147483647;for(let i=0;i<4;i++){const a=i*1.571+sr()*.5+.4,R2=c.H+5+sr()*4,sx=Math.cos(a)*R2,sz=Math.sin(a)*R2,hh=13+sr()*6;
+P("cyl",sx,hh/2,sz,2.4,hh,2.4,0x3a2a24,0,.7);for(let k=1;k<4;k++)P("cyl",sx,hh*k/4,sz,2.6,.3,2.6,0x241a16,0,.8);P("cyl",sx,hh+.05,sz,2.1,.1,2.1,0xff6a1a,0,1,glow);
+c.halo(sx,hh+2,sz,0x3a3232,5,.45);c.halo(sx+.8,hh+5,sz-.5,0x4a3e3a,8,.32)}}
 // ---- placement
 // landmark: an erupting volcano outside the walls, with lava streaks down its flank and a smoke plume
 const a0=rng()*6.283,R=c.H+16,vx=Math.cos(a0)*R,vz=Math.sin(a0)*R;
@@ -85,13 +99,14 @@ P("box",vx+Math.cos(a)*r,6.5,vz+Math.sin(a)*r,.7,22.7,.3,0xff5a14,0,1,null,rx,rz
 place(c.pc(2),(x,z)=>smithy(x,z),12);
 place(1,(x,z)=>crucible(x,z),14);
 place(c.pc(3),(x,z,r)=>gantry(x,z,r),8);
-place(c.pc(4),(x,z)=>anvil(x,z),6);
+place(c.pc(RICH?5:4),(x,z)=>anvil(x,z),6);
 place(c.pc(6),(x,z)=>columns(x,z),6);
 place(c.pc(8),(x,z)=>obsidian(x,z),6);
 place(c.pc(6),(x,z)=>pool(x,z,rr(2,3.6),rng()<.5),6);
 place(c.pc(4),(x,z,r)=>channel(x,z,r*PI/2+rng()*.4,rr(8,14)),10);
 place(c.pc(3),(x,z,r)=>cart(x,z,r*PI/2+rng()*.3),8);
 place(c.pc(3),(x,z,r)=>rack(x,z,r),6);
+if(RICH){place(c.pc(3),(x,z,r)=>pipes(x,z,r),8);place(c.pc(5),(x,z)=>brazier(x,z),6)}
 },
 mon:{names:["Cinder Imp","Ember Runner","Magma Golem","Ash Crawler","Obsidian Hulk","Flame Spitter","Slag Stalker"],weights:[[0,55],[1,22],[2,12],[3,14],[4,6],[5,8],[6,6]],hp:1,spd:1,dmg:1,trait:"explode"},
 // black rock body per type, glowing orange cracks, curved horns, a flame on the head and glowing eyes

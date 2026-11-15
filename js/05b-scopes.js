@@ -105,7 +105,7 @@ const s=scopeOf(g);if(!gb||!gb.lens||!s.pip)return;
 ensure();const L=gb.lens,geo=new T.CircleGeometry(L.r,40),grp=new T.Group();
 const p=new T.Mesh(geo,picM),q=new T.Mesh(geo,new T.MeshBasicMaterial({map:retTex(s,g),transparent:true,depthWrite:false,toneMapped:false}));
 // scope shadow: a dark ring in front of the glass that drifts with sway and aim lag and closes in while the scope comes up
-const rm=new T.Mesh(geo,new T.MeshBasicMaterial({map:ringT.clone(),transparent:true,depthWrite:false,toneMapped:false}));rm.material.map.needsUpdate=true;rm.position.z=.0011;
+const rm=new T.Mesh(geo,new T.MeshBasicMaterial({map:ringT,transparent:true,depthWrite:false,toneMapped:false}));rm.position.z=.0011;
 q.position.z=.0007;grp.add(p,q,rm);grp.position.set(L.x||0,L.y,L.z);gb.grp.add(grp);gb.lensG=grp;gb.lensQ=q;gb.ringM=rm;gb.lensGun=g}
 // per frame, after the main view is drawn and before the gun is: show the zoomed picture in the glass while aiming
 function lens(g){

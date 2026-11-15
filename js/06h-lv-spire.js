@@ -2,7 +2,7 @@
 // Level 4 · Iron Spire: a night-time machine city on a steel tower. Lattice towers, server racks, cargo containers and a needle spire.
 // Monsters are rogue robots with glowing visors. Boss: Overseer Mk-IV, which fires an orbital laser along a line.
 LV.reg({
-id:"spire",n:"Iron Spire",tag:"The machines have taken the tower",mod:"surge",pack:1,
+id:"spire",deck:"tech",n:"Iron Spire",tag:"The machines have taken the tower",mod:"surge",pack:1,
 theme:{sky:[0x060a18,0x1c3248,0x2fb8c0],cloud:.1,cc:[.35,.5,.6],stars:1,night:1,sun:{c:0xcfe8ff,i:.5,d:[-.4,.8,.3]},hemi:[0x4a6a90,0x1a1e26,.45],fog:[0x101c2a,30,150],
 gr:{base:"#2a3038",v:["#262c34","#30363e","#23282f","#2e343b"],path:"#3a4048",edge:"#1c5a66",plaza:"#343a44"},roads:false,
 wall:0x3a4250,trim:0x00e0ff,house:[0x4a525e,0x5a6470,0x3c4450],roof:[0x2a303a,0x3a4048],leaf:[0x1a2a30],trunk:0x2a2a2a,mount:[0x1a2030,0x222a3a],win:0x40ffd0,lamp:0x7af0ff,

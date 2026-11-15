@@ -91,14 +91,85 @@ if(g.multi||g.m>=70)return"heavy";
 if(g.pst||g.id==="g0"||(g.l<=.34&&!g.st))return"pistol";
 return g.st?"rifle":"smg"}
 
+// signature parts per gun, so guns that share a family still read differently at a glance.
+// Each entry gets the build helpers; e = muzzle end (z), top = receiver top (y). rev: revolver frame instead of a slide (no box mag); drum: drum magazine; mz: extra muzzle length.
+const GUNLOOK=(()=>{
+const serr=(P,z0,n)=>{for(let i=0;i<n;i++)P.bx(.068,.03,.006,0,.08,z0+i*.014,MDK)},
+fold=(P,mat)=>{const z=P.back;P.bx(.008,.008,.2,.03,-.02,z+.1,mat||MDK);P.bx(.008,.008,.2,-.03,-.02,z+.1,mat||MDK);P.bx(.07,.07,.012,0,-.035,z+.2,MDK)},
+handle=(P,len)=>{P.bx(.016,.045,.02,0,.1,-len/2,MDK);P.bx(.016,.045,.02,0,.1,len/2,MDK);P.bx(.022,.016,len+.02,0,.126,0,MDK)},
+vgrip=(P,z,ang)=>P.bx(.034,.09,.034,0,-.1,z,MDK,ang||0),
+can=(P,r,len)=>{P.cy(r,len,0,.02,P.e-len/2,MDK);P.cy(r+.004,.012,0,.02,P.e-len+.004,MMT)},
+bipod=(P,z)=>{P.bx(.012,.16,.012,.04,-.07,z,MDK,0,0,.35);P.bx(.012,.16,.012,-.04,-.07,z,MDK,0,0,-.35)},
+woodSt=P=>{P.bx(.074,.11,.23,0,-.014,P.L/2+.11,MWD)},
+ring=(P,r,z,mat)=>{const m=P.add(new T.TorusGeometry(r,.007,6,20),mat,0,.02,z);return m},
+rev=big=>P=>{const fr=big?.075:.065;
+const cr=big?.064:.056;P.bx(fr,.085,.08,0,.035,.065,P.skin);P.bx(.03,.012,.1,0,.035+cr+.004,-.02,P.skin);P.bx(fr,.03,.1,0,-.02,-.02,P.skin);P.cy(cr,.08,0,.035,-.015,MMT); // frame, top strap and cylinder
+if(!P.lowQ)for(let i=0;i<6;i++){const a=i*Math.PI/3+Math.PI/6;P.bx(.01,.01,.07,Math.cos(a)*cr,.035+Math.sin(a)*cr,-.015,MDK)} // flutes
+P.cy(big?.03:.025,-P.f-.055,0,.045,(P.f-.055)/2,MMT); // barrel to the frame
+P.bx(.018,.012,P.B-P.f-.02,0,.072,(P.f-P.B-.07)/2,MDK); // top rib
+if(big)P.bx(.04,.035,P.B-P.f-.04,0,.012,(P.f-P.B-.07)/2,P.skin); // full underlug
+P.bx(.014,.035,.022,0,.09,.1,MDK,-.6); // hammer spur
+P.bx(.064,.15,.08,0,-.1,.115,MWD,.42); // wood grip
+P.prop=P.cy(.044,.04,0,-.1,-.03,MMT);P.prop.visible=false}; // speed loader shown while reloading
+return{
+"Pistol":P=>serr(P,P.L*.25,3),
+"Sidearm+":P=>{P.bx(.072,.06,.06,0,.065,P.e+.03,MDK);P.bx(.074,.012,.03,0,.098,P.e+.03,MMT);serr(P,P.L*.28,2);P.mz=.02},
+"Service Pistol":P=>{P.bx(.072,.06,P.L*.9,0,.075,0,P.skin);serr(P,P.L*.22,4);P.cy(.024,.08,0,-.035,P.f+.06,MDK);P.cy(.018,.006,0,-.035,P.f+.017,MBL)},
+"Machine Pistol":P=>{fold(P);vgrip(P,P.f+.03)},
+"Revolver":rev(0),"Hand Cannon":P=>{rev(1)(P);P.bx(.06,.05,.05,0,.045,P.e+.02,MDK);P.bx(.062,.012,.03,0,.075,P.e+.02,MMT);P.mz=.01},
+"SMG":P=>fold(P),
+"Burst SMG":P=>{handle(P,.14);vgrip(P,P.f+.06,-.3);P.bx(.06,.06,.11,0,.0,P.back+.05,MDK)},
+"Tactical SMG":P=>{can(P,.032,.17);P.mz=.17;P.bx(.06,.07,.1,0,-.01,P.back+.05,P.skin);P.bx(.02,.02,.06,.05,.02,P.f+.06,MDK)},
+"Gale SMG":P=>{P.drum=1;fold(P,MMT);P.bx(.1,.014,P.L*.5,0,.07,-.02,MMT)},
+"Assault Rifle":P=>{handle(P,.2);P.mcurve=1},
+"Carbine":P=>{P.cy(.018,.18,0,-.005,P.L/2+.08,MDK);vgrip(P,P.f+.08)},
+"Battle Rifle":P=>{P.bx(.106,.102,P.L*.42,0,-.004,P.f+.02+P.L*.21,MWD);woodSt(P);P.bx(.02,.04,.02,0,.105,P.f+.03,MDK)},
+"Season Carbine":P=>{vgrip(P,P.f+.07,-.35);P.bx(.05,.05,.07,0,.02,P.e+.03,MMT);P.bx(.11,.012,P.L*.6,0,.035,-.02,MMT);P.mz=.04},
+"Vanguard AR":P=>{can(P,.03,.15);P.mz=.15;P.bx(.012,.012,.12,.06,.04,P.f+.08,RAILM);handle(P,.1)},
+"Light Machine Gun":P=>{bipod(P,P.e+.08);handle(P,.12);P.cy(.034,P.B*.7,0,.02,P.f-P.B*.35,MDK)},
+"Shotgun":P=>{},
+"Scattergun":P=>{for(let i=0;i<5;i++)P.bx(.05,.012,.03,0,.052,P.f-.03-i*.05,MDK)},
+"Sawed-Off":P=>{P.cy(.03,P.B*.95,.034,.02,P.f-P.B*.5,MMT);P.cy(.03,P.B*.95,-.034,.02,P.f-P.B*.5,MMT);P.bx(.064,.15,.08,0,-.11,P.L*.3,MWD,.5)},
+"Pump Defender":P=>{for(let i=0;i<4;i++)P.cy(.012,.05,.058,-.01,P.L*.05+i*.03,MRD);P.bx(.012,.05,.13,.052,-.01,P.L*.095,MDK)},
+"Auto Shotgun":P=>{P.drum=1;P.bx(.06,.03,P.B*.9,0,.045,P.f-P.B*.45,MDK)},
+"Thunder Shotgun":P=>{for(let i=0;i<2;i++)ring(P,.046,P.e+.03+i*.05,MBL);P.bx(.014,.014,P.B,0,.06,P.f-P.B/2,MBL)},
+"Dune Breaker":P=>{for(let i=0;i<4;i++)P.bx(.014,.03,.03,Math.cos(i*Math.PI/2)*.032,.02+Math.sin(i*Math.PI/2)*.032,P.e-.015,MMT);P.bx(.1,.1,.06,0,-.015,P.f+.05,MWD)},
+"Marksman":P=>{},
+"Scout Rifle":P=>{P.bx(.074,.03,.17,0,-.075,P.L/2+.1,MDK)},
+"Hunter Rifle":P=>{woodSt(P);P.bx(.1,.1,P.L*.5,0,-.02,P.f+P.L*.25,MWD);P.cy(.01,.06,.05,.05,.05,MMT);P.add(new T.SphereGeometry(.016,8,6),MMT,.08,.05,.05)},
+"Anti-Materiel Rifle":P=>{P.bx(.09,.06,.1,0,.02,P.e-.03,MDK);P.bx(.092,.016,.02,0,.02,P.e-.01,MMT);bipod(P,P.f-.05);P.bx(.02,.12,.02,0,-.1,P.L/2+.18,MDK);P.mz=.08},
+"Nova Beam":P=>{for(const s of[-1,1])P.bx(.006,.07,.12,s*.05,.04,P.e+.08,MGL);ring(P,.04,P.e+.01,MGL)},
+"Photon Marksman":P=>{P.add(new T.OctahedronGeometry(.035),MGL,0,.02,P.e-.02);P.bx(.1,.01,P.L*.7,0,.062,0,MGL)},
+"Aether Marksman":P=>{for(let i=0;i<3;i++)ring(P,.03,P.f-.05-i*.08,MMG);P.bx(.094,.01,P.L*.6,0,.064,0,MMG)},
+"Apex Predator":P=>{for(let i=0;i<3;i++)P.bx(.01,.05,.04,0,.09,P.f+.05+i*.06,MDK,-.5);P.bx(.096,.01,P.L*.8,0,-.06,0,MRD)},
+"Plasma Gun":P=>{},
+"Arc Blaster":P=>{for(const s of[-1,1])P.bx(.01,.012,.08,s*.03,.02,P.e-.03,MBL);P.bx(.07,.012,.012,0,.02,P.e+.01,MBL)},
+"Plasma Repeater":P=>{P.cy(.03,.14,0,.1,-.02,MGL);P.cy(.034,.02,0,.1,.06,MDK);P.cy(.034,.02,0,.1,-.1,MDK)},
+"Vortex SMG":P=>{ring(P,.05,P.e+.02,MGL);ring(P,.035,P.e+.06,MGL)},
+"Omega Rifle":P=>{P.bx(.012,.05,.16,0,.1,-.04,P.skin,-.2);P.bx(.014,.008,.16,0,.127,-.03,MGL)},
+"Aether Rifle":P=>{for(let i=0;i<3;i++)ring(P,.06,P.f+.03-i*.06,MMG)},
+"Mythic Pulse":P=>{ring(P,.075,P.f+.02,MMG);for(const s of[-1,1])P.bx(.01,.06,.16,s*.06,.03,P.f+.04,MDK)},
+"Railgun":P=>{},
+"Coil Driver":P=>{P.bx(.11,.03,.12,0,-.06,P.f+.02,MDK)},
+"Ion Lance":P=>{P.add(new T.ConeGeometry(.02,.12,8),MBL,0,.02,P.e-.04,-Math.PI/2);P.mz=.1},
+"Lancer":P=>{P.bx(.006,.03,.16,0,-.02,P.e+.02,MMT);P.bx(.008,.035,.03,0,-.02,P.e+.09,MDK)},
+"Heavy Pulse":P=>{},
+"Storm Cannon":P=>{for(const s of[-1,1])P.bx(.008,.008,P.B,s*.07,.06,P.f-P.B/2,MBL);P.bx(.15,.012,.03,0,.075,P.f-.05,MBL)},
+"Singularity":P=>{P.add(new T.SphereGeometry(.05,12,10),MMG,0,.08,.0);ring(P,.07,P.f-.02,MMG)},
+"Zenith Cannon":P=>{ring(P,.09,P.f-.15,MMT);ring(P,.09,P.f-.25,MMT);P.bx(.012,.07,.1,0,.11,.0,MMT)}
+}})();
+
 // ---------- gun model (barrel points toward -z) ----------
 function buildGun(g,sk){
 const grp=new T.Group(),skin=skinMat(sk||SK[0]),f=-g.l/2,fam=gunFamily(g),pistol=fam==="pistol",lowQ=typeof S!=="undefined"&&S.gfx>=3,ext=fam==="rifle"||fam==="sniper"?.14:0;
+const lk=GUNLOOK[g.n],P={g,f,L:g.l,B:g.b,skin,lowQ,mz:0,back:fam==="pistol"?g.l*.46:fam==="smg"?g.l*.24:g.l/2};let rv=false;
 const add=(geo,mat,x,y,z,rx,ry,rz)=>{const m=new T.Mesh(geo,mat);m.position.set(x,y,z);if(rx||ry||rz)m.rotation.set(rx||0,ry||0,rz||0);grp.add(m);return m};
 const bx=(w,h,d,x,y,z,mat,rx,ry,rz)=>add(new T.BoxGeometry(w,h,d),mat,x,y,z,rx,ry,rz),cy=(r,l,x,y,z,mat,r2)=>add(new T.CylinderGeometry(r,r2==null?r:r2,l,12),mat,x,y,z,Math.PI/2,0,0);
 const rail=(len,y,z)=>{const gm=new T.BoxGeometry(.034,.012,len),uv=gm.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*Math.round(len/.022));add(gm,RAILM,0,y,z)};
 // receiver by family: pistol has a short slide, SMG a compact body, rifle a long body, the rest keep the common receiver
-if(pistol){bx(.07,.075,g.l*.62,0,.02,-g.l*.13,MDK);bx(.066,.05,g.l*.92,0,.07,0,skin);bx(.03,.02,g.l*.8,0,.1,0,MDK)}
+rv=g.n==="Revolver"||g.n==="Hand Cannon";
+if(pistol&&!rv){bx(.07,.075,g.l*.62,0,.02,-g.l*.13,MDK);bx(.066,.05,g.l*.92,0,.07,0,skin);bx(.03,.02,g.l*.8,0,.1,0,MDK)}
+else if(rv){}
 else if(fam==="smg"){bx(.09,.12,g.l*.72,0,0,-g.l*.12,skin);bx(.036,.016,g.l*.6,0,.075,-g.l*.1,MDK);bx(.05,.14,.06,0,-.13,g.l*.08,MDK)}
 else{bx(.09,.12,g.l,0,0,0,skin);bx(.036,.016,g.l*.84,0,.075,-g.l*.04,MDK);bx(.092,.02,g.l*.5,0,-.02,f+g.l*.25,MMT)}
 cy(.022,g.b,0,.02,f-g.b/2,MMT);cy(.031,.05,0,.02,f-g.b-.015,MDK);
@@ -107,9 +178,12 @@ if(fam==="sniper")cy(.027,.045,0,.02,f-g.b-ext-.02,MDK); // muzzle brake
 if(fam==="shotgun")cy(.034,g.b*.95,0,.02,f-g.b*.5,MMT); // thick barrel
 if(fam==="rifle"&&!lowQ)bx(.104,.1,g.l*.42,0,-.005,f+.02+g.l*.21,skin); // handguard
 if(!pistol&&g.b>.2&&!g.pump&&!g.coil&&!g.multi)bx(.1,.12,Math.min(g.b*.95,.34),0,.012,f-Math.min(g.b*.95,.34)/2+.02,skin);
-bx(.058,.15,.075,0,pistol?-.1:-.125,g.l*.27,MDK,.32);bx(.012,.02,.09,0,-.075,g.l*.07,MDK);
+if(!rv)bx(.058,.15,.075,0,pistol?-.1:-.125,g.l*.27,MDK,.32);bx(.012,.02,.09,0,-.075,g.l*.07,MDK);
 const mg=g.mg||.1;let mag=null,prop=null;
 if(fam==="heavy"){mag=bx(.1,.13,.11,0,-.1,-.03,MDK);if(!lowQ){bx(.012,.11,.012,.035,-.13,f+.12,MDK);bx(.012,.11,.012,-.035,-.13,f+.12,MDK);bx(.1,.012,.012,0,-.185,f+.12,MDK)}}
+else if(rv){}
+else if(lk&&(g.n==="Gale SMG"||g.n==="Auto Shotgun"))mag=add(new T.CylinderGeometry(.075,.075,.065,14),MDK,0,-.11,-.015,0,0,Math.PI/2); // drum magazine
+else if(g.n==="Assault Rifle"){mag=bx(.07,mg*.6,.075,0,-.06-mg*.3,-.015,MDK,.14);mag.add(new T.Mesh(new T.BoxGeometry(.068,mg*.55,.07),MDK));mag.children[0].position.set(0,-mg*.5,-.02);mag.children[0].rotation.x=.3} // curved mag
 else if(!g.pump&&!g.coil&&!g.multi&&!g.scope||g.id==="g4")mag=bx(.07,mg,.075,0,-.06-mg/2,-.015,MDK,.14);
 else{prop=bx(.05,.07,.05,0,-.1,-.015,MMT);prop.visible=false}
 
@@ -127,6 +201,7 @@ if(g.coil){for(let i=0;i<3;i++)cy(.056,.03,0,.02,f-.1-i*.15,MBL);bx(.016,.02,g.b
 if(g.multi){[[.045,.05],[-.045,.05],[0,-.03]].forEach(([x,y])=>cy(.02,g.b,x,y,f-g.b/2-.02,MMT));cy(.075,.06,0,.01,f-.1,MDK);cy(.075,.06,0,.01,f-.26,MDK);bx(.12,.13,.14,0,-.14,.0,MDK);bx(.1,.012,g.l*.7,0,.07,0,MRD)}
 if(!pistol&&!g.scope&&!g.pump&&!g.coil&&!g.multi)rail(Math.min(g.l*.8,.42),.082,-g.l*.06);
 if(!pistol)bx(.094,.028,.075,0,.034,-g.l*.1,MDK);
+if(lk){Object.assign(P,{bx,cy,add,e:f-g.b-ext});lk(P);if(P.prop){prop=P.prop}}
 // the optic that goes with the sight picture (hidden while aiming, because the overlay is the view through it)
 const optic=new T.Group(),ob=(w,h,d,x,y,z,mat)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);optic.add(m);return m},oc=(r,l,x,y,z,mat)=>{const m=new T.Mesh(new T.CylinderGeometry(r,r,l,12),mat);m.rotation.x=Math.PI/2;m.position.set(x,y,z);optic.add(m)},ov=(r,l,x,y,z,mat)=>{const m=new T.Mesh(new T.CylinderGeometry(r,r,l,10),mat);m.position.set(x,y,z);optic.add(m)},sk2=scopeOf(g).k,oz=-g.l*.12;
 // open reflex frame: a low base, two posts, a short hood and a tinted pane with the reticle on it, so there is something to see through instead of a solid block
@@ -148,9 +223,9 @@ else if(sk2==="rail"){lens={y:.118,z:oz+.123,r:.029};oc(.036,.03,0,.118,oz+.105,
 if(sk2==="iron"||sk2==="rev"||sk2==="bead"){ob(.012,.035,.012,0,.1,f-g.b*.75,MDK);ob(.04,.03,.012,0,.098,g.l*.36,MDK)}
 grp.add(optic);
 const mf=new T.Sprite(new T.SpriteMaterial({map:FLASH,blending:T.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));
-const mz={x:0,y:.02,z:f-g.b-ext-.07};mf.position.set(mz.x,mz.y,mz.z);mf.scale.setScalar(.34);mf.visible=false;grp.add(mf);
+const mz={x:0,y:.02,z:f-g.b-ext-.07-P.mz};mf.position.set(mz.x,mz.y,mz.z);mf.scale.setScalar(.34);mf.visible=false;grp.add(mf);
 YardArt.gun(grp,g);
-return{grp,mf,mz,f,optic,lens,mag,prop,grip:{x:0,y:pistol?-.1:-.125,z:g.l*.27},fore:{x:0,y:g.pump?-.07:-.045,z:g.pump?f-.1:f-Math.min(g.b,.3)*.55}}}
+return{grp,mf,mz,f,optic,lens,mag,prop,grip:{x:0,y:pistol?-.1:-.125,z:rv?.115:g.l*.27},fore:{x:0,y:g.pump?-.07:-.045,z:g.pump?f-.1:f-Math.min(g.b,.3)*.55}}}
 
 // ---------- knife model (blade points toward -z, edge downward) ----------
 function buildKnife(kn){
@@ -205,7 +280,7 @@ const accent=B(trim),dark=L(body);add(head,bx(.36,.1,.36),dark,0,.2,0);add(head,
 add(head,bx(.025,.025,.19),accent,.23,-.1,.15);add(torso,bx(.39,.055,.025),accent,0,.12,.17);
 arms.forEach(a=>add(a,bx(.22,.07,.22),accent,0,.07,0));
 const badge=document.createElement("canvas");badge.width=128;badge.height=64;const ctx=badge.getContext("2d");ctx.fillStyle="#121827";ctx.fillRect(0,0,128,64);ctx.fillStyle="#ffb16b";ctx.font="bold 30px monospace";ctx.textAlign="center";ctx.fillText("<DEV>",64,43);
-const map=new T.CanvasTexture(badge);add(torso,new T.PlaneGeometry(.38,.19),new T.MeshBasicMaterial({map}),0,-.08,.18)
+const map=new T.CanvasTexture(badge),bm=new T.MeshBasicMaterial({map});bm.userData.own=1;add(torso,new T.PlaneGeometry(.38,.19),bm,0,-.08,.18)
 }}
 // no shadow map on Low and Potato, so every character carries a soft dark disc on the floor instead (hidden whenever real shadows are on; Q.set toggles it)
 let BLOBT=null,BLOBM=null;const BLOBG=new T.PlaneGeometry(1,1);BLOBG.rotateX(-Math.PI/2);
@@ -433,7 +508,7 @@ b.h.scale.setScalar(k/gs);const a=d<far-30?1:clamp((far-d)/30,0,1);
 b.fr.material.opacity=.8*a;b.bk.material.opacity=.95*a;b.fl.material.opacity=a;b.tr.material.opacity=.9*a;b.sh.material.opacity=.22*a}}
 return{make,remove,update,list}})();
 function tag(txt,col,y){const c=document.createElement("canvas");c.width=256;c.height=64;const x=c.getContext("2d");x.font="bold 34px system-ui,sans-serif";x.textAlign="center";x.fillStyle=col;x.strokeStyle="#000";x.lineWidth=5;x.lineJoin="round";x.strokeText(txt,128,44);x.fillText(txt,128,44);
-const s=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),depthWrite:false,fog:false}));s.scale.set(2,.5,1);s.position.y=y||2.5;s.raycast=()=>{};s.renderOrder=5;return s}
+const s=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(c),depthWrite:false,fog:false}));s.material.userData.own=1;s.scale.set(2,.5,1);s.position.y=y||2.5;s.raycast=()=>{};s.renderOrder=5;return s}
 
 // ---------- thumbnails (offscreen renderer) ----------
 const Thumb=(()=>{

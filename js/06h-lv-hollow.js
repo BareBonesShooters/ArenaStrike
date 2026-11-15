@@ -2,7 +2,7 @@
 // Level 1 · Haunted Hollow: a graveyard village at dusk. Log cabins, crooked graves, dead trees, jack-o'-lanterns.
 // Monsters are rotting zombies that sometimes climb back out of the ground. Boss: Gravemaw, who raises hands from the earth.
 LV.reg({
-id:"hollow",n:"Haunted Hollow",tag:"The dead don't stay buried",mod:"blackout",pack:0,
+id:"hollow",deck:"wood",deckPal:[0x4a3e34,0x5e5044,0x2a221c],n:"Haunted Hollow",tag:"The dead don't stay buried",mod:"blackout",pack:0,
 theme:{sky:[0x1a1030,0x5a2d58,0xe08a4a],cloud:.5,cc:[.9,.7,.75],stars:.5,sun:{c:0xff9a5a,i:.65,d:[.8,.22,.45]},hemi:[0xb58ac8,0x2a3020,.7],fog:[0x4a3550,22,120],
 gr:{base:"#3e4a32",v:["#36412b","#465238","#2f3a27","#4b4a34"],path:"#5a4c3a",edge:"#3a3026",plaza:"#5e5648"},roads:false,
 wall:0x4a4038,trim:0x3a2e26,house:[0x6a4a32,0x5a3e2a,0x7a5838],roof:[0x2a2228,0x3a2a2a],leaf:[0x2a2a22],trunk:0x2e2620,mount:[0x2a2238,0x3a2a44],win:0xffb04a,lamp:0xffa040,night:.5,
@@ -16,7 +16,8 @@ props(c){
 const {P,blk,reg,free,place,rr,pick,rng,glow,lerpC,PI}=c;
 const stone=[0x6e6f72,0x7c7a74,0x5c5e62],wood=[0x5a3e28,0x4a3220,0x6a4a30];
 // gravestone: slab, cross or obelisk, slightly tilted
-const grave=(x,z,r)=>{if(!free(x,z,.9))return false;const t=rng(),col=pick(stone),ry=r*PI/2+rr(-.25,.25),tl=rr(-.12,.12);reg(x,z,.9,.5,1);
+const grave=(x,z,r)=>{if(!free(x,z,.9))return false;const t=rng(),col=pick(stone),ry=r*PI/2+rr(-.25,.25),tl=rr(-.12,.12);
+{const [w,d,h]=t<.5?[.88,.42,1.24]:t<.8?[.78,.34,1.44]:[.64,.64,1.66],sw=r&1?d:w,sd=r&1?w:d;reg(x,z,sw,sd,h)} // collision matches each stone's real size and height (slab with round top, cross, obelisk)
 if(t<.5){P("box",x,.55,z,.8,1.1,.22,col,ry,.6,null,0,tl);P("cyl",x,1.1,z,.8,.22,.22,col,ry,.6,null,0,PI/2)}
 else if(t<.8){P("box",x,.7,z,.18,1.4,.18,col,ry,.6,null,0,tl);P("box",x,1.0,z,.7,.16,.18,col,ry,.6,null,0,tl)}
 else{P("box",x,.15,z,.6,.3,.6,col,ry,.6);P("pyr",x,.95,z,.38,1.4,.38,col,ry,.6)}
@@ -32,7 +33,9 @@ const e=limb(bx,y,bz,a,rr(.75,1.15),l,.15,tc);limb(e[0],e[1],e[2],a+rr(.4,.8),rr
 if(rng()<.4){const y=h*.6;P("box",x+.3,y-.3,z,.05,.6,.05,0x1a1410,0,1);P("box",x+.3,y-.66,z,.18,.12,.08,0x2a221c,0,.8)}return true};
 // log cabin: stacked logs with ends poking past the corners, stone chimney, porch with a lean-to roof, framed and shuttered windows
 const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=rot&1?w:d;if(!free(x,z,Math.max(sw,sd)/2+1.6))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
-reg(x,z,sw,sd,h+2.4,1);const lc=pick(wood),dark=lerpC(lc,0x000000,.3),end=lerpC(lc,0xffffff,.18),roof=pick(c.th.roof);
+reg(x,z,sw,sd,h+.05);
+// walkable roof: stepped bands follow the gable slope, and the lowest band reaches half the eave, which with the 0.3 m standing margin holds you to the roof edge without an invisible wall far out at ground level
+{const nb=8,len=w+.45,sp=d+.9;for(let k=0;k<nb;k++){const ac=k?Math.min(d,sp*(1-k/nb)):d+.45,tp=h+.05+Math.max(.06,2.2*(k+.5)/nb);reg(x,z,rot&1?ac:len,rot&1?len:ac,tp)}}const lc=pick(wood),dark=lerpC(lc,0x000000,.3),end=lerpC(lc,0xffffff,.18),roof=pick(c.th.roof);
 P("box",x,.12,z,w+.3,.24,d+.3,lerpC(c.th.trim,0x000000,.1),ry,.7);
 for(let i=0;i<6;i++){const y=.42+i*.42,lg=i%2?lc:lerpC(lc,0x000000,.15);P("box",x,y,z,w,.4,d,lg,ry,.6);
 for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=L(a+Math.sign(a)*.12,b+Math.sign(b)*.12);P("cyl",q[0],y,q[1],.4,.4,.4,i%2?end:lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}

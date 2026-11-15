@@ -44,7 +44,8 @@ e.sT-=dt;if(e.sT<=0){e.sT=.4;if(want>.12&&Math.hypot(p.x-e.sx,p.z-e.sz)<.1*spd){
 // hard unstuck: hop toward open space
 for(let k=0;k<8;k++){const a=e.ea+Math.atan2(ux,uz)+k*.785,hx=clamp(p.x+Math.cos(a)*.6,-H+2,H-2),hz=clamp(p.z+Math.sin(a)*.6,-H+2,H-2);if(!blocked(hx,hz,p.y,e.rad||.5)){p.x=hx;p.z=hz;p.y=floorAt(p.x,p.z,p.y+1.2);break}}}e.sx=p.x;e.sz=p.z}
 return mv?Math.min(1,want):0}
-function dropModel(g,tg){g.parent&&g.parent.remove(g);disposeGeo(g);if(tg&&tg.material){if(tg.material.map)tg.material.map.dispose();tg.material.dispose()}}
+// materials a model made for itself (name tag, badge: userData.own) go with it, with their canvas textures; shared materials and skins stay cached
+function dropModel(g,tg){g.parent&&g.parent.remove(g);disposeGeo(g);g.traverse(o=>{const m=o.material;if(m&&m.userData&&m.userData.own&&m!==(tg&&tg.material)){if(m.map)m.map.dispose();m.dispose()}});if(tg&&tg.material){if(tg.material.map)tg.material.map.dispose();tg.material.dispose()}}
 function killFeed(a,b,w,head,mine){
 const f=el("kfeed"),d=document.createElement("div");d.className="kf"+(mine?" me":"");
 d.innerHTML=`<b>${esc(a)}</b><i>${esc(w||"")}${head?" "+gly("target",12):""}</i><b>${esc(b)}</b>`;f.appendChild(d);

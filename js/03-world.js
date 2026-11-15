@@ -170,7 +170,7 @@ GDET=new T.CanvasTexture(c);GDET.colorSpace=T.NoColorSpace;/* a multiplier aroun
 // ---------- world: build ----------
 function disposeWorld(){
 const grp=WORLD.group;if(grp){sc.remove(grp);grp.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}})}
-WORLD.group=null;WORLD.lights=[];WORLD.dust=null;WORLD.dv=null;WORLD.flames=null;WORLD.zone=null;WORLD.course=null;WORLD.lvAnim=null;WORLD.spawns=[];WORLD.ceil=0;boxes=[]}
+WORLD.group=null;WORLD.lights=[];WORLD.dust=null;WORLD.dv=null;WORLD.flames=null;WORLD.zone=null;WORLD.course=null;WORLD.lvAnim=null;WORLD.halos=null;WORLD.spawns=[];WORLD.ceil=0;boxes=[]}
 
 // Low and Potato have no shadow map, so the shadows every wall, house and crate would cast are painted into the ground texture instead, along the same sun direction the real ones use.
 // Drawn once per match into a small canvas (solid, so overlaps never double up) and then softened and laid over the ground at a fixed strength.
@@ -383,13 +383,40 @@ hs.forEach((h,i)=>{const lx=i*2.6-6.5,lz=(i%2?1.3:-1.3),px=x+lx*c+lz*s,pz=z-lx*s
 const pc=n=>opt.fixed?n:Math.max(1,Math.round(n*LOD.props)),place=(n,fn,m)=>{let ok=0;for(let i=0;i<n*5&&ok<n;i++){const [x,z]=P2(m);if(fn(x,z,Math.floor(rng()*4)))ok++}return ok};
 
 // Monster Rush arenas: a themed multi-level layout (raised decks with staircases, bridges, bunkers, lanes) built before the scatter props so those fit around it
-const arenaPack=v=>{
-const c1=lerpC(th.trim,0x8a8e9a,.4),c2=lerpC(th.trim,0xffffff,.25),gl=th.lamp,wc3=pick(th.house);
+const arenaPack=(v,LVD)=>{
+// each level dresses the shared layout in its own material (LV deck: wood, sand, stone, metal, tech, ice, obsidian); waves on plain maps keep the grey decks.
+// Colours are free on every tier; the extra trim geometry (planks, courses, rivets, snow caps, icicles, cracks) is looks-only (crng) and only on Medium and up.
+const DS=LVD&&LVD.deck||"",rich=DS&&S.gfx<=2,dk=c=>lerpC(c,0x000000,.32),lt=c=>lerpC(c,0xffffff,.16);
+const PAL=LVD&&LVD.deckPal||{wood:[0x4e3524,0x6b4a30,0x2e2018],sand:[0xc49a62,0xd8b47c,0x8e6c44],stone:[0x6e7466,0x8a907e,0x4a5046],metal:[0x4a4644,0x6a625a,0x2a2624],tech:[0x2e3e4c,0x4a6070,0x1a242e],ice:[0x8aa2b0,0xf2f7fb,0x5a7080],obsidian:[0x1c1418,0x2c2026,0x0c080a]}[DS];
+const c1=PAL?PAL[0]:lerpC(th.trim,0x8a8e9a,.4),c2=PAL?PAL[1]:lerpC(th.trim,0xffffff,.25),gl=DS==="ice"?0x9ad8ff:th.lamp,wc3=PAL?lerpC(PAL[0],pick(th.house),.35):pick(th.house),edgeGlow=!DS||DS==="metal"||DS==="tech"||DS==="obsidian";
+// side faces of a box (x,z,w,d): calls f(cx,cz,len,alongX) once per face, sitting just proud of the face
+const faces=(x,z,w,d,f)=>{f(x,z+d/2+.02,w,1);f(x,z-d/2-.02,w,1);f(x+w/2+.02,z,d,0);f(x-w/2-.02,z,d,0)};
+const dress=(x,z,w,d,hh,top)=>{if(!rich)return;const r=crng;
+if(DS==="wood"){ // plank deck with dark seams, vertical board seams on the sides and log posts at the corners
+const ax=w>=d,n=Math.floor((ax?d:w)/.55);for(let i=1;i<n;i++){const o=-(ax?d:w)/2+i*.55;P("box",ax?x:x+o,top+.005,ax?z+o:z,ax?w:.03,.012,ax?.03:d,PAL[2],0,1)}
+faces(x,z,w,d,(cx,cz,len,X)=>{for(let o=-len/2+.6;o<len/2;o+=.6)P("box",X?cx+o:cx,hh/2,X?cz:cz+o,X?.04:.02,hh,X?.02:.04,PAL[2],0,1)});
+for(const [a,b] of[[w/2,d/2],[-w/2,d/2],[w/2,-d/2],[-w/2,-d/2]])P("cyl",x+a,(hh+.35)/2,z+b,.32,hh+.35,.32,PAL[0],0,.7)}
+else if(DS==="sand"||DS==="stone"){ // block courses every half metre, a lighter coping and, on the temple and dunes, moss or drifted sand at the foot
+faces(x,z,w,d,(cx,cz,len,X)=>{for(let y=.5;y<hh-.1;y+=.5)P("box",cx,y,cz,X?len+.04:.03,.05,X?.03:len+.04,PAL[2],0,1);for(let o=-len/2+.9;o<len/2;o+=1.8)P("box",X?cx+o:cx,Math.min(.25,hh/2),X?cz:cz+o,X?.03:.02,Math.min(.5,hh),X?.02:.03,PAL[2],0,1)});
+for(let i=0;i<3;i++){const a=r()*6.283,ox=Math.cos(a)*(w/2+.05),oz=Math.sin(a)*(d/2+.05);P("ico",x+Math.max(-w/2,Math.min(w/2,ox)),.05,z+Math.max(-d/2,Math.min(d/2,oz)),.9+r(),.25,.9+r(),DS==="sand"?0xd8b47c:0x4f6a3a,r()*3,.8)}}
+else if(DS==="metal"||DS==="tech"){ // plate seams with rivet heads, and black-and-yellow hazard edging (forge) or cyan panel lines (spire)
+faces(x,z,w,d,(cx,cz,len,X)=>{for(let o=-len/2+1.4;o<len/2;o+=1.4){P("box",X?cx+o:cx,hh/2,X?cz:cz+o,X?.05:.03,hh,X?.03:.05,PAL[2],0,1);if(DS==="metal")for(let y=.35;y<hh;y+=.6)P("box",X?cx+o-.12:cx,y,X?cz:cz+o-.12,.06,.06,.06,PAL[1],0,1)}});
+if(DS==="metal"){const ax=w>=d,L2=ax?w:d,k=Math.floor(L2/.6);for(const sg of[-1,1])for(let i=0;i<k;i++){const o=-L2/2+.3+i*.6;P("box",ax?x+o:x+sg*(w/2-.15),top+.01,ax?z+sg*(d/2-.15):z+o,ax?.58:.3,.02,ax?.3:.58,i&1?0x1a1a1a:0xe8b828,0,1)}}
+else P("box",x,top+.01,z,w*.7,.015,.06,0x5af0ff,0,1,glow)}
+else if(DS==="ice"){ // snow cap that overhangs a little, with icicles under the edges
+P("box",x,top+.07,z,w+.3,.14,d+.3,0xf6fafd,0,.9);faces(x,z,w+.16,d+.16,(cx,cz,len,X)=>{for(let o=-len/2+.3;o<len/2;o+=.55+r()*.4)P("cone",X?cx+o:cx,top-.32,X?cz:cz+o,.07,.5+r()*.4,.07,0xdff6ff,0,.9,null,PI,0)})}
+else if(DS==="obsidian"){ // glowing red cracks running down the sides
+faces(x,z,w,d,(cx,cz,len,X)=>{for(let i=0;i<Math.max(1,len/3|0);i++){const o=(r()-.5)*len*.8,h2=hh*(.4+r()*.5);P("box",X?cx+o:cx,hh-h2/2,X?cz:cz+o,X?.05:.02,h2,X?.02:.05,0xff2a3a,0,1,glow,0,(r()-.5)*.5)}})}};
 const deck=(x,z,w,d,hh)=>{blk(x,z,w,hh,d,c1,.7);P("box",x,hh+.05,z,w+.16,.1,d+.16,c2,0,1);
-for(const [a,b,ww,dd] of[[0,d/2+.01,w,.07],[0,-d/2-.01,w,.07],[w/2+.01,0,.07,d],[-w/2-.01,0,.07,d]])P("box",x+a,hh-.25,z+b,ww,.12,dd,gl,0,1,glow)};
-const stairs=(ex,ez,dx,dz,h0,h1,wd)=>{const n=Math.ceil((h1-h0)/.5);for(let i=0;i<n;i++){const k=.45+(n-1-i)*.9,cx=ex-dx*k,cz=ez-dz*k;blk(cx,cz,dx?.9:wd,h0+(h1-h0)*(i+1)/n,dx?wd:.9,c2,.75)}};
-const low=(x,z,w,d,hh)=>{blk(x,z,w,hh,d,wc3,.65);P("box",x,hh+.06,z,w+.1,.12,d+.1,th.trim,0,1)};
-const pillar=(x,z,hh)=>{blk(x,z,1.7,hh,1.7,lerpC(c1,0x000000,.15),.6);P("box",x,.3,z,2.1,.6,2.1,c2,0,.8);P("box",x,hh+.2,z,2.1,.4,2.1,c2,0,.8);P("box",x,hh*.6,z,.12,hh*.5,1.76,gl,0,1,glow)};
+if(edgeGlow)for(const [a,b,ww,dd] of[[0,d/2+.01,w,.07],[0,-d/2-.01,w,.07],[w/2+.01,0,.07,d],[-w/2-.01,0,.07,d]])P("box",x+a,hh-.25,z+b,ww,.12,dd,gl,0,1,glow);
+else for(const [a,b,ww,dd] of[[0,d/2+.03,w+.1,.1],[0,-d/2-.03,w+.1,.1],[w/2+.03,0,.1,d+.1],[-w/2-.03,0,.1,d+.1]])P("box",x+a,hh-.22,z+b,ww,.18,dd,dk(c1),0,1);
+dress(x,z,w,d,hh,hh+.1)};
+const stairs=(ex,ez,dx,dz,h0,h1,wd)=>{const n=Math.ceil((h1-h0)/.5);for(let i=0;i<n;i++){const k=.45+(n-1-i)*.9,cx=ex-dx*k,cz=ez-dz*k,sh=h0+(h1-h0)*(i+1)/n;blk(cx,cz,dx?.9:wd,sh,dx?wd:.9,c2,.75);
+if(rich)P("box",cx+dx*.42,sh+.02,cz+dz*.42,dx?.1:wd+.04,.05,dx?wd+.04:.1,DS==="ice"?0xf6fafd:dk(c2),0,1)}}; // tread nosing on each step
+const low=(x,z,w,d,hh)=>{blk(x,z,w,hh,d,wc3,.65);P("box",x,hh+.06,z,w+.1,.12,d+.1,PAL?c2:th.trim,0,1);dress(x,z,w,d,hh,hh+.12)};
+const pillar=(x,z,hh)=>{blk(x,z,1.7,hh,1.7,lerpC(c1,0x000000,.15),.6);P("box",x,.3,z,2.1,.6,2.1,c2,0,.8);P("box",x,hh+.2,z,2.1,.4,2.1,c2,0,.8);
+if(edgeGlow)P("box",x,hh*.6,z,.12,hh*.5,1.76,gl,0,1,glow);else{P("box",x+.9,hh*.62,z,.22,.32,.22,gl,0,1,glow);P("box",x-.9,hh*.62,z,.22,.32,.22,gl,0,1,glow)} // lantern pair instead of a neon strip
+dress(x,z,1.7,1.7,hh,hh+.4)};
 if(v===0){ // keep: two-tier fortress, corner bunkers, ring of cover
 deck(0,0,17,17,1.6);deck(0,0,8,8,3.2);
 stairs(8.5,0,-1,0,0,1.6,3);stairs(-8.5,0,1,0,0,1.6,3);stairs(0,8.5,0,-1,0,1.6,3);stairs(0,-8.5,0,1,0,1.6,3);
@@ -412,14 +439,14 @@ deck(-30,-30,7,7,3.2);stairs(-26.5,-30,-1,0,0,3.2,3);deck(30,-6,7,7,3.2);stairs(
 };
 if(!opt.empty){
 const LVD=opt.level&&typeof LV_REG!=="undefined"&&LV_REG[opt.level];
-if(opt.waves&&!(LVD&&LVD.pack===-1))arenaPack(LVD&&LVD.pack!=null?LVD.pack:((seed>>>0)>>3)%4);
+if(opt.waves&&!(LVD&&LVD.pack===-1))arenaPack(LVD&&LVD.pack!=null?LVD.pack:((seed>>>0)>>3)%4,LVD);
 if(LVD){ // a Monster Rush level builds all of its own scenery (js/06h-lv-*.js)
 let nl=0,ne=0;WORLD.lvAnim=[];
 const c={blk,reg,P,glow,solid,grp,rng,crng,rr,cr,pick,cpick,free,place,pc,crateAt,crate,barrel,rock,lerpC,th,key,H,PI,U,LOD,
 // extra=true: a lamp that only lights its surroundings on High and Ultra (up to 4 more), so lanterns and torches you can see cast real light there
 // while Low keeps its original 4 lights and costs no more
 light:(x,y,z,col,int,dist,extra)=>{if(SOFT)return null;if(extra){if((LOD.post|0)<2||ne>=4)return null;ne++}else{if(nl>=4)return null;nl++}const l=new T.PointLight(col,(int||1.2)*PLK(dist||24,1.6),PLR(dist||24,1.6),PLD);l.position.set(x,y,z);l.userData.base=(int||1.2)*PLK(dist||24,1.6);l.userData.ph=rng()*9;grp.add(l);WORLD.lights.push(l);return l},
-halo:(x,y,z,col,s,op)=>{const h=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:col,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:op==null?.7:op,fog:false}));h.scale.setScalar(s||2);h.position.set(x,y,z);h.raycast=()=>{};grp.add(h);return h},
+halo:(x,y,z,col,s,op)=>{const h=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:col,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:op==null?.7:op,fog:false}));h.scale.setScalar(s||2);h.position.set(x,y,z);h.raycast=()=>{};h.userData.op=h.material.opacity;grp.add(h);(WORLD.halos=WORLD.halos||[]).push(h);return h},
 add:o=>{o.traverse(m=>{m.raycast=()=>{}});grp.add(o);return o},
 anim:fn=>{WORLD.lvAnim.push(fn)}};
 try{LVD.props(c)}catch(e){console.warn("level props",opt.level,e)}}
@@ -508,9 +535,9 @@ function worldFrame(dt,t){
 YardArt.frame(dt);
 if(WORLD.lvAnim)for(const f of WORLD.lvAnim)try{f(dt,t)}catch(e){}
 Sky.m.position.copy(cam.position);Sky.u.time.value=t;
-for(const l of WORLD.lights)l.intensity=l.userData.base*(.82+.18*Math.sin(t*7+l.userData.ph)*Math.sin(t*2.3+l.userData.ph*2)+(Math.sin(t*31+l.userData.ph)>.97?-.4:0));
+const lm=Light.lampMul;for(const l of WORLD.lights)l.intensity=lm*l.userData.base*(.82+.18*Math.sin(t*7+l.userData.ph)*Math.sin(t*2.3+l.userData.ph*2)+(Math.sin(t*31+l.userData.ph)>.97?-.4:0));
 if(WORLD.dust){const dv=WORLD.dv||{vy:.15,top:6.8},wx=(dv.wx||0)*(1+.6*Math.max(0,Math.sin(t*.23))*Math.sin(t*.71)),a=WORLD.dust.geometry.attributes.position,up=dv.vy>0;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*dv.vy*(1+i%3*.4);if(up){if(y>dv.top)y=.2}else if(y<0)y=dv.top;a.setY(i,y);let x=a.getX(i)+(Math.sin(t*.3+i)*.1+wx*(1+i%5*.15))*dt;if(x>H)x-=H*2;a.setX(i,x)}a.needsUpdate=true}
-if(WORLD.flames)for(const c of WORLD.flames){const f=.9+.1*Math.sin(t*9+c.ph)+.06*Math.sin(t*23+c.ph*3);c.fl.scale.set(f,.8+.4*f,f);c.halo.material.opacity=.5+.3*f;if(!c.fixed){c.g.position.y=c.y+Math.sin(t*.8+c.ph)*.12;c.g.rotation.y=t*.2+c.ph}}}
+if(WORLD.flames)for(const c of WORLD.flames){const f=.9+.1*Math.sin(t*9+c.ph)+.06*Math.sin(t*23+c.ph*3);c.fl.scale.set(f,.8+.4*f,f);c.halo.material.opacity=(.5+.3*f)*lm;if(!c.fixed){c.g.position.y=c.y+Math.sin(t*.8+c.ph)*.12;c.g.rotation.y=t*.2+c.ph}}}
 
 
 
