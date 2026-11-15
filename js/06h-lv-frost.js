@@ -30,7 +30,8 @@ const lc=pick(logs),dk=c.lerpC(lc,0x000000,.3),end=c.lerpC(lc,0x9a7350,.35),roof
 // same log-cabin joinery as Haunted Hollow: plinth, stacked logs with round ends past the corners, framed and shuttered windows, door header, roof edge boards
 P("box",x,.12,z,w+.3,.24,d+.3,0x4a4440,ry,.7);
 for(let i=0;i<6;i++){const y=.42+i*.42,lg=i%2?lc:c.lerpC(lc,0x000000,.15);P("box",x,y,z,w,.4,d,lg,ry,.6);
-for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=i%2?L(a,b+Math.sign(b)*.1):L(a+Math.sign(a)*.1,b);P("cyl",q[0],y,q[1],.42,.6,.42,lg,ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
+// round logs on all four walls; each row's log on one pair of walls runs on past the corners and the crossing pair stops inside it, swapping every row, so the corners interlock like a notched cabin and every end belongs to a real log
+{const ox=w/2-.14,oz=d/2-.14,lx=i%2?w-.28:w+.6,lz=i%2?d+.6:d-.28;for(const s of[-1,1]){let q=L(0,s*oz);P("cyl",q[0],y,q[1],.42,lx,.42,lg,ry,.7,null,0,PI/2);q=L(s*ox,0);P("cyl",q[0],y,q[1],.42,lz,.42,lg,ry+PI/2,.7,null,0,PI/2)}}}
 P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
 {const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1]){const lx=sg*((d+.9)/2)*.97;P("box",x+lx*c2,h+.06,z-lx*s2,.4,.08,w+.95,dk,r2,.85,null,0,-sg*ang)}}
 {let q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dk,ry,.9);
