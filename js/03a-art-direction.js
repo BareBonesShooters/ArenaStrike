@@ -347,7 +347,7 @@ const YardArt = (() => {
         for(const side of[-1,1]){
           p("box",side*14,4.2,-40,2,.32,2,C.rust);
           p("cyl",side*14,5.4,-40,.12,2.2,.12,C.iron);
-          p("box",side*14+.7,6.1,-40,1.4,.8,.06,C.brass);
+          p("box",side*14+.7,6.06,-40,1.4,.8,.06,C.brass); // top just under the post top (level with it, the two faces flicker)
         }
       }
     }

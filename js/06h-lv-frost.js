@@ -24,8 +24,8 @@ for(let i=0;i<3;i++){const r=2.1-i*.6,y=1.6+i*1.3;P("cone",x,y,z,r,1.6,r,col,rng
 // log cabin with a thick white snow roof, icicles along the eaves and a smoking chimney
 const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=rot&1?w:d;if(!free(x,z,Math.max(sw,sd)/2+1.2))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
 reg(x,z,sw,sd,h+.05);
-// walkable roof, same stepped bands as the Haunted Hollow cabins (lowest band reaches half the eave)
-{const nb=8,len=w+.45,sp=d+.9;for(let k=0;k<nb;k++){const ac=k?Math.min(d,sp*(1-k/nb)):d+.45,tp=h+.05+Math.max(.06,2.2*(k+.5)/nb)+.3;reg(x,z,rot&1?ac:len,rot&1?len:ac,tp)}}
+// walkable roof, same stepped bands as the Haunted Hollow cabins (lowest band reaches half the eave), raised 10 cm for the snow cap
+{const nb=8,len=w+.45,sp=d+.9;for(let k=0;k<nb;k++){const ac=k?Math.min(d,sp*(1-k/nb)):d+.45,tp=h+.05+Math.max(.06,2.2*(k+.5)/nb)+.1;reg(x,z,rot&1?ac:len,rot&1?len:ac,tp)}}
 const lc=pick(logs),dk=c.lerpC(lc,0x000000,.3),end=c.lerpC(lc,0x9a7350,.35),roof=0x3a2a24;
 // same log-cabin joinery as Haunted Hollow: plinth, stacked logs with round ends past the corners, framed and shuttered windows, door header, roof edge boards
 P("box",x,.12,z,w+.3,.24,d+.3,0x4a4440,ry,.7);
@@ -35,13 +35,14 @@ for(let i=0;i<6;i++){const y=.42+i*.42,lg=i%2?lc:c.lerpC(lc,0x000000,.15);P("box
 P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
 {const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1]){const lx=sg*((d+.9)/2)*.97;P("box",x+lx*c2,h+.06,z-lx*s2,.4,.08,w+.95,dk,r2,.85,null,0,-sg*ang)}}
 {let q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dk,ry,.9);
-for(const s of[-1,1]){q=L(s*w/3.2,d/2+.09);P("box",q[0],1.5,q[1],.06,.7,.05,dk,ry,1);P("box",q[0],1.5,q[1],.8,.06,.05,dk,ry,1);
+for(const s of[-1,1]){q=L(s*w/3.2,d/2+.09);P("box",q[0],1.5,q[1],.06,.66,.05,dk,ry,1);P("box",q[0],1.5,q[1],.76,.06,.05,dk,ry,1);
 q=L(s*w/3.2,d/2+.12);P("box",q[0],1.1,q[1],1,.08,.2,dk,ry,.9);P("box",q[0],1.14,q[1],1.04,.05,.22,snow,ry,.9);q=L(s*w/3.2+s*.55,d/2+.1);P("box",q[0],1.5,q[1],.28,.82,.06,0x6a3a2a,ry,.9,null,0,s*.06)}}
-P("gab",x,h+1.55,z,d+1.2,1.1,w+1.2,snow,ry+PI/2,.9);
+// snow cap: same slope as the roof, laid 10 cm on top of it and a little wider so it overhangs the eaves (a flatter cap set a metre up read as a floating lid)
+{const W2=d+1.15,H2=2.2*W2/(d+.9);P("gab",x,h+.1+H2/2,z,W2,H2,w+1.1,snow,ry+PI/2,.9)}
 for(let t=-w/2+.4;t<w/2-.2;t+=.7)for(const s of[-1,1]){const q=L(t,s*(d/2+.15));P("cone",q[0],h-.3,q[1],.07,.6,.07,0xdff6ff,ry,.9,null,PI,0)}
 let q=L(0,d/2+.03);P("box",q[0],1,q[1],1,2,.1,0x3a2a1c,ry,.9);
 for(const s of[-1,1]){q=L(s*w/3.2,d/2+.04);P("box",q[0],1.5,q[1],.8,.7,.1,c.th.win,ry,1,glow)}
-q=L(w*.3,-d*.15);P("box",q[0],h+1.6,q[1],.6,1.6,.6,0x4a4440,ry,.7);c.halo(q[0],h+3.6,q[1],0xdde6ee,3.5,.22);return true};
+q=L(w*.3,-d*.15);P("box",q[0],h+1.9,q[1],.6,1.6,.6,0x4a4440,ry,.7);c.halo(q[0],h+3.9,q[1],0xdde6ee,3.5,.22);return true};
 // ice crystal formation, glowing light blue, some tall
 const icec=(x,z)=>{if(!free(x,z,1.2))return false;reg(x,z,1.2,1.2,1.6,1);const n=3+Math.floor(rng()*3);for(let i=0;i<n;i++){const h=rng()<.3?rr(3,5):rr(1.2,2.4),r=rr(.14,.3);P("cone",x+rr(-.5,.5),h/2,z+rr(-.5,.5),r,h,r,pick(ice),rng()*3,1,glow)}if(rng()<.4)c.halo(x,1.4,z,0x9ad8ff,2.6,.45);return true};
 // snowman: stacked spheres, carrot nose, stick arms, top hat

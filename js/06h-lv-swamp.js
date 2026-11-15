@@ -57,7 +57,7 @@ reg(x,z,.7,.7,h,1);P("cyl",x,h/2,z,.6,h,.6,0xe8dcc0,0,.6);P("sph",x,h,z,r*2,r*.9
 for(let i=0;i<5;i++){const a=rng()*6.283,dd=rr(.2,.6);P("sph",x+Math.cos(a)*dd*r,h+.45*r*Math.sqrt(1-dd*dd),z+Math.sin(a)*dd*r,.22,.12,.22,sp,0,1,pur?glow:null)}
 return true};
 // cattail and reed cluster
-const reeds=(x,z)=>{if(!free(x,z,1))return false;for(let i=0;i<7;i++){const cx=x+rr(-.8,.8),cz=z+rr(-.8,.8),h=rr(1.4,2.4);P("cyl",cx,h/2,cz,.07,h,.07,pick([0x6a8a3a,0x7a8a46,0x5a7a34]),0,.6);if(i%2===0)P("cyl",cx,h-.25,cz,.14,.5,.14,0x4a2a1a,0,.8)}return true};
+const reeds=(x,z)=>{if(!free(x,z,1))return false;for(let i=0;i<7;i++){const cx=x+rr(-.8,.8),cz=z+rr(-.8,.8),h=rr(1.4,2.4);P("cyl",cx,h/2-.03,cz,.07,h-.06,.07,pick([0x6a8a3a,0x7a8a46,0x5a7a34]),0,.6);if(i%2===0)P("cyl",cx,h-.25,cz,.14,.5,.14,0x4a2a1a,0,.8)}return true};
 // rotting boardwalk planks lying on the mud
 const planks=(x,z,ry)=>{if(!free(x,z,2))return false;const dx=Math.cos(ry),dz=-Math.sin(ry);for(let i=0;i<7;i++){if(rng()<.2)continue;const q=i*.55-1.6;P("box",x+dx*q,.06,z+dz*q,1.1,.08,.42,pick([0x5a4630,0x4a3a26,0x6a5a3a]),ry+rr(-.08,.08),.8)}return true};
 // sunken rowboat, half under the water

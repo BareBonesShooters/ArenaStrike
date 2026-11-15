@@ -17,13 +17,15 @@ for (const map of maps) {
     try { Title.end(); } catch (e) {} try { clearEnts(); } catch (e) {}
     const rec = [], orig = Batch.prototype.add;
     Batch.prototype.add = function (geo, m, col, ...rest) {
-      if (geo === U.box && this.k) { // baked solid batch only
+      const gt = geo === U.box ? "box" : geo === U.cyl ? "cyl" : null;
+      if (!this.__id) this.__id = ++window.__bid || (window.__bid = 1);
+      if (gt) { // boxes everywhere; upright cylinders only for their flat tops and bottoms
         const e = m.elements, ax = [[e[0], e[1], e[2]], [e[4], e[5], e[6]], [e[8], e[9], e[10]]];
         const len = ax.map(v => Math.hypot(...v));
         // only boxes rotated about y alone (their local y stays world up)
         if (Math.abs(ax[1][1] / len[1] - 1) < 1e-4) {
           let ry = Math.atan2(-ax[0][2], ax[0][0]); ry = ((ry % (Math.PI / 2)) + Math.PI / 2) % (Math.PI / 2); if (Math.PI / 2 - ry < 1e-4) ry = 0;
-          rec.push({ ry, cx: e[12], cy: e[13], cz: e[14], ax, len, col: new T.Color(col).getHex() });
+          rec.push({ ry: gt === "cyl" ? 0 : ry, gt, bt: this.__id, cx: e[12], cy: e[13], cz: e[14], ax: gt === "cyl" ? [[len[0], 0, 0], [0, len[1], 0], [0, 0, len[2]]] : ax, len, col: new T.Color(col).getHex() });
         }
       }
       return orig.call(this, geo, m, col, ...rest);
@@ -43,11 +45,11 @@ for (const map of maps) {
       const al = b.ax.every(v => { const n = Math.hypot(...v) || 1, p = [Math.abs(v[0] * u[0] + v[2] * u[2]) / n, Math.abs(v[1]) / n, Math.abs(v[0] * w[0] + v[2] * w[2]) / n]; return Math.max(...p) > .999; });
       if (!al) continue;
       if (!groups.has(k)) groups.set(k, []);
-      groups.get(k).push({ lo, hi, col: b.col, x: b.cx, y: b.cy, z: b.cz, size: ext.map(e => +(e * 2).toFixed(2)) });
+      groups.get(k).push({ lo, hi, col: b.col, gt: b.gt, bt: b.bt, x: b.cx, y: b.cy, z: b.cz, size: ext.map(e => +(e * 2).toFixed(2)) });
     }
     const out = [];
     const covered = (list, pt, A, B) => list.some(C => C !== A && C !== B && pt.every((v, i) => v > C.lo[i] + .001 && v < C.hi[i] - .001));
-    const near = (a, b) => (a.col !== b.col);
+    const near = (a, b) => (a.col !== b.col || a.bt !== b.bt); // different colour, or different batch (glow vs solid shade differently)
     for (const list of groups.values()) {
       list.sort((p, q) => p.lo[0] - q.lo[0]);
       for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) {
@@ -57,6 +59,7 @@ for (const map of maps) {
         if (ov.some(o => o < -.003)) continue;
         // zfight: on some axis a face of A and a face of B coincide (same facing side), and the other two axes overlap with area
         for (let d = 0; d < 3; d++) {
+          if ((A.gt === "cyl" || B.gt === "cyl") && d !== 1) continue; // a cylinder only has flat faces top and bottom
           const o1 = (d + 1) % 3, o2 = (d + 2) % 3; if (ov[o1] < .02 || ov[o2] < .02) continue;
           for (const [fa, fb, sg] of [[A.hi[d], B.hi[d], 1], [A.lo[d], B.lo[d], -1]]) if (Math.abs(fa - fb) < .003 && !(d === 1 && fa < .02)) {
             // the shared patch is visible only if the point just outside it is open air (not inside some third solid)
@@ -65,7 +68,7 @@ for (const map of maps) {
           }
         }
         // sliver: B pokes out of A's face (or A out of B's) by 1-60 mm while overlapping well on the other axes
-        for (const [X, Y] of [[A, B], [B, A]]) for (let d = 0; d < 3; d++) {
+        if (A.gt === "box" && B.gt === "box") for (const [X, Y] of [[A, B], [B, A]]) for (let d = 0; d < 3; d++) {
           const o1 = (d + 1) % 3, o2 = (d + 2) % 3; if (ov[o1] < .04 || ov[o2] < .04 || ov[d] < .02) continue;
           for (const [p, sg] of [[Y.hi[d] - X.hi[d], 1], [X.lo[d] - Y.lo[d], -1]]) if (!(sg < 0 && d === 1 && Y.lo[d] < .02) && p > .001 && p < .06 && (Y.hi[d] - Y.lo[d]) > p + .05) {
             const pt = [0, 0, 0]; pt[d] = sg > 0 ? X.hi[d] + p / 2 : X.lo[d] - p / 2; pt[o1] = (Math.max(X.lo[o1], Y.lo[o1]) + Math.min(X.hi[o1], Y.hi[o1])) / 2; pt[o2] = (Math.max(X.lo[o2], Y.lo[o2]) + Math.min(X.hi[o2], Y.hi[o2])) / 2;

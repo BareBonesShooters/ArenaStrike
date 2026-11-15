@@ -43,7 +43,7 @@ for(let i=0;i<6;i++){const y=.42+i*.42,lg=i%2?lc:lerpC(lc,0x000000,.15);P("box",
 P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
 {const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1])for(let k=1;k<=4;k++){const f=k/5,lx=sg*((d+.9)/2)*(1-f)+sg*Math.sin(ang)*.05,ly=h+f*2.2+Math.cos(ang)*.05;P("box",x+lx*c2,ly,z-lx*s2,.4,.06,w+.95,k&1?lerpC(roof,0x000000,.2):roof,r2,.85,null,0,-sg*ang)}}
 let q=L(0,d/2+.03);P("box",q[0],1,q[1],1,2,.1,0x2a1a10,ry,.9);q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dark,ry,.9);
-for(const s of[-1,1]){q=L(s*w/3.2,d/2+.04);P("box",q[0],1.5,q[1],.8,.7,.1,c.th.win,ry,1,glow);q=L(s*w/3.2,d/2+.09);P("box",q[0],1.5,q[1],.06,.7,.05,dark,ry,1);P("box",q[0],1.5,q[1],.8,.06,.05,dark,ry,1);
+for(const s of[-1,1]){q=L(s*w/3.2,d/2+.04);P("box",q[0],1.5,q[1],.8,.7,.1,c.th.win,ry,1,glow);q=L(s*w/3.2,d/2+.09);P("box",q[0],1.5,q[1],.06,.66,.05,dark,ry,1);P("box",q[0],1.5,q[1],.76,.06,.05,dark,ry,1);
 q=L(s*w/3.2,d/2+.12);P("box",q[0],1.1,q[1],1,.08,.2,dark,ry,.9);q=L(s*w/3.2+s*.55,d/2+.1);P("box",q[0],1.5,q[1],.28,.82,.06,lerpC(roof,lc,.4),ry,.9,null,0,s*.06)}
 // porch: plank deck, two posts and a lean-to roof over the door
 q=L(0,d/2+.75);P("box",q[0],.14,q[1],2.6,.12,1.4,lerpC(lc,0x000000,.1),ry,.8);
