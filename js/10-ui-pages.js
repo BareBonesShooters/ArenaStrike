@@ -15,7 +15,7 @@ if(v!=="pg")LoadoutPreview.stop();
 try{if(v==="lobby"&&!bkReady)backdrop()}catch(e){}
 if(v==="")bkReady=false;
 try{if(view==="pg"&&v!=="pg"&&typeof Thumb!=="undefined")Thumb.flush()}catch(e){}
-try{if(v!==view)snd("whoosh",.35);Mus.view(v)}catch(e){}
+try{if(v!==view)snd("whoosh",.55);Mus.view(v)}catch(e){}
 for(const id of["lobby","pg","ps","end"]){const el=$(id);if(!el)continue;const was=el.classList.contains("hid");el.classList.toggle("hid",id!==v);if(was&&id===v)enterEl(el)}
 if(HUDV.includes(v)){const h=$("hud");if(h)h.classList.add("hid")}
 // canvas must not steal lobby/UI clicks
@@ -1060,7 +1060,7 @@ if(!t||t===document)return;
 if(t.disabled||t.getAttribute("disabled")!=null)return;
 const a=t.getAttribute("data-a"),f=ACT[a];if(!f)return;if(a==="wshx"&&t.id==="wsh"&&e.target.closest&&e.target.closest("[data-stop]")&&!e.target.closest(".wshc"))return;
 e.preventDefault();e.stopPropagation();
-try{snd("ui",.35)}catch(err){}
+try{snd("ui",.8)}catch(err){} // menu clicks: clearly audible, still below gameplay sounds
 try{f(t)}catch(err){console.error("ACT."+a,err);toast("Button error: "+a)}});
 document.addEventListener("input",e=>{const t=e.target,f=t.dataset&&t.dataset.i&&INP[t.dataset.i];if(f)f(t)});
 const INP={

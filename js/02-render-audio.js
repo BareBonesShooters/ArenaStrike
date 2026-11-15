@@ -220,9 +220,10 @@ if(r>=4)[392,494,587,784].forEach(f=>tone(f,.9,"sine",.04*v,f*1.01,n*.07));if(r>
 // ----- arcade sounds: chiptune blips, coin and power-up jingles, combo ladders, plus the monster, rift and thunder effects -----
 const sq=(f,d,v,dl,f2)=>tone(f,d,"square",v,f2||f,dl),tri=(f,d,v,dl,f2)=>tone(f,d,"triangle",v,f2||f,dl);
 Object.assign(SND,{
-ui:v=>{tri(988,.04,.07*v);tone(1318,.05,"sine",.04*v,1318,.03)},
-hover:v=>tone(1760,.03,"sine",.04*v,1760),
-tab:v=>{sq(660,.04,.04*v,0,880);sq(990,.05,.03*v,.04)},
+// UI blips: a short square transient up front gives each click a crisp edge (a bare triangle/sine reads as muffled), then the tone
+ui:v=>{sq(1568,.012,.05*v);tri(988,.05,.1*v);tone(1318,.06,"sine",.06*v,1318,.03)},
+hover:v=>{tri(1760,.03,.07*v);sq(2637,.008,.02*v)},
+tab:v=>{sq(660,.04,.06*v,0,880);sq(990,.05,.045*v,.04)},
 pick:v=>[523,659,784,1046,1318].forEach((f,i)=>{sq(f,.07,.055*v,i*.045);tri(f/2,.07,.05*v,i*.045)}),
 coin:v=>{sq(988,.07,.07*v);sq(1319,.45,.07*v,.07);tone(2637,.25,"sine",.03*v,2637,.07)},
 buy:v=>{for(let i=0;i<4;i++){sq(988+i*120,.06,.05*v,i*.07);sq(1319+i*160,.18,.05*v,i*.07+.05)}},
@@ -442,7 +443,7 @@ try{gunBake(I(eq().g)||G[0],true);knBake(curKn(),true)}catch(e){}
 setTimeout(()=>{try{G.forEach(g=>gunBake(g));KN.forEach(k=>knBake(k))}catch(e){}},3500);
 bq("m:lobby",60/84*32,musLobby,{wet:.15,loop:1});bq("m:battle",60/126*16,musBattle,{wet:.1,loop:1});
 setTimeout(()=>{try{Mus.ensure(Mus.resolve("lobby"));Mus.ensure(Mus.resolve("battle"));Mus.ensure("boss");Mus.ensure("corrupt")}catch(e){}},2500)}
-document.addEventListener("pointerover",e=>{const t=e.target.closest&&e.target.closest("button,.mode,.slot,.th,.puc,[data-a]");if(!t||t===hvL)return;hvL=t;const n=performance.now();if(n-hvT<70||(view===""&&!menuOpen))return;hvT=n;snd("hover",.7)},true);
+document.addEventListener("pointerover",e=>{const t=e.target.closest&&e.target.closest("button,.mode,.slot,.th,.puc,[data-a]");if(!t||t===hvL)return;hvL=t;const n=performance.now();if(n-hvT<70||(view===""&&!menuOpen))return;hvT=n;snd("hover",.85)},true);
 let rangeK=-1; // the knife being inspected in the shooting range (-1 = the equipped one)
 const curKn=()=>mode==="range"&&rangeK>=0&&KN[rangeK]?KN[rangeK]:I(eq().k)||KN[0];
 
