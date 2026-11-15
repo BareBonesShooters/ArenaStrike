@@ -59,14 +59,16 @@ place(c.pc(12),pool,4);
 // distant jagged spires outside the walls (decor only)
 for(let i=0;i<30;i++){const a=i/30*6.283+rng()*.2,r=H+10+rng()*12,x=Math.cos(a)*r,z=Math.sin(a)*r,h=rr(10,18),w=rr(2.5,4);P("pyr",x,h/2,z,w,h,w,pick(obs),rng()*3,.6)}
 // floating rock chunks above the arena, bobbing
-const rocks=[];
-for(let i=0;i<5;i++){const m=new T.Mesh(new T.IcosahedronGeometry(rr(1,2),0),new T.MeshLambertMaterial({color:0x2a0a10,flatShading:true}));m.position.set(rr(-22,22),rr(12,17),rr(-22,22));m.userData.b=m.position.y;m.userData.ph=rng()*6.283;c.add(m);rocks.push(m)}
+const rocks=[],rockM=new T.MeshLambertMaterial({color:0x2a0a10,flatShading:true});
+for(let i=0;i<5;i++){const m=new T.Mesh(new T.IcosahedronGeometry(rr(1,2),0),rockM);m.position.set(rr(-22,22),rr(12,17),rr(-22,22));m.userData.b=m.position.y;m.userData.ph=rng()*6.283;c.add(m);rocks.push(m)}
 c.anim((dt,t)=>{for(const m of rocks){m.position.y=m.userData.b+Math.sin(t*.8+m.userData.ph)*.5;m.rotation.y+=dt*.15;m.rotation.x+=dt*.07}});
 // landmark: a huge red rift just outside the east wall, a ring of glowing slabs around a pulsing core
 const RX=H+6.5,RZ=-6;
 const rift=new T.Group();rift.position.set(RX,0,RZ);rift.rotation.y=-PI/2;
 const rm=new T.MeshBasicMaterial({color:0xff1a2a});
-for(let i=0;i<12;i++){const a=i/12*6.283,b=new T.Mesh(new T.BoxGeometry(1.1,1.7,.5),rm);b.position.set(Math.cos(a)*6,6+Math.sin(a)*6,0);b.rotation.z=a;rift.add(b)}
+const bars=new T.InstancedMesh(new T.BoxGeometry(1.1,1.7,.5),rm,12),bm=new T.Matrix4(),bq=new T.Quaternion(),bp=new T.Vector3(),bs=new T.Vector3(1,1,1),bz=new T.Vector3(0,0,1);
+for(let i=0;i<12;i++){const a=i/12*6.283;bp.set(Math.cos(a)*6,6+Math.sin(a)*6,0);bq.setFromAxisAngle(bz,a);bars.setMatrixAt(i,bm.compose(bp,bq,bs))}
+bars.frustumCulled=false;rift.add(bars);
 const disc=new T.Mesh(new T.CircleGeometry(5.2,28),new T.MeshBasicMaterial({color:0xff0a20,transparent:true,opacity:.35,side:T.DoubleSide,depthWrite:false}));disc.position.set(0,6,0);rift.add(disc);
 c.add(rift);
 c.anim((dt,t)=>{const s=1+.05*Math.sin(t*1.4);disc.scale.set(s,s,1);disc.material.opacity=.3+.15*Math.sin(t*1.4)});

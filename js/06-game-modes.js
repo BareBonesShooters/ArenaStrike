@@ -146,7 +146,7 @@ if(typeof CustomBattle!=="undefined")CustomBattle.stop();
 try{inspClose(true)}catch(e){}try{pkBodyDrop()}catch(e){}try{TP.drop()}catch(e){}try{Bul.clear()}catch(e){}
 E.forEach(e=>dropModel(e.g,e.tag));E=[];dying.forEach(d=>dropModel(d.g));dying=[];
 pu.forEach(p=>dropModel(p.g));pu=[];rT.forEach(m=>dropModel(m));rT=[];projs.forEach(o=>sc.remove(o.m));projs.length=0}
-function beginPlay(){
+function beginPlay(){setTimeout(()=>{if(state==="play")warmBoss()},400);
 state="play";menuOpen=false;show("");$("hud").classList.remove("hid");document.body.classList.add("playing");
 clearKeys();Aim.reset();Aim.request()}
 async function startGame(m){S.name=cleanName($("nm").value)||S.name||"Player";sv();startGame0(m)}
@@ -527,7 +527,7 @@ if(k>=1){e.lg=null;e.yo=0;p.y=floorAt(p.x,p.z,p.y+1.2);e.cd=Math.max(e.cd,.7);e.
 // ---------- Monster Rush: bosses, power-ups, finishers, effects ----------
 const BN=["Gravemaw","Bonecrusher","The Hollow King","Rotlord","Voidmother"],CN=["Glitchwraith","Null Sovereign","The Unmade","Static Herald"],GN=["Wraith Queen","The Hollow Choir","Specter Prime","Banshee Monarch"],bossName=(c,gh)=>gh?GN[(Math.floor(wave/5)+GN.length*9)%GN.length]:c?"Corrupt "+CN[wave%CN.length]:BN[(Math.floor(wave/5)-1+BN.length*9)%BN.length];
 let bossEl=null,bossLag=1;
-function ringFx(x,z,r,col,life){const m=new T.Mesh(new T.RingGeometry(r*.9,r,48),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.6,side:T.DoubleSide,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(x,.12,z);sc.add(m);setTimeout(()=>{sc.remove(m);m.geometry.dispose();m.material.dispose()},life*1000)}
+function ringFx(x,z,r,col,life){const m=new T.Mesh(new T.RingGeometry(r*.9,r,48),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.6,side:T.DoubleSide,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.set(x,.12,z);m.userData.own=1;m.geometry.userData.own=1;m.material.userData.own=1;sc.add(m);Cleaner.track("ring",m);setTimeout(()=>{sc.remove(m);m.geometry.dispose();m.material.dispose()},life*1000)}
 function spawnMinions(x,z,n,rad,step,k){for(let i=0;i<n;i++){const a=rnd()*6.283,r=1.5+rnd()*rad;spawnMon({minion:1,k:k|0,x:clamp(x+Math.cos(a)*r,-H+3,H-3),z:clamp(z+Math.sin(a)*r,-H+3,H-3),em:1.4+i*step})}}
 function emergeStep(e,dt,ex,ez){if(e.ghost)return Ghost.emerge(e,dt,ex,ez);const g=e.g,p=g.position,u=g.userData;e.em-=dt;const f=clamp(e.em/1.4,0,1);if(e.em<1.4&&!e.fxd){e.fxd=1;spawnFx(p.x,p.z,!!e.corr)}
 p.y=-1.9*f;g.rotation.y=turnTo(g.rotation.y,Math.atan2(ex,ez),dt*6);
@@ -561,18 +561,23 @@ for(let i=0;i<n;i++){const a=rnd()*6.283,r=i===0?0:2+rnd()*9,x=clamp(P.x+Math.co
 ringFx(x,z,3,0xff5a1a,1);
 setTimeout(()=>{if(state!=="play"||!E.includes(e))return;Fx.burst({x,y:.4,z},0xff8a2a,22,8,.12,2,22);ringFx(x,z,3.3,0xffd24a,.35);if(Math.hypot(P.x-x,P.z-z)<3.1&&P.y<2.2&&los(x,.9,z,P.x,P.y+1,P.z))bossHit(e.dmg*.8,{x,z});snd("kill",.45)},900+i*120)}
 document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove("shk"),160)}
+// boss lights: two point lights stay in the scene at zero strength (like the flashlight), so a boss spawn never adds or removes a light,
+// which would make every lit material recompile on the spot. A boss takes one, moves it with itself, and gives it back when it leaves E.
+const BossLit=(()=>{const L=[];for(let i=0;i<2;i++){const l=new T.PointLight(0xff2030,0,PLR(30,1.5),PLD);sc.add(l);L.push(l)}
+return{take(col,int,x,z){const l=L.find(v=>!v.userData.busy);if(!l)return null;l.userData.busy=true;l.userData.boss=null;l.color.setHex(col);l.intensity=int;l.distance=PLR(30,1.5);l.decay=PLD;l.position.set(x,3,z);return l},
+tick(){for(const l of L){if(!l.userData.busy)continue;const b=l.userData.boss;if(!b||!E.includes(b)){l.userData.busy=false;l.userData.boss=null;l.intensity=0}}}}})();
 function spawnBoss(corr,ghost){
 try{snd("roar",1);setTimeout(()=>snd("slam",.8),700)}catch(e){}
 const lb=LV.on()&&!ghost?LV.bossDef():null;
 let o=awaySpot(P.x,P.z,20);if(blocked(o.x,o.z,0,corr?1.45:1.2))o=freeSpot(o.x,o.z);const g=mkMon(2),sc_=bossScale(),lv=1+xpLevel*.035,hp=Math.round((4200+wave*620)*(1+sc_.tier*.03)*(grind?1:Math.sqrt(sc_.bf))*lv*(corr?(grind?1.3:2.2):1)*coopHp()*bdf().hp*(grind?Tune.n("boss.grindHp",.3,.05,1):1)*(lb?(lb.hp||1)*LV.ramp():1));
 if(lb)LV.skin(g,2,{boss:true});g.scale.multiplyScalar(lb&&lb.scale?lb.scale:corr?2.7:2.2);
 if(corr&&!lb){const tc=new T.Color(0x1a0008);(g.userData.mats||[]).forEach(m=>{m.color.lerp(tc,.68);m.userData.em=0x4a0010;m.emissive.setHex(0x4a0010)})}
-const lt=new T.PointLight(lb&&lb.col?lb.col:ghost?0x40e0ff:corr?0xa020ff:0xff2030,2.5*PLK(30,1.5),PLR(30,1.5),PLD);lt.position.y=3;g.add(lt);
+const lt=BossLit.take(lb&&lb.col?lb.col:ghost?0x40e0ff:corr?0xa020ff:0xff2030,2.5*PLK(30,1.5),o.x,o.z);
 if(!lb)for(let i=0;i<5;i++){const c=new T.Mesh(new T.ConeGeometry(.09,.55,5),new T.MeshLambertMaterial({color:0xe8e4d0}));c.position.set((i-2)*.14,2.35,.1);c.rotation.z=(i-2)*.18;g.add(c)}
 const ring=new T.Mesh(new T.TorusGeometry(1.1,.07,8,32),new T.MeshBasicMaterial({color:0xff3344}));ring.rotation.x=Math.PI/2;ring.position.y=.08;g.add(ring);
 const e={g,hp,hpMax:hp,t:"mon",k:2,boss:true,corr:!!corr,lt,sd:1,name:(lb&&LV.bossName())||bossName(corr,ghost),lvDef:lb,ghostB:!!ghost,ghost:!!ghost,rad:corr?1.45:1.2,at:"volley",spd:Math.min(5.2,3.3+wave*.035)*bdf().sp,dmg:(36+wave*2.1)*(1+sc_.tier*.015)*(1+(sc_.bf-1)*.4)*(1+xpLevel*.02)*(corr?1.6:1)*bdf().dm*(lb?LV.dmgRamp():1),ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,stage:0,stun:0,wind:0,atkT:2.2,ring,cd:1,leapT:corr?4:6.5,lp:null,hb:0,addT:7};
 if(ghost)Ghost.tint(g,true);
-bindOwner(g,e);g.position.set(o.x,0,o.z);sc.add(g);g.updateMatrixWorld(true);E.push(e);bossLag=1;
+if(lt)lt.userData.boss=e;bindOwner(g,e);g.position.set(o.x,0,o.z);sc.add(g);g.updateMatrixWorld(true);E.push(e);bossLag=1;
 // the arena darkens and the ground trembles as it rises
 try{if(!corr){corrStart();corrTgt=.55}}catch(x){}
 try{tone(38,2.6,"sawtooth",.3,26);tone(57,2.2,"square",.1,40,.2);tone(88,1.4,"sawtooth",.07,60,.5)}catch(x){}
@@ -581,7 +586,7 @@ function bossStep(e,dt){
 const g=e.g,p=g.position,u=g.userData,ex=P.x-p.x,ez=P.z-p.z,dist=Math.hypot(ex,ez)||1,t=performance.now()/1000;
 if(e.hf>0){e.hf-=dt;if(e.hf<=0)hurtFlash(g,false)}
 e.ring.rotation.z+=dt*(e.stun>0?6:2);e.ring.material.color.setHex(e.stun>0?0xaefcff:e.wind>0?0xffaa00:e.ghostB?0x6ff3ff:e.corr?0xb050ff:0xff3344);
-if(e.lt)e.lt.intensity=((e.stun>0?1:2.2+Math.sin(t*4)*.8)+(e.wind>0?2.5:0))*PLK(30,1.5);
+if(e.lt){e.lt.position.set(p.x,p.y+3,p.z);e.lt.intensity=((e.stun>0?1:2.2+Math.sin(t*4)*.8)+(e.wind>0?2.5:0))*PLK(30,1.5)}
 if((fr&7)===0&&e.stun<=0)Fx.burst({x:p.x+(rnd()-.5)*2.4,y:.2,z:p.z+(rnd()-.5)*2.4},e.corr?0xa020ff:0xff3344,2,1.5,.06,2,8);
 if(rnd()<dt*.35)e.sd*=-1;
 e.phCD=(e.phCD||0)-dt;e.blCD=(e.blCD||0)-dt;

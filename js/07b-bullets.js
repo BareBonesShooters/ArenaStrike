@@ -19,7 +19,7 @@ const cls=g=>g.coil?"rail":g.glow&&g.scope?"beam":g.glow?"plasma":g.scope?"snipe
 const spec=g=>{const c=CL[cls(g)];return c.bolt&&g.st?Object.assign({},c,{v:140}):c};
 // bullet drop at a distance for a gun, in metres (range marks on scopes use it)
 function dropAt(g,d){const c=spec(g);if(!c.v||d<=c.inst)return 0;const t=(d-c.inst)/c.v;return .5*c.g*t*t}
-const B=[],SK=[],sg=new T.BoxGeometry(1,1,1),_d=new T.Vector3(),_e=new T.Vector3(),_q=new T.Vector3();
+const B=[],SK=[],sg=new T.BoxGeometry(1,1,1),_d=new T.Vector3(),_e=new T.Vector3(),_q=new T.Vector3(),_p0=new T.Vector3();
 let si=0;
 function streak(){if(SK.length<40){const m=new T.Mesh(sg,new T.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:.9,blending:T.AdditiveBlending,depthWrite:false}));m.frustumCulled=false;m.raycast=()=>{};m.visible=false;sc.add(m);SK.push(m);return m}
 const m=SK[si=(si+1)%SK.length];return m}
@@ -108,7 +108,7 @@ b.vel=dir.clone().multiplyScalar(v);b.m=streak();b.m.material.color.setHex(b.col
 function step(dt){
 for(let i=B.length-1;i>=0;i--){const b=B[i];b.t+=dt;
 const gr=b.src==="b"?b.grav:b.c.g;b.vel.y-=gr*dt;const len=b.vel.length()*dt;b.dir.copy(b.vel).normalize();
-const p0=b.p.clone(),live=b.t<b.ttl&&b.s<(b.c.max||140)&&travel(b,len);
+const p0=_p0.copy(b.p),live=b.t<b.ttl&&b.s<(b.c.max||140)&&travel(b,len);
 if(b.src==="b"&&!b.whizz){const cp=cam.position,seg=b.p.distanceTo(p0);if(seg>0){_d.subVectors(b.p,p0).divideScalar(seg);const tt=clamp((cp.x-p0.x)*_d.x+(cp.y-p0.y)*_d.y+(cp.z-p0.z)*_d.z,0,seg),qx=p0.x+_d.x*tt-cp.x,qy=p0.y+_d.y*tt-cp.y,qz=p0.z+_d.z*tt-cp.z,cd=Math.hypot(qx,qy,qz);
 if(cd<1.6&&live){b.whizz=1;snd("whizz",clamp(1.3-cd*.6,.3,1),.9+rnd()*.25)}}}
 if(!live){if(b.m)b.m.visible=false;B.splice(i,1);continue}

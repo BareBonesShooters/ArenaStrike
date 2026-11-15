@@ -482,7 +482,7 @@ a3.lerpVectors(o.a,o.b,(hd+tl)/2);m.position.copy(a3);m.lookAt(o.b);m.scale.set(
 function tracers(dt){for(const o of TR){if(o.l<=0)continue;o.t+=dt;
 if(o.t<o.ft){place(o,o.t/o.ft);continue}
 o.l-=dt;if(o.l<=0){o.m.visible=false;continue}place(o,1);o.m.material.opacity=o.l/(o.ml||.09)*.9}}
-return{burst,spray,step,tracer,tracers,clear(){for(const o of pr)o.l=0;im.instanceMatrix.needsUpdate=true;TR.forEach(o=>{o.l=0;o.m.visible=false});try{Gfx.clear()}catch(e){}}}})();
+return{burst,spray,step,tracer,tracers,alive(){let n=0;for(const o of pr)if(o.l>0)n++;return n},clear(){for(const o of pr)o.l=0;im.instanceMatrix.needsUpdate=true;TR.forEach(o=>{o.l=0;o.m.visible=false});try{Gfx.clear()}catch(e){}}}})();
 // ---------- combat graphics: muzzle and impact flares, shock rings, glowing ground cracks, lightning, spawn portals, claw slashes ----------
 const Gfx=(()=>{
 const FL=[],RG=[],TF=[];let ready=false,fi=0,ri=0,crG=null;
@@ -495,9 +495,9 @@ function flare(p,col,size,life,vy){if(LOD.fx<.2)return;init();const o=FL[fi=(fi+
 function ring(x,y,z,col,r0,r1,life,op){if(LOD.fx<.2)return;init();const o=RG[ri=(ri+1)%RG.length];o.m.position.set(x,y,z);o.m.material.color.setHex(col);o.r0=r0;o.r1=r1;o.l=o.mx=life;o.op=op==null?.7:op;o.m.visible=true;o.m.scale.set(r0,r0,1)}
 function drop(o){sc.remove(o.o);o.o.traverse(c=>{if(c.geometry&&!c.userData.shared)c.geometry.dispose();if(c.material)c.material.dispose()})}
 function add(o){if(TF.length>44)drop(TF.shift());TF.push(o)}
-function crack(x,z,col,life,n){if(LOD.fx<.2)return;init();n=n||6;const gr=new T.Group(),mats=[];gr.position.set(x,.06,z);
-for(let i=0;i<n;i++){const L=1.1+rnd()*1.6,a=i/n*6.283+rnd()*.5,m=new T.MeshBasicMaterial({color:col,transparent:true,opacity:.9,blending:T.AdditiveBlending,depthWrite:false,fog:false}),b=new T.Mesh(crG,m);
-b.userData.shared=1;b.scale.set(.07+rnd()*.06,1,L);b.position.set(Math.cos(a)*L/2,0,Math.sin(a)*L/2);b.rotation.y=Math.PI/2-a;b.raycast=()=>{};gr.add(b);mats.push(m)}
+function crack(x,z,col,life,n){if(LOD.fx<.2)return;init();n=n||6;const gr=new T.Group(),cm=new T.MeshBasicMaterial({color:col,transparent:true,opacity:.9,blending:T.AdditiveBlending,depthWrite:false,fog:false}),mats=[cm];gr.position.set(x,.06,z);
+for(let i=0;i<n;i++){const L=1.1+rnd()*1.6,a=i/n*6.283+rnd()*.5,b=new T.Mesh(crG,cm);
+b.userData.shared=1;b.scale.set(.07+rnd()*.06,1,L);b.position.set(Math.cos(a)*L/2,0,Math.sin(a)*L/2);b.rotation.y=Math.PI/2-a;b.raycast=()=>{};gr.add(b)}
 sc.add(gr);add({o:gr,l:life,m:life,k:"crack",mats})}
 function column(x,z,col,h,life){if(LOD.fx<.2)return;const m=new T.Mesh(new T.CylinderGeometry(.45,.95,h,14,1,true),new T.MeshBasicMaterial({color:col,transparent:true,opacity:.65,side:T.DoubleSide,depthWrite:false,blending:T.AdditiveBlending,fog:false}));
 m.position.set(x,h/2,z);m.raycast=()=>{};sc.add(m);add({o:m,l:life,m:life,k:"col"})}
@@ -536,7 +536,7 @@ else if(o.k==="col"){o.o.material.opacity=.65*k;o.o.scale.set(1+(1-k)*.4,1,1+(1-
 else if(o.k==="bolt")o.o.material.opacity=(Math.random()<.45?1:.35)*Math.min(1,k*2);
 else o.o.material.opacity=k}}
 function clear(){if(MK){mkM.makeScale(0,0,0);for(let i=0;i<96;i++)MK.setMatrixAt(i,mkM);MK.instanceMatrix.needsUpdate=true}for(const o of FL){o.l=0;if(o.s)o.s.visible=false}for(const o of RG){o.l=0;o.m.visible=false}for(const o of TF)drop(o);TF.length=0}
-return{flare,ring,crack,column,bolt,slash,splat,impact,step,clear}})();
+return{flare,ring,crack,column,bolt,slash,splat,impact,step,clear,get n(){return TF.length}}})();
 const SPC={};const spm=c=>SPC[c]||(SPC[c]=new T.MeshBasicMaterial({color:c}));
 const gunCol=g=>g.coil?{col:0xa5d8ff,life:.16}:g.glow?{col:g.r>=5?0xf0abfc:0x67e8f9,life:.12}:g.multi?{col:0xffa24a,life:.1}:g.scope&&g.d>=100?{col:0xfff1b0,life:.16}:g.pel>1?{col:0xffd070,life:.08}:{col:0xffe9a0,life:.09};
 function spawnFx(x,z,corr){ // the ground splits, light leaks out, and (corrupted) a violet rift opens above the spot

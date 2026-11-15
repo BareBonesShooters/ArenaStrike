@@ -100,7 +100,7 @@ if(cam.fov!==58){cam.fov=58;cam.updateProjectionMatrix()}
 cam.position.set(Math.sin(a)*34,18,Math.cos(a)*34);cam.lookAt(-3,2,-5)}
 worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
-Light.frame(dt);
+Light.frame(dt);Cleaner.frame(dt);BossLit.tick();
 rd.shadowMap.needsUpdate=S.gfx<2||!(fr&1);
 const vmOn=(playing||paused||(state==="title"&&Title.fp))&&!(CustomBattle.active&&!CustomBattle.joined);
 Post.frame();
@@ -118,11 +118,13 @@ if(String(e)!==loopErr){loopErr=String(e);console.error(e)}}}
 function prewarm(){
 const a=new T.Group(),b=new T.Group();
 try{
-a.add(mkHuman({gun:GB("g2")}),mkMon(0),mkMon(1),mkMon(2),tag("warm","#fff",2));
+a.add(mkHuman({gun:GB("g2")}),mkMon(0),mkMon(1),mkMon(2),tag("warm","#fff",2),new T.Mesh(new T.TorusGeometry(1.1,.07,8,32),new T.MeshBasicMaterial({color:0xff3344})));
 b.add(buildGun(GB("g2"),SK[0]).grp,buildKnife(KN[0]).grp);
 sc.add(a);VM.scene.add(b);rd.compile(sc,cam);rd.compile(VM.scene,VM.cam)}catch(e){}
 sc.remove(a);VM.scene.remove(b);disposeGeo(a);disposeGeo(b)}
-if(SOFT)setTimeout(()=>{if(state!=="play")prewarm()},1200);
+// once a match has its own lights, build one boss-shaped model off-screen (the same parts spawnBoss uses) and compile it, so the first boss does not stall the fight
+function warmBoss(){const a=new T.Group();try{a.add(mkMon(2),new T.Mesh(new T.TorusGeometry(1.1,.07,8,32),new T.MeshBasicMaterial({color:0xff3344})));sc.add(a);rd.compile(sc,cam)}catch(e){}sc.remove(a);disposeGeo(a)}
+setTimeout(()=>{if(state!=="play")prewarm()},1200);
 
 // ---------- title screen: a live Monster Rush wave with a squad shooting it ----------
 const Title=(()=>{
@@ -192,6 +194,7 @@ const c=WORLD.course,rt=c&&c.route;if(!rt||rt.length<3)throw new Error("parkour 
 const ps=pk(PS.filter(x=>x.sty)),r=mkHuman({body:ps.c,trim:ps.t,style:ps.sty});r.userData.nar=true;add(r);
 A={rt,r,i:0,t:0,ry:0,fin:0,fw:0,clock:0,lab:"PARKOUR  ·  "+PKDN[df]+"  ·  "+mp.n};
 const s=rt[0];r.position.set(s.x,s.h,s.z);cam.fov=70;cam.updateProjectionMatrix();cam.position.set(s.x,s.h+3,s.z+6)}
+const _want=new T.Vector3();
 function fParkour(dt){
 const a=A,rt=a.rt,r=a.r;let ry=a.ry;
 if(a.fin>0){a.fin+=dt;const lp=rt[rt.length-1];r.position.set(lp.x,lp.h+danceHuman(r,a.fin,a.fin<1.6?"flip":"lev",ry),lp.z);
@@ -209,7 +212,7 @@ ry=turnTo(ry,Math.atan2(ex,ez),dt*10);r.rotation.y=ry;r.position.set(x,y,z);a.ry
 narutoPose(r,dt,1.25,air);
 setLab(a.lab+"  ·  PLATFORM "+(a.i+1)+" / "+rt.length+"  ·  "+a.clock.toFixed(1)+"s")}
 const [fx,fz]=fwdV(ry),rx=fz,rz=-fx,rp=r.position;
-const want=new T.Vector3(rp.x-fx*3.9+rx*.7,rp.y+2.1,rp.z-fz*3.9+rz*.7);
+_want.set(rp.x-fx*3.9+rx*.7,rp.y+2.1,rp.z-fz*3.9+rz*.7);const want=_want;
 cam.position.lerp(want,1-Math.exp(-dt*5));cam.lookAt(rp.x+fx*2.2,rp.y+1.4,rp.z+fz*2.2)}
 // ---------- weapon inspection: the real gun and knife models, shown in rarity order ----------
 function startInspect(){
@@ -456,3 +459,25 @@ else{tr.style.transition="none";tr.style.width=w+"%"}
 prev=w}).observe(hp,{attributes:true,attributeFilter:["style"]})}
 document.addEventListener("pointermove",e=>{const b=e.target&&e.target.closest&&e.target.closest(".b");if(!b)return;const r=b.getBoundingClientRect();b.style.setProperty("--bx",(e.clientX-r.left)+"px");b.style.setProperty("--by",(e.clientY-r.top)+"px")},{passive:true})}
 
+
+// ---------- auto cleaner: caps and prunes what builds up over a long session ----------
+// Runs every 5 s, never logs. Bullets, particles, tracers, bullet marks and flares already use fixed pools, so this covers the lists that grow with play:
+// ring effects (Cleaner.track), enemy shots (projs), dying monsters (dying), and tracked objects that finished without leaving their list.
+// Over-cap items go oldest first. Geometry and materials are disposed only when the object made them (userData.own), so shared caches
+// (bullet, spit and nova sprites, particle box, crack and mark pools) are never freed.
+const Cleaner=(()=>{
+const G={ring:[]},CAP={ring:()=>Tune.n("clean.rings",24,4,96),projs:()=>Tune.n("clean.projs",160,40,600),dying:()=>Tune.n("clean.dying",24,4,80)};
+let timer=0,sweeps=0,pruned=0;
+function track(group,o){(G[group]||(G[group]=[])).push(o)}
+function own(o){o.traverse(c=>{if(c.geometry&&c.geometry.userData.own)c.geometry.dispose();for(const m of[].concat(c.material||[]))if(m&&m.userData.own)m.dispose()})}
+function sweep(){
+sweeps++;
+for(const k in G){const L=G[k];for(let i=L.length-1;i>=0;i--)if(!L[i].parent)L.splice(i,1);
+const cap=CAP[k]?CAP[k]():96;while(L.length>cap){const o=L.shift();if(o.parent)o.parent.remove(o);own(o);pruned++}}
+const cp=CAP.projs();while(projs.length>cp){const o=projs.shift();if(o.m.parent)o.m.parent.remove(o.m);pruned++}
+const cd=CAP.dying();while(dying.length>cd){const d=dying.shift();dropModel(d.g);pruned++}
+}
+window.Cleaner={stats:()=>Cleaner.stats()};
+return{track,frame(dt){timer+=dt;if(timer<5)return;timer=0;sweep()},
+stats(){return{sweeps,pruned,rings:G.ring.length,tracked:Object.values(G).reduce((a,L)=>a+L.length,0),projs:projs.length,dying:dying.length,
+fxLive:Fx.alive(),gfxGroups:Gfx.n,bullets:Bul.n,sc:sc.children.length,geometries:rd.info.memory.geometries,textures:rd.info.memory.textures,programs:rd.info.programs?rd.info.programs.length:0}}}})();
