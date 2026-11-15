@@ -367,8 +367,8 @@ const remembered=()=>{try{return localStorage.getItem(DEV_KEY)===passwordHash}ca
 const remember=on=>{try{on?localStorage.setItem(DEV_KEY,passwordHash):localStorage.removeItem(DEV_KEY)}catch(e){}};
 let unlocked=remembered(),attempt=0;
 return{
-get unlocked(){return unlocked},
-async unlock(password){
+get unlocked(){return window.ArenaAccount?.configured?ArenaAccount.isDev():unlocked},
+async unlock(password){if(window.ArenaAccount?.configured)return ArenaAccount.unlock(password);
 const current=++attempt;
 if(!globalThis.crypto||!crypto.subtle)throw new Error("Open the game using HTTPS or localhost to unlock developer access.");
 const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(password)));
@@ -378,7 +378,7 @@ if(hash!==passwordHash)return false;
 unlocked=true;remember(true);return true
 },
 lock(){attempt++;unlocked=false;remember(false);if(S.opt)S.opt.grind=false;sv()},
-canGrind(gameMode,online){return unlocked&&gameMode==="waves"&&!online&&!!(S.opt&&S.opt.grind)}
+canGrind(gameMode,online){return this.unlocked&&gameMode==="waves"&&!online&&!!(S.opt&&S.opt.grind)}
 }})();
 
 async function redeemCode(raw){
@@ -511,7 +511,7 @@ return o})();
 const DEF=()=>({g:"g0",k:"n0",s:"s0",p:"p0",e:["m0","","","",""]});
 const START_OWN=()=>({f0:1,g0:1,n0:1,s0:1,m0:1,p0:1,b0:1,a0:1,u0:1});
 let S={coins:200,own:START_OWN(),ld:[DEF(),DEF(),DEF(),DEF(),DEF()],cur:0,name:"Player",board:{},q:{},tut:0,streak:0,sens:1,ssens:1,vol:.7,mvol:.35,bg:"b0",av:"a0",mh:"u0",mm:"u0",mp:{mode:"ffa",bots:5,diff:"medium"}};
-try{const d=JSON.parse(localStorage.getItem("arena3dv2")||"{}");if(d&&typeof d==="object"&&!Array.isArray(d))Object.assign(S,d)}catch(e){}
+try{const d=JSON.parse(JSON.stringify(window.ArenaStorage?.load())||"{}");if(d&&typeof d==="object"&&!Array.isArray(d))Object.assign(S,d)}catch(e){}
 function migrate(){
 S.redeemed=Array.isArray(S.redeemed)?[...new Set(S.redeemed.filter(c=>typeof c==="string"))]:[];
 const own=Object.assign(START_OWN(),S.own&&typeof S.own==="object"?S.own:{});
@@ -542,12 +542,12 @@ if(!S.cs||typeof S.cs!=="object")S.cs={};for(const k of["spent","opened","dups",
 // One save per device (this browser). Name is only a display name for multiplayer.
 const SAVE_KEY="arena3dv2_device";
 const Cloud={claim:async()=>"none",load:async()=>null,sched(){},flush(){},get key(){return null}};
-const sv=()=>{try{S.coins=Math.max(0,Math.round(+S.coins||0));S.name=cleanName(S.name)||"Player";localStorage.setItem(SAVE_KEY,JSON.stringify(S));localStorage.setItem("arena3dv2",JSON.stringify(S))}catch(e){}try{paintCoins()}catch(e){}},eq=()=>S.ld[S.cur];
+const sv=()=>{try{S.coins=Math.max(0,Math.round(+S.coins||0));S.name=cleanName(S.name)||"Player";if(window.ArenaStorage)ArenaStorage.save(S);else localStorage.setItem(SAVE_KEY,JSON.stringify(S));window.ArenaAccount?.schedule()}catch(e){}try{paintCoins()}catch(e){}},eq=()=>S.ld[S.cur];
 const freshS=()=>({coins:100,own:START_OWN(),ld:[DEF(),DEF(),DEF(),DEF(),DEF()],cur:0,name:"Player",board:{},q:{},tut:0,streak:0,sens:1,ssens:1,vol:.7,mvol:.35,bg:"b0",av:"a0",mh:"u0",mm:"u0",mp:{mode:"ffa",bots:5,diff:"medium"},bpXP:0,bpClaim:{},aq:null,qb:[],qseen:0,pkt:{},pkg:{},pks:{}});
 async function switchProfile(raw){
 const nm=cleanName(raw)||"Player";S.name=nm;try{migrate()}catch(e){}try{sv()}catch(e){}return true}
 // load this device's save once
-try{const raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem("arena3dv2");if(raw){const d=JSON.parse(raw);if(d&&typeof d==="object"){S=Object.assign(freshS(),d);migrate()}}}catch(e){}
+try{const raw=JSON.stringify(window.ArenaStorage?.load())||localStorage.getItem(SAVE_KEY)||localStorage.getItem("arena3dv2");if(raw){const d=JSON.parse(raw);if(d&&typeof d==="object"){S=Object.assign(freshS(),d);migrate()}}}catch(e){}
 const bKey=n=>/^(__proto__|constructor|prototype)$/.test(n)?n+"_":n;
 const boardOf=n=>{n=bKey(n);const h=Object.prototype.hasOwnProperty;if(!h.call(S.board,n)||!S.board[n])S.board[n]={w:0,k:0};return S.board[n]};
 Object.keys(DF).forEach(k=>boardOf(DF[k].n));

@@ -14,6 +14,18 @@ js/01..11-*.js    game code in load order (core, render+audio, world, models, pl
 
 The scripts are classic scripts sharing one global scope, so keep the load order in index.html.
 
+Accounts, reports and developer tools
+- See [SETUP-ACCOUNTS.md](SETUP-ACCOUNTS.md) for deployment, email delivery and disabled paid-plan placeholders.
+- Sign in to sync progress and restore your developer role. Guest play remains available.
+- The sidebar includes Account and (for authorized accounts) Developer panel next to Settings.
+- Report a problem is at the bottom right. Reports require sign-in and can be reviewed in the developer panel.
+- Public rankings use client-reported results and basic validation; they are not cheat-proof.
+- Owners manage developer roles or issue one-use invitations. Database roles protect shared developer actions.
+- Signed-in developers publish Battle Sim Maker levels directly through Supabase; players refresh levels to load them.
+- Device settings stay on the device. Account progress and guest progress are stored separately.
+- Public email delivery is still required before public registrations can work. Stripe purchases remain disabled.
+- The shared developer password below is used only if Supabase is unconfigured; it cannot grant backend access.
+
 Reward codes and developer access
 - Open Redeem codes from the lobby. `DEV` grants the exclusive Dev gun skin and Dev outfit. Equip them in Loadout; neither item drops from cases or is sold in the Shop.
 - Reward codes ignore letter case and surrounding spaces. Each code can be claimed once per browser save; inventory and redemption history persist with the existing local save.

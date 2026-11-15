@@ -88,7 +88,7 @@ $("sg-rg").innerHTML=seg("rg",[[3,"3"],[5,"5"],[10,"10"]],rgv);
 hide("o-df",!(sel==="duel"||sel==="gg"||sel==="parkour"||sel==="waves"));$("o-dft").textContent=sel==="parkour"?"Course difficulty":sel==="waves"?"Monster difficulty":"Bot difficulty";hide("o-rd",sel!=="duel");hide("o-party",!PMS(sel));
 const hasGhost=Object.keys(S.pkt||{}).some(k=>k.indexOf((S.opt.df||"easy")+"_")===0&&S.pkg&&S.pkg[k]&&S.pkg[k].length>2);
 hide("o-gr",false);{const access=DevAccess.unlocked;
-$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock</button>':'<button class="b" data-a="devaccess">'+ico("n-lock",16)+'Input code</button>';
+$("sg-gr").innerHTML=access?'<button class="b" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button>'+devLockBtn("Lock"):'<button class="b" data-a="devaccess">'+ico("n-lock",16)+'Input code</button>';
 $("grinfo").textContent=access?"Developer modes unlocked on this device.":"Input code for a dev-only gamemode."}
 hide("o-gl",sel!=="waves");{const gl=!!S.opt.ghostLvl;$("sg-gl").innerHTML=seg("gl",[["0","Classic"],["1","Ghost level"]],gl?1:0);$("glinfo").textContent=gl?"Every monster is a ghost: they hover, keep their distance and shoot when they see you. Every 5th wave brings the Ghost boss.":"Classic Monster Rush. A ghost wave still haunts the arena every 7th wave."}
 hide("o-ghost",sel!=="parkour");hide("o-pkk",sel!=="parkour");$("sg-pk").innerHTML=seg("pkknife",[["0","Off"],["1","On"]],pkKnifeOn()?1:0);
@@ -168,7 +168,7 @@ LoadoutPreview.stop();
 const b=$("pgb"),st=b.scrollTop,sl=[...b.querySelectorAll(".strip")].map(s=>s.scrollLeft);
 if(still!==false)b.classList.add("still");
 b.innerHTML=PG[PAGE].f();b.querySelectorAll(".strip").forEach((s,i)=>{s.scrollLeft=sl[i]||0});b.scrollTop=st;
-paintCoins();fillThumbs(b);Cine.scan(b);paintRanges();Glide.sync();LoadoutPreview.mount(b)}
+paintCoins();fillThumbs(b);Cine.scan(b);paintRanges();Glide.sync();LoadoutPreview.mount(b);window.AccountUI?.mount(b)}
 
 // shop
 function roll(c){
@@ -755,9 +755,11 @@ ${sGrp("Touch",[sRow("Aim assist",sel("assist","Touch aim assist",[["on","On (ai
 ${sGrp("Accessibility",[sRow("Colour-blind mode",sel("cb","Colour-blind mode",CBlind.list,o.cb||""))])}
 ${document.body.classList.contains("touch")?"":sGrp("Keys",[...Keys.A.map(([id,l])=>`<div class="srow"><span class="sl"><span>${l}</span></span><button class="b kb" data-a="rebind" data-v="${id}" aria-label="${l}: ${Keys.name(Keys.get(id))}. Change key">${Keys.name(Keys.get(id))}</button></div>`),`<div class="srow"><span class="sl"><span>Defaults</span></span><button class="b" data-a="keyreset">Reset keys</button></div>`])}
 </div><p class="scred">Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</p></div>`}
+// signed-in accounts keep developer access on the account, so "lock" becomes a link to the account page (js/10a-accounts.js)
+const devLockBtn=t=>window.ArenaAccount?.configured?`<button class="b" data-a="page" data-v="account">Account</button>`:`<button class="b" data-a="devlock">${t}</button>`;
 function pSettings(){
 return`<div class="sec"><h3>This device</h3><div class="row"><div class="l"><b>${esc(S.name)}</b><small>Display name for multiplayer. Everything below saves on this device.</small></div><button class="b" data-a="page" data-v="load">${ico("n-load",16)}Loadout</button></div>
-<div class="row"><div class="l"><b>Developer access</b><small>${DevAccess.unlocked?"Unlocked on this device.":"Locked. Enter a code under Redeem codes."}</small></div>${DevAccess.unlocked?`<button class="b" data-a="devlock">Lock access</button>`:`<button class="b" data-a="devaccess">${ico("n-lock",16)}Input code</button>`}</div></div>
+<div class="row"><div class="l"><b>Developer access</b><small>${DevAccess.unlocked?"Unlocked on this device.":"Locked. Enter a code under Redeem codes."}</small></div>${DevAccess.unlocked?`${devLockBtn("Lock access")}`:`<button class="b" data-a="devaccess">${ico("n-lock",16)}Input code</button>`}</div></div>
 ${settingsHTML()}`}
 function pHelp(){
 const K2=[["Move","W A S D"],["Look and aim","Mouse"],["Jump, climb ledges","Space"],["Sprint","Shift"],["Slide","Control / Option"],["Grenade (hold to aim)","Hold G"],["Shoot / charge knife throw","Left click"],["Aim down sights","Right click to toggle"],["Reload","R"],["Gun or knife","1, 2 or scroll"],["Emotes","3 to 7"],["Scoreboard","Hold Tab"],["Map (shows where everyone is)","M"],["Pause (shows your quests)","P or Esc"],["Restart (parkour only)","T"]];
@@ -803,7 +805,7 @@ return`<div class="codes-layout">
 <div id="code-rewards" class="code-rewards"></div>
 <button class="b" data-a="page" data-v="load">${ico("n-load",16)}Open Loadout</button><small class="code-note">Rewards save on this browser, just like your other items.</small></section>
 <section class="code-panel developer-panel"><span class="eyebrow">Developer exclusive</span><h3>Custom Gamemodes</h3><p>Input code for a dev-only gamemode.</p>
-${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Access stays on this device until you lock it. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button><button class="b" data-a="devlock">Lock access</button></div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
+${unlocked?`<div class="code-access">${ico("check",18)}Custom Gamemodes unlocked</div><p>Access stays on this device until you lock it. Choose a developer mode.</p><div class="code-actions"><button class="b p" data-a="custommode" data-v="grind">Grinding Mode</button><button class="b p" data-a="custommode" data-v="battle_maker">Battle Sim Maker</button>${devLockBtn("Lock access")}</div>`:`<form id="developer-form" class="code-form"><label for="developer-password">Developer code</label><div class="code-entry"><input id="developer-password" name="password" type="password" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Enter code" aria-describedby="developer-status"><button class="b" type="submit">Unlock</button></div><small>Developer codes are case-sensitive.</small></form>`}
 <p id="developer-status" class="code-status" role="status" aria-live="polite"></p></section></div>`
 }
 function codeStatus(id,message,ok){const el=$(id);if(el){el.textContent=message;el.classList.toggle("success",!!ok);el.classList.toggle("error",!ok)}}

@@ -1,5 +1,5 @@
 "use strict";
-// Public level data is static. Only a developer's in-memory GitHub credential can publish.
+// Signed-in developers publish through Supabase. Unconfigured builds retain the GitHub fallback.
 const BattleLevelData=(()=>{
 const maps=["vale","mesa","frost"],MAX_LEVELS=120,MAX_ENEMIES=40;
 function level(raw,{draft=false}={}){
@@ -78,10 +78,19 @@ async function connect(value){
 }
 function disconnect(){session++;token=""}
 async function refreshDeveloper(){
+ if(window.ArenaAccount?.configured){requireDev();return loadPublic(true)}
  requireDev();if(busy||connecting)throw Error("Wait for the current GitHub request to finish.");
  const id=session;busy=true;try{const latest=await remote(id);assertSession(id);return latest.data.levels.map(l=>BattleLevelData.level(l))}finally{busy=false}
 }
 async function publish(entry,base){
+ if(window.ArenaAccount?.configured){
+  requireDev();if(busy)throw Error('A publish is already running.');busy=true;
+  try{const next=BattleLevelData.level(entry),rows=await ArenaAccount.rows('arena_levels'),old=rows.find(l=>l.id===next.id);
+   if(BattleLevelData.fingerprint(old?.data)!==base)throw Error('This level changed. Refresh published levels and reopen it; your draft is saved.');
+   next.updatedAt=new Date().toISOString();const result=await ArenaAccount.rpc('arena_publish_level',{p_id:next.id,p_data:next,p_revision:Number(old?.revision||0)});
+   return{level:BattleLevelData.level(result.data),revision:BattleLevelData.fingerprint(result.data),commit:'',message:'Published! Players can load this level immediately.'};
+  }finally{busy=false}
+ }
  requireDev();if(busy||connecting)throw Error("A GitHub request is already running.");if(!token)throw Error("Connect GitHub before publishing.");
  const next=BattleLevelData.level(entry),id=session;busy=true;
  try{
@@ -93,11 +102,13 @@ async function publish(entry,base){
  }finally{busy=false}
 }
 async function loadPublic(force=false){
+ if(window.ArenaAccount?.configured){const rows=await ArenaAccount.rows('arena_levels');return rows.filter(r=>r.published).map(r=>BattleLevelData.level(r.data))}
  if(publicLoaded&&!force)return publicRows.map(l=>BattleLevelData.level(l));
  const response=await request(new URL(file,document.baseURI).href,{cache:"no-store"});
  if(!response.ok)throw Error("Published levels could not load. The original challenges still work; use Refresh levels to retry.");
  const text=await response.text();if(text.length>1000000)throw Error("Published levels are too large to load.");
  const data=BattleLevelData.catalog(JSON.parse(text));publicRows=data.levels;publicLoaded=true;return publicRows.map(l=>BattleLevelData.level(l));
 }
-return{repository,branch,file,connect,disconnect,refreshDeveloper,publish,loadPublic,get connected(){if(!DevAccess.unlocked)disconnect();return!!token},get busy(){return busy||connecting}};
+return{repository,branch,file,connect,disconnect,refreshDeveloper,publish,loadPublic,get connected(){if(window.ArenaAccount?.configured)return ArenaAccount.isDev();if(!DevAccess.unlocked)disconnect();return!!token},get busy(){return busy||connecting}};
 })();
+

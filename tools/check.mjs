@@ -46,9 +46,11 @@ const tags = [...html.matchAll(/<script[^>]*?\s(?:data-)?src="(js\/[^"?]+)/g)].m
 const im = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
 if (!im) fails.push("index   index.html has no import map for three");
 else for (const [k, v] of Object.entries(JSON.parse(im[1]).imports || {})) if (!fs.existsSync(v.replace(/^\.\//, ""))) fails.push(`index   import map entry ${k} points at ${v}, which does not exist`);
+// files that are in the repo but deliberately not loaded yet (Oren's sign-in entry screen is unfinished; it is not loaded on his branch either)
+const UNWIRED = new Set(["js/10b-entry.js"]);
 for (const f of list("js").filter(f => f.endsWith(".js"))) {
   const n = tags.filter(t => t === f).length;
-  if (n === 0) fails.push(`index   ${f} is not loaded by index.html`);
+  if (n === 0 && !UNWIRED.has(f)) fails.push(`index   ${f} is not loaded by index.html`);
   if (n > 1) fails.push(`index   ${f} is loaded ${n} times`);
 }
 for (const t of tags) if (!fs.existsSync(t)) fails.push(`index   index.html loads ${t}, which does not exist`);
@@ -64,6 +66,7 @@ let file = "";
 for (const line of diff.split("\n")) {
   if (line.startsWith("+++ ")) { file = line.slice(6); continue; }
   if (!line.startsWith("+") || line.startsWith("+++")) continue;
+  if (file.startsWith("js/vendor/")) continue; // third-party bundles are checked by their own authors
   const l = line.slice(1);
   if (/\bconsole\.log\(/.test(l)) fails.push(`added   ${file}: console.log left in: ${l.trim().slice(0, 100)}`);
   if (/\bdebugger\b/.test(l)) fails.push(`added   ${file}: debugger statement`);

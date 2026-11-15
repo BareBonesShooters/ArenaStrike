@@ -168,7 +168,7 @@ PU=PUbase();PU.on=m==="waves";P.max=100;P.hp=100;xp=0;xpNeed=40;xpLevel=0;knifeC
 if(m==="party")return Party.startSolo();
 if(m==="duel1"){S.mp.mode="duel1";return Party.startSolo()}
 if(m==="coop"){toast("Co-op needs friends. Host a server and share the code");return}
-beginPlay();newRound()}
+window.ArenaAccount?.startMatch(m,customGrind);beginPlay();newRound()}
 function newRound(){
 clearEnts();VM.swap();
 const lv0=mode==="waves"&&!PT.on&&LV_REG[LV.idAt(0)]?LV.idAt(0):null;
@@ -205,6 +205,7 @@ sub=f===0?"Flawless run, no falls":"You reached the golden beacon";st.push(["Fal
 else if(mode==="waves"){sub="You reached wave "+wave+(grind?" (Grinding Mode)":"");st.push(["Wave",wave],["Kills",kills]);b=0}
 else{const used=RANGE_SHOTS-Math.max(0,rs),acc=used?rHit/used:0,fin=Math.round(myS*(.75+acc*.5));b=Math.min(8,Math.floor(fin/16));qAdd("range",myS,1);sub=used>=RANGE_SHOTS?"Out of ammo. Final score "+fin:"Run ended early. Final score "+fin;st.push(["Final score",fin],["Target points",myS],["Accuracy",Math.round(acc*100)+"%"],["Shots hit",rHit+" / "+used],["Best streak",rBest],["Reward",b+" coins"])}
 S.coins+=b;if(b>0)qAdd("coin",b);const bx=bpDaily(((win?130:70)+(mode==="waves"?wave*10:0)+Math.min(150,kills*4))*(mode==="tut"?.3:1)*(mode==="waves"?LV.bpMul():1));st.push(["Battle Pass XP","+"+bx.xp+(bx.boost?" (daily boost)":"")]);addBP(bx.xp);sv();
+window.ArenaAccount?.finishMatch({mode,kills,wave,win,dev:grind||PT.on});
 endCard({title:mode==="waves"||mode==="range"?"Run complete":mode==="parkour"?"Course complete":win?"Victory":"Defeat",sub,stats:st,coins:b,win:mode==="waves"||mode==="range"?null:win,again:PT.on&&PT.online?"":grind?"grind":mode});
 snd(win||mode==="waves"||mode==="range"?"win":"lose")}
 
