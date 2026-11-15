@@ -160,7 +160,7 @@ ghostW=false;try{Death.stop()}catch(e){}
 try{Mus.set("battle")}catch(e){}
 if(m==="parkour"){if(!pkPicked){pkMapScreen();return}pkPicked=false}
 const nm=cleanName($("nm").value)||"Player";S.name=nm;try{Party.leave();corrReset()}catch(e){}mode=m;grind=customGrind;diff=m==="tut"?"easy":(DF[$("df").value]?$("df").value:"easy");
-GOAL=m==="gg"?GOAL_GG:m==="tut"?3:[3,5,10].includes(+$("rg").value)?+$("rg").value:5;
+if(m==="gg"||PT.on&&PT.mode==="gg")try{ggRoll()}catch(e){}GOAL=m==="gg"?GOAL_GG:m==="tut"?3:[3,5,10].includes(+$("rg").value)?+$("rg").value:5;
 myS=opS=kills=ggL=wave=wq=wn=bt=0;tutF={};slot=0;lastCount=0;sv();
 PU=PUbase();PU.on=m==="waves";P.max=100;P.hp=100;xp=0;xpNeed=40;xpLevel=0;knifeCharge=0;knifeCharging=false;grenAim=false;clearGrenPrev();{const o=document.getElementById("puov");if(o)o.remove()}if(bossEl)bossEl.style.display="none";
 if(m==="party")return Party.startSolo();

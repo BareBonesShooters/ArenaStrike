@@ -293,8 +293,8 @@ let p;
 if(pitched){ // visible pitched roof (ridge along the long side); solid, so nobody stands inside it
 const lx=w>=d,ry2=lx?ry+PI/2:ry,span=(lx?d:w)+.9,len=(lx?w:d)+.9;
 { // the roof is walkable: stepped collision bands follow the slope, each rise under STEP so you just walk up it
-const bands=[[1,0],[.75,.25],[.5,.5],[.25,.75],[.1,.92]];
-for(const [f,r] of bands){const ac=Math.min(lx?d:w,span*f),tp=h+.2+rh*r,lw=lx?w:ac,ld=lx?ac:d;reg(x,z,rot&1?ld:lw,rot&1?lw:ld,tp)}}
+const nb=Math.round(Tune.n("world.roofBands",8,4,14)); // each band's top is the slope height at the middle of its strip, so you never sink more than half a step into the shingles
+for(let k=0;k<nb;k++){const ac=Math.min(lx?d:w,span*(1-k/nb)),tp=h+.15+Math.max(.05,rh*(k+.5)/nb),lw=lx?w:ac,ld=lx?ac:d;reg(x,z,rot&1?ld:lw,rot&1?lw:ld,tp)}}
 P("gab",x,h+.15+rh/2,z,span,rh,len,rc,ry2,.78);P("box",x,h+.15+rh+.04,z,.2,.12,len+.08,th.trim,ry2,.9);
 p=L(w*.25,-d*.2);P("box",p[0],h+.3+(rh+.9)/2,p[1],.62,rh+.9,.62,0x8a4b3a,ry,.7);P("box",p[0],h+1.24+rh,p[1],.78,.12,.78,0x5c3528,ry,.85);reg(p[0],p[1],.7,.7,h+rh+1.2,1);
 // shingle rows: thin lips laid along each roof slope so the roof reads as tiles, not a flat prism
@@ -302,7 +302,7 @@ p=L(w*.25,-d*.2);P("box",p[0],h+.3+(rh+.9)/2,p[1],.62,rh+.9,.62,0x8a4b3a,ry,.7);
 else{ // flat deck: its top is exactly the collision surface, so a player up there stands on the roof; a crate staircase on one side makes it reachable
 reg(x,z,sw,sd,h+.32);
 P("box",x,h+.2,z,w+.04,.24,d+.04,rc,ry,.78);
-for(const [a,b,ww,dd] of[[0,d/2+.2,w+.5,.16],[0,-d/2-.2,w+.5,.16],[w/2+.2,0,.16,d+.5],[-w/2-.2,0,.16,d+.5]]){p=L(a,b);P("box",p[0],h+.52,p[1],ww,.4,dd,th.trim,ry,.85)}
+for(const [a,b,ww,dd] of[[0,d/2+.2,w+.5,.16],[0,-d/2-.2,w+.5,.16],[w/2+.2,0,.16,d+.5],[-w/2-.2,0,.16,d+.5]]){p=L(a,b);P("box",p[0],h+.52,p[1],ww,.4,dd,th.trim,ry,.85);reg(p[0],p[1],rot&1?dd:ww,rot&1?ww:dd,h+.72)}
 p=L(-w*.28,d*.18);P("box",p[0],h+.78,p[1],1.1,.8,.9,0x9aa0a8,ry,.7);reg(p[0],p[1],1.2,1,h+1.18,1);
 p=L(w*.12,-d*.22);P("cyl",p[0],h+.62,p[1],.5,.6,.5,0x7a7f88,ry,.7);
 p=L(w*.3,d*.22);P("box",p[0],h+1.2,p[1],.06,1.8,.06,0x2a2c34,ry,1);P("box",p[0],h+1.85,p[1],.8,.05,.05,0x2a2c34,ry,1);

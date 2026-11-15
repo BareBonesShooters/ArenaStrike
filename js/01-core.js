@@ -405,7 +405,8 @@ return{ok:true,items:items.map(it=>it.id),coins,message:"Redeemed! "+items.map(i
 G.sort((a,b)=>a.r-b.r);
 // every collection is listed Common -> Uncommon -> Rare -> Epic -> Legendary -> Secret (stable sort, so same-rarity items keep their order). ids never change, so saves stay valid
 [SK,KN,EM,PS,BG,AV,FN,MU].forEach(L=>L.sort((a,b)=>a.r-b.r));CS.forEach(c=>{if(![G,SK,KN,EM,PS,BG,AV,FN,MU].includes(c.L))c.L.sort((a,b)=>a.r-b.r)});
-const GGO=["Pistol","Sidearm+","Revolver","SMG","Machine Pistol","Assault Rifle","Battle Rifle","Shotgun","Auto Shotgun","Marksman","Plasma Gun","Light Machine Gun","Railgun","Hand Cannon","Omega Rifle"].map(n=>G.findIndex(x=>x.n===n)).filter(i=>i>=0); // Gun Game ladder order, weakest to strongest
+let GGO=["Pistol","Sidearm+","Revolver","SMG","Machine Pistol","Assault Rifle","Battle Rifle","Shotgun","Auto Shotgun","Marksman","Plasma Gun","Light Machine Gun","Railgun","Hand Cannon","Omega Rifle"].map(n=>G.findIndex(x=>x.n===n)).filter(i=>i>=0); // Gun Game ladder order, weakest to strongest // fallback order; ggRoll() deals a fresh ladder each match
+function ggRoll(){const pool=G.map((g,i)=>[g,i]).filter(([g])=>g.d>0&&g.t>0&&g.m>0&&typeof g.r==="number"),used=new Set(),out=[];for(const r of [0,0,1,1,1,2,2,2,3,3,3,4,4,5,5]){const c=pool.filter(([g,i])=>!used.has(i)&&Math.min(g.r,5)===r);if(!c.length)continue;const[,i]=c[Math.random()*c.length|0];used.add(i);out.push(i)}if(out.length>=10)GGO=out;return GGO}
 // Horizontal track rewards (exclusive cosmetics + rare guns; coins only on filler tiers)
 const BP_REW=[
 {tier:1,r:1,kind:"coins",n:"+50 Coins",coins:50,icon:"coin"},
