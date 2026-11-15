@@ -26,11 +26,11 @@ const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=ro
 reg(x,z,sw,sd,h+.05);
 // walkable roof, same stepped bands as the Haunted Hollow cabins (lowest band reaches half the eave)
 {const nb=8,len=w+.45,sp=d+.9;for(let k=0;k<nb;k++){const ac=k?Math.min(d,sp*(1-k/nb)):d+.45,tp=h+.05+Math.max(.06,2.2*(k+.5)/nb)+.3;reg(x,z,rot&1?ac:len,rot&1?len:ac,tp)}}
-const lc=pick(logs),dk=c.lerpC(lc,0x000000,.3),end=c.lerpC(lc,0xffffff,.18),roof=0x3a2a24;
+const lc=pick(logs),dk=c.lerpC(lc,0x000000,.3),end=c.lerpC(lc,0x9a7350,.35),roof=0x3a2a24;
 // same log-cabin joinery as Haunted Hollow: plinth, stacked logs with round ends past the corners, framed and shuttered windows, door header, roof edge boards
 P("box",x,.12,z,w+.3,.24,d+.3,0x4a4440,ry,.7);
 for(let i=0;i<6;i++){const y=.42+i*.42;P("box",x,y,z,w,.4,d,i%2?lc:c.lerpC(lc,0x000000,.15),ry,.6);
-for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=L(a+Math.sign(a)*.12,b+Math.sign(b)*.12);P("cyl",q[0],y,q[1],.4,.4,.4,i%2?end:c.lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
+for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=i%2?L(a-Math.sign(a)*.21,b+Math.sign(b)*.17):L(a+Math.sign(a)*.17,b-Math.sign(b)*.21);P("cyl",q[0],y,q[1],.38,.4,.38,i%2?end:c.lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
 P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
 {const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1]){const lx=sg*((d+.9)/2)*.97;P("box",x+lx*c2,h+.06,z-lx*s2,.4,.08,w+.95,dk,r2,.85,null,0,-sg*ang)}}
 {let q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dk,ry,.9);

@@ -5,7 +5,7 @@ LV.reg({
 id:"hollow",deck:"wood",deckPal:[0x4a3e34,0x5e5044,0x2a221c],n:"Haunted Hollow",tag:"The dead don't stay buried",mod:"blackout",pack:0,
 theme:{sky:[0x1a1030,0x5a2d58,0xe08a4a],cloud:.5,cc:[.9,.7,.75],stars:.5,sun:{c:0xff9a5a,i:.65,d:[.8,.22,.45]},hemi:[0xb58ac8,0x2a3020,.7],fog:[0x4a3550,22,120],
 gr:{base:"#3e4a32",v:["#36412b","#465238","#2f3a27","#4b4a34"],path:"#5a4c3a",edge:"#3a3026",plaza:"#5e5648"},roads:false,
-wall:0x4a4038,trim:0x3a2e26,house:[0x6a4a32,0x5a3e2a,0x7a5838],roof:[0x2a2228,0x3a2a2a],leaf:[0x2a2a22],trunk:0x2e2620,mount:[0x2a2238,0x3a2a44],win:0xffb04a,lamp:0xffa040,night:.5,
+wall:0x4a4038,trim:0x3a2e26,house:[0x6a4a32,0x5a3e2a,0x7a5838],roof:[0x2a2228,0x3a2a2a],leaf:[0x2a2a22],trunk:0x2e2620,mount:[0x2a2238,0x3a2a44],rock:0x4a4a3c,win:0xffb04a,lamp:0xffa040,night:.5,
 motes:[0xb6ff7a,.16,.85,7,.12]},
 // ground: dark grass with dirt grave patches and a worn earth ring
 paint(g,N,k,rng){
@@ -35,10 +35,11 @@ if(rng()<.4){const y=h*.6;P("box",x+.3,y-.3,z,.05,.6,.05,0x1a1410,0,1);P("box",x
 const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=rot&1?w:d;if(!free(x,z,Math.max(sw,sd)/2+1.6))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
 reg(x,z,sw,sd,h+.05);
 // walkable roof: stepped bands follow the gable slope, and the lowest band reaches half the eave, which with the 0.3 m standing margin holds you to the roof edge without an invisible wall far out at ground level
-{const nb=8,len=w+.45,sp=d+.9;for(let k=0;k<nb;k++){const ac=k?Math.min(d,sp*(1-k/nb)):d+.45,tp=h+.05+Math.max(.06,2.2*(k+.5)/nb);reg(x,z,rot&1?ac:len,rot&1?len:ac,tp)}}const lc=pick(wood),dark=lerpC(lc,0x000000,.3),end=lerpC(lc,0xffffff,.18),roof=pick(c.th.roof);
+{const nb=8,len=w+.45,sp=d+.9;for(let k=0;k<nb;k++){const ac=k?Math.min(d,sp*(1-k/nb)):d+.45,tp=h+.05+Math.max(.06,2.2*(k+.5)/nb);reg(x,z,rot&1?ac:len,rot&1?len:ac,tp)}}const lc=pick(wood),dark=lerpC(lc,0x000000,.3),end=lerpC(lc,0x9a7350,.35),roof=pick(c.th.roof);
 P("box",x,.12,z,w+.3,.24,d+.3,lerpC(c.th.trim,0x000000,.1),ry,.7);
 for(let i=0;i<6;i++){const y=.42+i*.42,lg=i%2?lc:lerpC(lc,0x000000,.15);P("box",x,y,z,w,.4,d,lg,ry,.6);
-for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=L(a+Math.sign(a)*.12,b+Math.sign(b)*.12);P("cyl",q[0],y,q[1],.4,.4,.4,i%2?end:lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
+// log ends alternate like a real notched cabin: even rows poke out along the long walls, odd rows along the short ones, each starting just inside its corner so no two overlap
+for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=i%2?L(a-Math.sign(a)*.21,b+Math.sign(b)*.17):L(a+Math.sign(a)*.17,b-Math.sign(b)*.21);P("cyl",q[0],y,q[1],.38,.4,.38,i%2?end:lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
 P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
 {const ang=Math.atan2(2.2,(d+.9)/2),r2=ry+PI/2,c2=Math.cos(r2),s2=Math.sin(r2);for(const sg of[-1,1])for(let k=1;k<=4;k++){const f=k/5,lx=sg*((d+.9)/2)*(1-f)+sg*Math.sin(ang)*.05,ly=h+f*2.2+Math.cos(ang)*.05;P("box",x+lx*c2,ly,z-lx*s2,.4,.06,w+.95,k&1?lerpC(roof,0x000000,.2):roof,r2,.85,null,0,-sg*ang)}}
 let q=L(0,d/2+.03);P("box",q[0],1,q[1],1,2,.1,0x2a1a10,ry,.9);q=L(0,d/2+.08);P("box",q[0],2.06,q[1],1.3,.14,.1,dark,ry,.9);

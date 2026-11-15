@@ -363,7 +363,7 @@ p=L(-.1,0);P("box",p[0],1.2,p[1],1.94,.4,1.64,th.night?0x203050:0xbfe6ff,ry,1,gl
 for(const lx of[-1.2,1.2])for(const lz of[-.9,.9]){p=L(lx,lz);P("cyl",p[0],.34,p[1],.68,.3,.68,0x151515,ry,1,null,0,PI/2);}
 const hl=th.night?0xfff0b0:0xffffff;for(const lz of[-.55,.55]){p=L(1.8,lz);P("box",p[0],.6,p[1],.08,.18,.3,hl,ry,1,glow)}return true};
 const lamp=(x,z)=>{if(!free(x,z,.6))return false;reg(x,z,.3,.3,4.6);P("box",x,2.3,z,.2,4.6,.2,0x3a3a42,0,.6);P("box",x,4.7,z,.5,.1,.5,0x2a2a30,0,1);P("ico",x,4.5,z,.55,.55,.55,th.lamp,0,1,glow);return true};
-const rock=(x,z)=>{const s=rr(1,2.2);if(!free(x,z,s*.8))return false;reg(x,z,s*1.3,s*1.3,s*.8);const c=th.snow>.8?0xcfd8e2:0x7d8087;P("ico",x,s*.35,z,s*1.5,s*.9,s*1.3,c,rng()*3,.55);return true};
+const rock=(x,z)=>{const s=rr(1,2.2);if(!free(x,z,s*.8))return false;reg(x,z,s*1.3,s*1.3,s*.8);const c=th.snow>.8?0xcfd8e2:(th.rock||0x7d8087);P("ico",x,s*.35,z,s*1.5,s*.9,s*1.3,c,rng()*3,.55);return true};
 const bench=(x,z,rot)=>{const w=rot&1?.7:2,d=rot&1?2:.7;if(!free(x,z,1.3))return false;reg(x,z,w,d,.5);const ry=rot*PI/2;P("box",x,.42,z,2,.1,.6,0x8b6b3d,ry,.8);P("box",x,.2,z,1.8,.4,.5,0x555560,ry,.6);return true};
 const tower=(x,z,rot)=>{if(!free(x,z,7))return false;
 lb(x,z,rot,0,0,4,2.2,4,pick(th.house),.6);
