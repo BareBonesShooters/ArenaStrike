@@ -359,7 +359,7 @@ body.touch.playing{touch-action:none;-webkit-user-select:none;user-select:none}
 #tj{position:absolute;left:var(--tsl);bottom:calc(var(--tsb) + 22px);margin-left:18px;width:124px;height:124px;border-radius:50%;border:2px solid rgba(255,255,255,.28);background:radial-gradient(circle,rgba(255,255,255,.12),rgba(255,255,255,.04));pointer-events:none!important;opacity:.55;transition:opacity .15s}
 #tj.on{opacity:1}#tj i{position:absolute;left:36px;top:36px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.5);box-shadow:0 2px 10px rgba(0,0,0,.4)}
 #tj b{position:absolute;left:50%;top:-30px;transform:translateX(-50%);font:700 .62rem Outfit,sans-serif;letter-spacing:.1em;color:#ffcf9d;opacity:0;transition:opacity .15s}#tj.sp b{opacity:1}
-#tc button{position:absolute;width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.34);background:rgba(16,22,40,.5);color:#fff;font:700 .62rem Outfit,sans-serif;letter-spacing:.05em;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);transition:transform .08s,background .1s}
+#tc button{position:absolute;width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.34);background:rgba(16,22,40,.6);color:#fff;font:700 .62rem Outfit,sans-serif;letter-spacing:.05em;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:transform .08s,background .1s}
 #tc button svg{width:20px;height:20px;fill:currentColor}
 #tc button.on{background:rgba(255,138,61,.75);transform:scale(.93);border-color:#ffd2a8}#tc button.lk{background:rgba(255,138,61,.45);border-color:#ffb36b}
 #tf{right:calc(var(--tsr) + 16px);bottom:calc(var(--tsb) + 16px);width:92px!important;height:92px!important;font-size:.78rem!important;background:rgba(255,92,56,.42)!important}
@@ -432,7 +432,7 @@ body.touch .sec{margin-bottom:10px}}
 @keyframes pkw-bg{0%{opacity:0}14%{opacity:1}80%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){#pkwin i{display:none}}
 /* gun inspect panel (shooting range, key I) */
-#inspw{position:fixed;right:18px;top:50%;transform:translateY(-50%);width:min(350px,92vw);z-index:58;padding:12px;border-radius:var(--r2);background:rgba(8,12,24,.8);border:1px solid var(--rc,var(--hair));box-shadow:0 0 28px -8px var(--rc,#000),0 14px 40px rgba(0,0,0,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;display:flex;flex-direction:column;gap:8px;pointer-events:auto;cursor:default!important}
+#inspw{position:fixed;right:18px;top:50%;transform:translateY(-50%);width:min(350px,92vw);z-index:58;padding:12px;border-radius:var(--r2);background:rgba(8,12,24,.9);border:1px solid var(--rc,var(--hair));box-shadow:0 0 28px -8px var(--rc,#000),0 14px 40px rgba(0,0,0,.5);color:#fff;display:flex;flex-direction:column;gap:8px;pointer-events:auto;cursor:default!important}
 #inspw *{cursor:default!important}
 #inspw .ih{display:flex;flex-direction:column;gap:2px}
 #inspw .ih b{font-size:1.15rem;color:var(--rc,#fff)}
@@ -1087,7 +1087,7 @@ body:not(.playing):not(.paused) #sunfx{filter:opacity(.7)}
 
 /* tutorial card */
 #tut:not(.hid){display:flex;flex-direction:column;align-items:center;gap:2px}
-#tut{max-width:min(92vw,520px);padding:10px 18px 12px;border-radius:var(--r2);white-space:normal;text-align:center;-webkit-backdrop-filter:blur(10px) saturate(1.4);backdrop-filter:blur(10px) saturate(1.4)}
+#tut{max-width:min(92vw,520px);padding:10px 18px 12px;border-radius:var(--r2);white-space:normal;text-align:center;background:rgba(8,12,24,.84)} /* no backdrop blur: it re-blurs the live 3D canvas every frame and made the tutorial lag */
 #tut small{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:700}
 #tut b{font-size:1.02rem;font-weight:800}
 #tut span{font-size:.86rem;color:var(--ink2);font-weight:500;line-height:1.4}
