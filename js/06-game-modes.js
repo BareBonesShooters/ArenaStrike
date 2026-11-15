@@ -163,7 +163,7 @@ try{Mus.set("battle")}catch(e){}
 if(m==="parkour"){if(!pkPicked){pkMapScreen();return}pkPicked=false}
 const nm=cleanName($("nm").value)||"Player";S.name=nm;try{Party.leave();corrReset()}catch(e){}mode=m;grind=customGrind;diff=m==="tut"?"easy":(DF[$("df").value]?$("df").value:"easy");
 if(m==="gg"||PT.on&&PT.mode==="gg")try{ggRoll()}catch(e){}GOAL=m==="gg"?GOAL_GG:m==="tut"?3:[3,5,10].includes(+$("rg").value)?+$("rg").value:5;
-myS=opS=kills=ggL=wave=wq=wn=bt=0;tutF={};slot=0;lastCount=0;sv();
+myS=opS=kills=ggL=wave=wq=wn=bt=0;wPend.clear();tutF={};slot=0;lastCount=0;sv();
 PU=PUbase();PU.on=m==="waves";P.max=100;P.hp=100;xp=0;xpNeed=40;xpLevel=0;knifeCharge=0;knifeCharging=false;grenAim=false;clearGrenPrev();{const o=document.getElementById("puov");if(o)o.remove()}if(bossEl)bossEl.style.display="none";
 if(m==="party")return Party.startSolo();
 if(m==="duel1"){S.mp.mode="duel1";return Party.startSolo()}
@@ -323,10 +323,15 @@ const pool=weights.filter(w=>w[1]>0);let tot=0;pool.forEach(w=>tot+=w[1]);let x=
 for(const [k,w] of pool){x-=w;if(x<=0)return k}return 0}
 // relative speed multipliers by type (overall a bit slower than before)
 const MON_SPD=[1.0,1.5,0.5,1.35,0.4,1.1,0.85];
-let ghostW=false,wmod="",eliteN=0;const WMN={swarm:"SWARM",brute:"BRUTE SQUAD",ambush:"AMBUSH",elite:"ELITE HUNT"};
+let ghostW=false,wmod="",eliteN=0;
+// Monster Rush difficulty for ordinary monsters and boss minions: health, damage, wave size, and how many minions a boss calls (Hard is the reference tuning)
+const MONDIF={easy:{hp:.7,dm:.6,n:.75,mn:.5},medium:{hp:.85,dm:.78,n:.88,mn:.7},hard:{hp:1,dm:1,n:1,mn:.85},impossible:{hp:1.1,dm:1.12,n:1.1,mn:1}},mdf=()=>grind?MONDIF.hard:MONDIF[diff]||MONDIF.medium;
+// monsters promised on a timer (a dead one rising, the level champion): counted in "monsters left" and holding the wave open until they land, so none leaks into the break or the next wave
+const wPend=new Set();
+function laterMon(ms,fn){const tk={w:wave};wPend.add(tk);const run=()=>{if(!wPend.has(tk))return;if(mode==="waves"&&(state==="pause"||menuOpen)){setTimeout(run,250);return}wPend.delete(tk);if(state==="play"&&mode==="waves"&&wave===tk.w)fn()};setTimeout(run,ms)}const WMN={swarm:"SWARM",brute:"BRUTE SQUAD",ambush:"AMBUSH",elite:"ELITE HUNT"};
 function nextWave(){
 if(mode==="waves"&&!PT.on&&wave>0&&wave%5===0&&stageDone!==wave){stageDone=wave;stageChange();return}
-wave++;snd("horn",.8);if(wave%5===0)setTimeout(()=>snd("roar",.8),600);const bw=wave%5===0;wq=bw?0:Math.min(LV.countCap(),3+wave*2);if(coopN()>1&&wq)wq=Math.min(60,Math.round(wq*(1+.3*(coopN()-1))));wt=0;wn=0;P.hp=Math.min(P.max,P.hp+PU.sw);
+wave++;snd("horn",.8);if(wave%5===0)setTimeout(()=>snd("roar",.8),600);const bw=wave%5===0;wq=bw?0:Math.max(3,Math.round(Math.min(LV.countCap(),3+wave*2)*mdf().n));if(coopN()>1&&wq)wq=Math.min(60,Math.round(wq*(1+.3*(coopN()-1))));wt=0;wn=0;P.hp=Math.min(P.max,P.hp+PU.sw);
 corrWas=corrupted;corrupted=false;
 const lw=LV.startWave(),lvd=lw?LV.cur():null;
 ghostW=mode==="waves"&&!PT.on&&!!((S.opt&&S.opt.ghostLvl)||(lw?lw.mod==="ghost":(wave>=7&&wave%7===0)));
@@ -345,7 +350,7 @@ else if(ghostW){flash("GHOST LEVEL \u00b7 wave "+wave+" \u00b7 the dead hover an
 else if(ph&&Phase.begin(ph)){wmod="";wq=Math.round(wq*1.1)}
 else if(lw&&lw.mod&&LV.MODS[lw.mod]){const m=LV.MODS[lw.mod];flash(lnm+"Wave "+wave+" \u00b7 "+m.n+(m.sub?" \u00b7 "+m.sub:""),3200);try{snd("phase",.7)}catch(e){}}
 else{flash(lnm+(corrupted?"Corrupted wave ":"Wave ")+wave+(wmod?" · "+WMN[wmod]:""),2400);if(wmod)setTimeout(()=>snd(wmod==="elite"?"elite":"roar",.7),500)}
-if(lw&&lw.champion)setTimeout(()=>{if(state==="play"&&mode==="waves")spawnMon({champion:1})},2200);
+if(lw&&lw.champion)laterMon(2200,()=>spawnMon({champion:1}));
 try{Mus.set(corrupted?"corrupt":bw?"boss":"battle")}catch(e){}
 snd("go")}
 // ---------- stages: every boss you beat moves the fight to a new arena (fade out, rebuild, title card, fade in) ----------
@@ -374,7 +379,7 @@ let o=opt.minion||opt.rise?{x:opt.x,z:opt.z}:near.length?pk(near):awaySpot(P.x,P
 // burrowing monsters (desert) dig up close to you instead of walking in from the edge
 if(!opt.minion&&!opt.rise&&!champ&&lvm&&lvm.mon&&lvm.mon.trait==="burrow"&&rnd()<.55){const a=rnd()*6.283,r=8+rnd()*7;o={x:clamp(P.x+Math.cos(a)*r,-H+3,H-3),z:clamp(P.z+Math.sin(a)*r,-H+3,H-3)}}if(blocked(o.x,o.z,0,.6))o=freeSpot(o.x,o.z);
 const typeMul=[1,.7,2.5,.65,3.2,.8,1.2][k]||1;
-const hp=(opt.minion?24+wave*4.5:34+wave*9.5)*typeMul*(corrupted?1.25:1)*coopHp()*(elite?2.6:1)*(wmod==="swarm"&&!opt.minion?.65:1)*(grind?.2:1)*LV.hpMul()*(champ?7:1);
+const hp=(opt.minion?24+wave*4.5:34+wave*9.5)*typeMul*(corrupted?1.25:1)*coopHp()*(elite?2.6:1)*(wmod==="swarm"&&!opt.minion?.65:1)*(grind?.2:1)*LV.hpMul()*(champ?7:1)*mdf().hp*(opt.minion?.8:1);
 const g=mkMon(Math.min(2,k)); // visual base 0-2, extras reuse with tint
 if(lvm)LV.skin(g,k,{champion:champ});
 else if(k>=3){g.traverse(o=>{if(o.isMesh&&o.material&&o.material.color){if(k===3)o.material.color.offsetHSL(.08,.2,-.05);if(k===4)o.material.color.offsetHSL(-.05,-.1,-.15);if(k===5)o.material.color.offsetHSL(.35,.15,.05);if(k===6)o.material.color.offsetHSL(-.15,.1,.1)}})}
@@ -391,7 +396,7 @@ const au=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:0xff1030,blending:
 if(elite){const au2=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:0xffc233,blending:T.AdditiveBlending,transparent:true,depthWrite:false,opacity:.55,fog:false}));au2.scale.set(4,4,1);au2.position.y=1.2;au2.raycast=()=>{};g.add(au2);g.scale.multiplyScalar(1.22);(g.userData.mats||[]).forEach(m=>{if(m.emissive)m.emissive.setHex(0x5a3a00)})}
 const md=({easy:.85,medium:1,hard:1.15,impossible:1.3})[diff]||1;
 const baseSp=(grind?.7:1)*Math.min(LV.spdCap(),(2.15+wave*.12)*md*LV.spdMul())*(MON_SPD[k]||1)*(champ?.85:1)*(corrupted?1.1:1)*(wmod==="swarm"?1.12:1);
-const e={g,hp,t:"mon",k,cd:1,sd:rnd()<.5?1:-1,spd:baseSp,dmg:(7+wave*1)*(k===2||k===4?1.5:k===3?.8:1)*(corrupted?1.2:1)*(elite?1.3:1)*LV.dmgMul()*(champ?1.6:1),ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,corr:!!corrupted,minion:!!opt.minion,rad:clamp(.4*g.scale.x+.12,.5,.7),pt:.5,stk:0,px:o.x,pz:o.z,vt:0,hc:0,vis:false};
+const e={g,hp,t:"mon",k,cd:1,sd:rnd()<.5?1:-1,spd:baseSp,dmg:(7+wave*1)*(k===2||k===4?1.5:k===3?.8:1)*(corrupted?1.2:1)*(elite?1.3:1)*LV.dmgMul()*(champ?1.6:1)*mdf().dm,ph:rnd()*6,esc:0,ea:0,sT:.5,sx:o.x,sz:o.z,hf:0,corr:!!corrupted,minion:!!opt.minion,rad:clamp(.4*g.scale.x+.12,.5,.7),pt:.5,stk:0,px:o.x,pz:o.z,vt:0,hc:0,vis:false};
 e.hpMax=hp;e.bar=HB.make(g,2.6/(g.scale.x||1),()=>({hp:e.hp,max:e.hpMax,alive:e.hp>0&&!(e.em>0),far:70}),{base:e.corr?1.1:1,col:corrupted?(f=>f>.5?0xa78bfa:0xf43f5e):champ?(f=>0xff6a1a):elite?(f=>0xfbbf24):null});e.elite=elite?1:0;e.champion=champ?1:0;e.lvRisen=opt.rise?1:0;LV.onSpawn(e);if(champ){const nm=LV.monName(k)||"Monster";e.name="Champion "+nm;flash("CHAMPION: "+nm+" · a mini-boss joins the wave",2600);try{snd("elite",.8)}catch(x){}}e.em=opt.minion?(opt.em||1.4):1.4
 if(ghostW||opt.ghost){e.ghost=1;e.phz=1;e.hv=.55;Ghost.tint(g)}
 Phase.mod(e,g);
@@ -549,7 +554,7 @@ document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove
 const LEAP_MAX=13; // longest boss jump in world units; the arena is 80 across
 // boss blows are capped at a share of full health and followed by a short grace window, so no single landing can take you from healthy to dead
 // bosses scale with the chosen difficulty: hp, damage, speed, attack tempo, the most one hit can take, and the grace window after it
-const BD={easy:{hp:.5,dm:.5,sp:.8,tm:1.5,cap:.2,gr:1.3},medium:{hp:.75,dm:.72,sp:.9,tm:1.25,cap:.28,gr:1.05},hard:{hp:1,dm:1,sp:1,tm:1,cap:.36,gr:.9},impossible:{hp:1.15,dm:1.12,sp:1.04,tm:.92,cap:.4,gr:.8}},BDG={hp:.12,dm:.3,sp:.7,tm:2,cap:.08,gr:1.6},bdf=()=>grind?BDG:BD[diff]||BD.hard;
+const BD={easy:{hp:.4,dm:.4,sp:.78,tm:1.6,cap:.16,gr:1.4},medium:{hp:.62,dm:.6,sp:.88,tm:1.35,cap:.24,gr:1.15},hard:{hp:.9,dm:.9,sp:1,tm:1.05,cap:.32,gr:.95},impossible:{hp:1.15,dm:1.12,sp:1.04,tm:.92,cap:.4,gr:.8}},BDG={hp:.12,dm:.3,sp:.7,tm:2,cap:.08,gr:1.6},bdf=()=>grind?BDG:BD[diff]||BD.hard;
 function bossHit(d,src){const was=P.hp,b=bdf();hit(Math.min(d,P.max*b.cap/(PU.arm||1)),src);if(P.hp<was)P.prot=Math.max(P.prot,b.gr)}
 function bossSlam(e,r,m){
 const p=e.g.position,x=p.x,z=p.z;
@@ -596,7 +601,7 @@ e.phCD=(e.phCD||0)-dt;e.blCD=(e.blCD||0)-dt;
 e.hb-=dt;if(e.hb<=0){e.hb=e.hp<e.hpMax*.3?.55:1.1;try{tone(54,.24,"sine",.2,36)}catch(x){}}
 if(e.corr&&e.stun<=0&&!E.some(x=>x.minion&&x.hp>0)){e.addT-=dt;if(e.addT<=0&&E.length<11){e.addT=8;spawnMon();spawnMon()}}
 // quarter-health thresholds summon minions and fully stun the boss (no attack)
-if(e.stage<3&&e.hp>0&&e.hp<=e.hpMax*(1-.25*(e.stage+1))){e.stage++;e.stun=4.2;e.wind=0;e.atkT=2;u.kick=1;snd("kill",.9);flash(e.name+" is stunned. Horde incoming!",2000);ringFx(p.x,p.z,9,0xaefcff,2.5);Fx.burst({x:p.x,y:2.4,z:p.z},0xaefcff,24,6,.1,3,22);const mn_=(e.lvDef&&e.lvDef.minions||5)*e.stage;spawnMinions(p.x,p.z,mn_,6,2.2/mn_,e.lvDef?e.lvDef.minionK:0)}
+if(e.stage<3&&e.hp>0&&e.hp<=e.hpMax*(1-.25*(e.stage+1))){e.stage++;e.stun=4.2;e.wind=0;e.atkT=2;u.kick=1;snd("kill",.9);flash(e.name+" is stunned. Horde incoming!",2000);ringFx(p.x,p.z,9,0xaefcff,2.5);Fx.burst({x:p.x,y:2.4,z:p.z},0xaefcff,24,6,.1,3,22);const mn_=Math.max(2,Math.round((e.lvDef&&e.lvDef.minions||5)*e.stage*mdf().mn));spawnMinions(p.x,p.z,mn_,6,2.2/mn_,e.lvDef?e.lvDef.minionK:0)}
 if(P.fz>0||rL>0||menuOpen){poseMon(g,dt);return}
 if(P.dead>0){poseMon(g,dt);return}
 const minionsLeft=E.filter(x=>x!==e&&x.t==="mon"&&x.minion&&x.hp>0).length;
@@ -658,7 +663,7 @@ if(i%2===0)snd("kill",.7+.1*i);
 },i*140);
 setTimeout(()=>{document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove("shk"),700);flashScreen("#ffd24a")},200);
 setTimeout(()=>{Fx.burst({x:p.x,y:2.5,z:p.z},0xffffff,55,12,.16,4,40);ringFx(p.x,p.z,14,0xffd24a,2.2)},900);
-S.coins+=Math.round((15+wave*2)*LV.coinMul());addBP(Math.round((e.corr?150+wave*3:80+Math.floor(wave*2.4))*LV.bpMul()));spawnMinions(p.x,p.z,12,2.2,.14,e.lvDef?e.lvDef.minionK:0)}
+S.coins+=Math.round((15+wave*2)*LV.coinMul());addBP(Math.round((e.corr?150+wave*3:80+Math.floor(wave*2.4))*LV.bpMul()));spawnMinions(p.x,p.z,Math.max(3,Math.round(12*mdf().mn)),2.2,.14,e.lvDef?e.lvDef.minionK:0)}
 function bossHud(){const b=E.find(x=>x.boss);if(!b){if(bossEl)bossEl.style.display="none";return}
 if(!bossEl){bossEl=document.createElement("div");bossEl.id="bossbar";bossEl.innerHTML='<div class="bn"></div><div class="bt"><i class="bl"></i><i class="bf"></i><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u></div><div class="bp"><s></s><s></s><s></s><s></s></div>';document.body.appendChild(bossEl)}
 const f=clamp(b.hp/b.hpMax,0,1),mins=E.filter(x=>x!==b&&x.t==="mon"&&x.minion&&x.hp>0).length;

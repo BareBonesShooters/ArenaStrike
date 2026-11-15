@@ -263,7 +263,7 @@ if(mode==="parkour"){PK.frame(dt);pkBodyFrame(dt)}
 if(mode==="waves"){bossHud();corrFrame(dt);Phase.frame(dt);LV.frame(dt);
 if(!menuOpen){
 if(wq>0){wt-=dt;if(wt<=0&&E.length<16+(wmod==="swarm"?6:0)+(coopN()-1)*3){wt=wmod==="swarm"?.4:wmod==="ambush"?.25:.6;wq--;spawnMon()}}
-else if(!E.length&&!wn&&P.dead<=0){const b=Math.round(2*wave*PU.coin*(corrupted?1.5:1)*LV.coinMul()),lvC=LV.on()&&LV.cur()&&LV.cur().corrupt;LV.endWave();S.coins+=b;addBP(Math.round((15+Math.floor(wave*2.6)+(corrupted?20:0))*LV.bpMul()));sv();qAdd("wave",wave,1);qAdd("wc",1);if(PT.coop)PT.cw=wave;
+else if(!E.length&&!wPend.size&&!wn&&P.dead<=0){const b=Math.round(2*wave*PU.coin*(corrupted?1.5:1)*LV.coinMul()),lvC=LV.on()&&LV.cur()&&LV.cur().corrupt;LV.endWave();S.coins+=b;addBP(Math.round((15+Math.floor(wave*2.6)+(corrupted?20:0))*LV.bpMul()));sv();qAdd("wave",wave,1);qAdd("wc",1);if(PT.coop)PT.cw=wave;
 if(corrupted&&(!lvC||wave%5===0)){flash("CORRUPTED WAVE CLEARED: pick 3 power-ups",2800);snd("win");wn=1e9;setTimeout(()=>offerCorruptedPU(3),600)}
 else if(Phase.on&&Phase.clear(b)){}
 else{flash("Wave "+wave+" cleared  +"+b+" coins"+(PT.coop?"  \u00b7  waiting for the squad":""),2500);snd("clear");setTimeout(()=>snd("chord",.6),180);wn=PT.coop?1e9:1.6}
@@ -331,7 +331,7 @@ hudT-=dt;if(hudT>0)return;hudT=.12;
 let top="",sub="",kc=null,rows=[];
 if(PT.on){const h=Party.hud();kc=h.kc;rows=h.rows;top=h.top;sub=h.sub}
 else if(mode==="parkour"){const h=PK.hud();top=h.top;sub=h.sub;rows=h.rows}
-else if(mode==="waves"){top="Wave "+wave;sub=(E.length+wq)+" monsters left";rows=[[S.name,kills]]}
+else if(mode==="waves"){top="Wave "+wave;sub=(E.length+wq+wPend.size)+" monsters left";rows=[[S.name,kills]]}
 else if(mode==="range"){top="Accuracy Challenge";{const u=RANGE_SHOTS-Math.max(0,rs);sub="Score "+myS+"  ·  "+Math.max(0,rs)+" of "+RANGE_SHOTS+" shots left  ·  "+(u?Math.round(rHit/u*100):100)+"% accuracy"+(rCur>=2?"  ·  streak "+rCur:"")}rows=[[S.name,myS]];txt("rgn",cg().n+"  ·  "+R[cg().r]+"  ·  "+(rangeG+1)+"/"+G.length);el("rgn").style.color=RC[cg().r]}
 else{top=mode==="gg"?"Gun Game":mode==="tut"?"Tutorial":"Duel";sub=mode==="gg"?"":"First to "+GOAL;rows=[[S.name,myS],[DF[diff].n,opS]];if(mode==="gg")kc=[myS+"",GOAL_GG+"",DF[diff].n+" "+opS]}
 txt("top",top);txt("sub",sub);hide("sub",!sub);

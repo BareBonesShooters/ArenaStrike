@@ -91,13 +91,13 @@ if(ready||PT.cwT>30){PT.cwT=0;
 for(const e of E.slice())dropModel(e.g,e.tag);E=[];projs.forEach(o=>sc.remove(o.m));projs.length=0;
 if(P.dead>0){P.dead=0;respawn();P.hp=P.max*.5;P.prot=3;flash("Back on your feet",1400)}
 wn=0;nextWave()}}
-function hud(){if(PT.coop){let up=P.dead>0?0:1;for(const [,r] of PT.remotes)if(r.init&&!r.dead)up++;return{kc:null,rows:board().map(r=>[r.n,(r.k|0)+(r.me?" \u2605":""),r.me?"me":""]),top:"Wave "+wave,sub:(E.length+wq)+" monsters  \u00b7  "+up+" of "+(1+PT.remotes.size)+" standing"}}
+function hud(){if(PT.coop){let up=P.dead>0?0:1;for(const [,r] of PT.remotes)if(r.init&&!r.dead)up++;return{kc:null,rows:board().map(r=>[r.n,(r.k|0)+(r.me?" \u2605":""),r.me?"me":""]),top:"Wave "+wave,sub:(E.length+wq+wPend.size)+" monsters  \u00b7  "+up+" of "+(1+PT.remotes.size)+" standing"}}
 const rows=board().map(r=>[r.n,(r.k|0)+(r.me?" \u2605":""),r.me?"me":""]);
 let mine=PT.me?PT.me.kills|0:0;if(tm()){mine=PT.me.kills|0;for(const [,r] of PT.remotes)if(r.team===PT.team)mine+=r.kills|0}
 return{kc:null,rows,top:mine+" / "+PT.goal,sub:PM_MODES[PT.mode]?PM_MODES[PT.mode].n:"Party"}}
 function begin(asHost,online,cfg){
 PT.on=true;PT.online=online;PT.host=!!asHost;PT.mode=(cfg&&cfg.mode)||S.mp.mode||"ffa";if(!PM_MODES[PT.mode])PT.mode="ffa";PT.goal=PM_MODES[PT.mode].goal;PT.winner="";PT.coop=PT.mode==="coop";PT.cw=0;PT.cwT=0;
-myS=opS=kills=ggL=wave=wq=wn=bt=0;PU=PUbase();PU.on=PT.coop;xp=0;xpNeed=40;xpLevel=0;corrReset();
+myS=opS=kills=ggL=wave=wq=wn=bt=0;wPend.clear();PU=PUbase();PU.on=PT.coop;xp=0;xpNeed=40;xpLevel=0;corrReset();
 PT.team=0;if(online&&tm()){const t=cfg&&cfg.teams&&cfg.teams[Net.pid];PT.team=t!=null?t:(asHost?0:1)}
 PT.me={kills:0,deaths:0,lvl:0};wipeRemotes();mode=PT.coop?"waves":"party";diff=(cfg&&cfg.diff)||S.mp.diff||"medium";lastBy=null;sendT=0;botT=0;
 const seed=(cfg&&cfg.seed)!=null?cfg.seed:((rnd()*2147483647)|0),theme=(cfg&&cfg.theme&&THEMES[cfg.theme])?cfg.theme:pk(OUTDOOR);

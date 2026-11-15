@@ -106,7 +106,7 @@ function moveMul(){return P.lvChill>0?.65:1}
 function onDeath(e){if(!on()||!e||e.boss)return;const t=e.lvTrait,p=e.g.position,x=p.x,z=p.z;
 if(t==="explode"&&!e.minion){ringFx(x,z,3.2,0xff6a1a,.6);setTimeout(()=>{if(state!=="play")return;Fx.burst({x,y:.6,z},0xff7a2a,26,9,.12,2,20);Gfx.flare({x,y:1,z},0xffb04a,5,.3);snd("boom",.5);
 if(Math.hypot(P.x-x,P.z-z)<3.2&&P.y<2)hit(8+wave*.6,{x,z})},650)}
-else if(t==="rise"&&!e.minion&&!e.lvRisen&&rnd()<.22){setTimeout(()=>{if(state!=="play"||mode!=="waves")return;spawnMon({k:e.k,x,z,rise:1})},900)}}
+else if(t==="rise"&&!e.minion&&!e.lvRisen&&rnd()<.22){laterMon(900,()=>spawnMon({k:e.k,x,z,rise:1}))}}
 // per-frame: poison, chill, leap trait, power surge, frenzy
 let surgeT=2,lpT=0;
 function frame(dt){
