@@ -139,6 +139,13 @@ return{board,targets,shoot,stab,sendFx,frame,hud,startSolo,startOnline,onNet,lea
 
 const Net=(()=>{
 let peer=null,conns=new Map(),pid="",rosterList=[],mode="ffa",bots=5,diff="medium",ready=false,lastStart=null,leaving=false,keepT=null;
+// PeerJS is only needed for online play, so it is no longer a render-blocking script: it loads when you host or join,
+// and is prefetched quietly once the page is idle so it is usually ready by then.
+const needPeer=(()=>{let st=0,wait=[];const SRC="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js",SRI="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR";
+return cb=>{if(typeof Peer!=="undefined"){if(cb)cb(true);return}if(cb)wait.push(cb);if(st===1)return;st=1;
+const el=document.createElement("script");el.src=SRC;el.integrity=SRI;el.crossOrigin="anonymous";el.async=true;
+const done=ok=>{st=ok?2:0;const w=wait;wait=[];for(const f of w)try{f(ok)}catch(e){}};el.onload=()=>done(typeof Peer!=="undefined");el.onerror=()=>done(false);document.head.appendChild(el)}})();
+try{(window.requestIdleCallback||(f=>setTimeout(f,4000)))(()=>needPeer(),{timeout:8000})}catch(e){}
 const api={state:"idle",code:"",err:"",onChange:null,get pid(){return pid},get ready(){return ready},
 roster(){return rosterList.slice()},
 fire(){if(api.onChange)api.onChange()},
@@ -146,7 +153,7 @@ setMode(m){mode=m;broadcast({t:"meta",mode,bots,diff})},
 setBots(n){bots=n|0;broadcast({t:"meta",mode,bots,diff})},
 send(msg){const j=msg;for(const [,c] of conns)if(c.open)try{c.send(j)}catch(e){}},
 host(code0){
-if(typeof Peer==="undefined"){api.err="PeerJS failed to load. Check your internet connection.";api.fire();return}
+if(typeof Peer==="undefined"){api.state="starting";api.err="";api.fire();needPeer(ok=>ok?api.host(code0):(api.err="PeerJS failed to load. Check your internet connection.",api.state="idle",api.fire()));return}
 api.state="starting";api.err="";leaving=false;api.fire();
 const code=code0||(""+Math.random().toString(36).slice(2,7)).toUpperCase();
 try{if(peer)peer.destroy()}catch(e){}
@@ -158,7 +165,7 @@ guard(p,{host:1,code});
 join(code){
 code=String(code||"").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,5);
 if(code.length<4){api.err="Enter a valid room code";api.fire();return}
-if(typeof Peer==="undefined"){api.err="PeerJS failed to load. Check your internet connection.";api.fire();return}
+if(typeof Peer==="undefined"){api.state="starting";api.err="";api.fire();needPeer(ok=>ok?api.join(code):(api.err="PeerJS failed to load. Check your internet connection.",api.state="idle",api.fire()));return}
 api.state="starting";api.err="";leaving=false;api.fire();
 try{if(peer)peer.destroy()}catch(e){}
 const p=peer=new Peer({debug:0});

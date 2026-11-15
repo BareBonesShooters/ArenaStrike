@@ -160,7 +160,7 @@ SB.h[key]=x;res(true)}).catch(()=>res(false))
 }catch(e){res(false)}})}
 function bq(key,dur,fn,o,front){if(!SB.on||SB.h[key]||SB.pend[key])return;SB.pend[key]=1;const j=[key,dur,fn,o];front?SB.q.unshift(j):SB.q.push(j);if(!SB.busy)pump()}
 function pump(){SB.busy=true;const j=SB.q.shift();if(!j){SB.busy=false;return}
-bake(j[0],j[1],j[2],j[3]).then(()=>setTimeout(pump,j[0][0]==="m"?120:20))}
+bake(j[0],j[1],j[2],j[3]).then(()=>{const ms=j[0][0]==="m"?120:20;if(window.requestIdleCallback)requestIdleCallback(pump,{timeout:ms+300});else setTimeout(pump,ms)})} // bake in idle gaps, not mid-frame, so the title reel stays smooth
 function bplay(keys,v,rate){ // play one of the baked variants; false = not ready, caller falls back to the live synth
 if(!SB.on)return false;let c=[];for(const k of keys){const x=SB.h[k];if(x&&x.ok)c.push(x)}if(!c.length)return false;
 if(SB.act>40)return true;const x=c[(Math.random()*c.length)|0],id=x.h.play();x.h.volume(Math.max(0,Math.min(1,v)),id);if(PANV)try{x.h.stereo(PANV,id)}catch(e){}x.h.rate(Math.max(.5,Math.min(2.5,rate||1)),id);

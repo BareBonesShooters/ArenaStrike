@@ -494,6 +494,7 @@ const sp=[];if(cand.length){sp.push(cand[0]);while(sp.length<14&&sp.length<cand.
 if(!sp.length)sp.push([0,H-8]);WORLD.spawns=sp.map(s=>({x:s[0],z:s[1]}));
 if(WORLD.course)WORLD.spawns=[{x:WORLD.course.cps[0].x,z:WORLD.course.cps[0].z}];
 YardArt.world(grp,key,seed,opt);
+try{Warm.kick()}catch(e){}// compile the new world's shaders in parallel before its first frame (11-main-loop.js)
 return WORLD}
 
 function mkMotes(grp,n,col,size,op,top){const dp=new Float32Array(n*3);for(let i=0;i<n;i++){dp[i*3]=(Math.random()-.5)*H*2;dp[i*3+1]=Math.random()*top;dp[i*3+2]=(Math.random()-.5)*H*2}

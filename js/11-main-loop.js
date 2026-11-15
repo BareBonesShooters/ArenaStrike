@@ -82,11 +82,20 @@ let lastT=performance.now(),clock=0,loopErr="",fr=0;
 // Skipped display refreshes leave the GPU idle, which is what saves heat and battery on phones and 120 Hz screens.
 const Batt={low:false};try{if(navigator.getBattery)navigator.getBattery().then(b=>{const up=()=>{const w=Batt.low;Batt.low=!b.charging&&b.level<=.2;if(Batt.low&&!w&&(!S.opt||S.opt.bsave!=="off"))try{toast("Battery low: frame rate capped at 30 to save power")}catch(e){}};up();b.addEventListener("levelchange",up);b.addEventListener("chargingchange",up)}).catch(()=>{})}catch(e){}
 function fpsCap(){const o=S.opt||{},bs=o.bsave==="on"||(o.bsave!=="off"&&Batt.low);return bs?30:(+o.fps||0)}
+// Shader warm-up. A freshly built world compiled its shaders on the first draw, which froze the title reel, the lobby and the start of a match
+// for 0.2-0.7 s on a fast Mac (seconds on weaker GPUs). After any world build we compile in parallel (KHR_parallel_shader_compile) and hold
+// frames, game time included, until the programs are ready. Capped (warm.maxMs) so a slow driver can never hang the game.
+const Warm=(()=>{let busy=0,since=0,gen=0;return{
+kick(){if(typeof rd.compileAsync!=="function")return;const g=++gen;busy=1;since=performance.now();
+const L=[rd.compileAsync(sc,cam)];try{if(VM.scene&&VM.cam)L.push(rd.compileAsync(VM.scene,VM.cam))}catch(e){}
+Promise.all(L).catch(()=>{}).finally(()=>{if(g===gen)busy=0})},
+get busy(){if(busy&&performance.now()-since>Tune.n("warm.maxMs",1500,200,5000))busy=0;return!!busy}}})();
 function loop(now){
 requestAnimationFrame(loop);
 const fcap=fpsCap();if(fcap&&now-lastT<1000/fcap-2)return;
 const raw=now-lastT,dt=Math.min(.05,Math.max(0,raw/1000));lastT=now;clock+=dt;fr++;
 try{
+if(Warm.busy)return;
 const playing=state==="play",paused=state==="pause";
 // the lobby orbit is slow, so it renders at half rate (a third on weak settings) and leaves the GPU free for the blurred panels
 if(!playing&&!paused&&state!=="title"&&fr%(S.gfx>2?(SOFT?6:3):2)){return}
