@@ -58,7 +58,7 @@ const s=slot(),i=idx(),d=cur();
 const out={slot:s,mod:"",champion:s===3,boss:s===5,corrupt:!!(d&&d.corrupt)};
 if(s!==5){mod=modFor(i,s);out.mod=mod}
 // Blackout: the lights fade out (js/02c-light.js), your flashlight comes on, and the screen edges fall into darkness
-if(mod==="blackout"){try{Light.blackout(1)}catch(e){}ov("radial-gradient(ellipse 60% 55% at 50% 52%,rgba(0,0,10,0) 30%,rgba(0,0,12,.55) 70%,rgba(0,0,8,.9) 100%)")}
+if(mod==="blackout"){try{Light.blackout(1)}catch(e){}try{for(const e of E)eyes(e)}catch(e){}ov("radial-gradient(ellipse 60% 55% at 50% 52%,rgba(0,0,10,0) 30%,rgba(0,0,12,.55) 70%,rgba(0,0,8,.9) 100%)")}
 if(mod==="heatwave")ov("linear-gradient(0deg,rgba(255,140,40,.22),rgba(255,200,120,.05) 50%,rgba(255,120,30,.18))","lvheat");
 if(mod==="goldrush")ov("radial-gradient(ellipse at center,rgba(0,0,0,0) 50%,rgba(255,200,40,.22) 100%)");
 if(mod==="frenzy")ov("radial-gradient(ellipse at center,rgba(0,0,0,0) 45%,rgba(200,0,40,.25) 100%)");
@@ -66,9 +66,9 @@ surgeT=2;return out}
 let ovEl=null;
 function ov(bg,cls){clearOv();ovEl=document.createElement("div");ovEl.className="lvov"+(cls?" "+cls:"");ovEl.style.cssText="position:fixed;inset:0;z-index:7;pointer-events:none;background:"+bg;document.body.appendChild(ovEl)}
 function clearOv(){if(ovEl){ovEl.remove();ovEl=null}}
-function endWave(){mod="";clearOv();try{Light.blackout(0)}catch(e){}}
+function endWave(){mod="";clearOv();noEyes();try{Light.blackout(0)}catch(e){}}
 // the match ended or the map is being rebuilt: drop the modifier, its overlay and its lighting at once
-function reset(){mod="";clearOv();try{Light.blackout(-1)}catch(e){}}
+function reset(){mod="";clearOv();noEyes();try{Light.blackout(-1)}catch(e){}}
 // ---- monsters
 function pickType(fallback){const d=cur();if(!d||!d.mon||!d.mon.weights)return fallback();
 const n=3+Math.max(0,Math.floor((wave-1)/10)),pool=d.mon.weights.filter(w=>w[1]>0&&(w[0]<3||w[0]<n+1||wave>=6));let tot=0;pool.forEach(w=>tot+=w[1]);let x=rnd()*tot;for(const [k,w] of pool){x-=w;if(x<=0)return k}return 0}
@@ -82,8 +82,18 @@ function skin(g,k,o){const d=cur();if(!d||!d.skin)return;try{d.skin(g,k,o||{})}c
 if(M().scale&&!(o&&o.boss))g.scale.multiplyScalar(M().scale)}
 // after spawnMon builds e
 function onSpawn(e){const d=cur();if(!d)return;e.lvTrait=d.mon&&d.mon.trait||"";
-if(mod==="blackout"&&e.g){const eb=new T.MeshBasicMaterial({color:0xfff26a,fog:false}),hd=e.g.userData.head;if(hd)for(const x of[-.14,.14]){const m=new T.Mesh(new T.SphereGeometry(.075,8,6),eb);m.position.set(x,.06,.3);m.raycast=()=>{};hd.add(m);
-const h=new T.Sprite(new T.SpriteMaterial({map:SOFTDOT,color:0xffd84a,transparent:true,opacity:.75,blending:T.AdditiveBlending,depthWrite:false,fog:false}));h.scale.setScalar(.55);h.raycast=()=>{};m.add(h)}}}
+if(mod==="blackout")eyes(e)}
+// Blackout: glowing eyes that ignore fog and darkness, so in the dark you see the monsters' eyes before their bodies.
+// Added to every monster when the lights die (not only new spawns) and taken off again when they come back.
+let EYES=[],eyeG=null,eyeM=null,eyeS=null;
+function eyes(e){if(!e||!e.g||e.g.userData.eyes)return;
+eyeG=eyeG||new T.SphereGeometry(.075,8,6);eyeM=eyeM||new T.MeshBasicMaterial({color:0xfff26a,fog:false,toneMapped:false});
+eyeS=eyeS||new T.SpriteMaterial({map:SOFTDOT,color:0xffc83a,transparent:true,opacity:.85,blending:T.AdditiveBlending,depthWrite:false,fog:false,toneMapped:false});
+let hd=e.g.userData.head,y=.06,z=.3;if(!hd){hd=e.g;const b=new T.Box3().setFromObject(e.g);y=(b.max.y-e.g.position.y)/(e.g.scale.y||1)*.88;z=.32}
+const pair=[];for(const x of[-.14,.14]){const m=new T.Mesh(eyeG,eyeM);m.position.set(x,y,z);m.raycast=()=>{};hd.add(m);
+const h=new T.Sprite(eyeS);h.scale.setScalar(.7);h.raycast=()=>{};m.add(h);pair.push(m)}
+e.g.userData.eyes=pair;EYES.push(e.g)}
+function noEyes(){for(const g of EYES){for(const m of g.userData.eyes||[])m.removeFromParent();delete g.userData.eyes}EYES=[]}
 // player damage dealt to a monster: shield trait, glass cannon
 function toMon(e,d,head){if(!on())return d;let m=M().toMon||1;if(e.lvTrait==="shield"&&!head&&!e.boss)m*=.7;return d*m}
 // monster or boss damage to the player

@@ -34,37 +34,37 @@ if(AC&&!BKG&&AC.state==="suspended")AC.resume().catch(()=>{});return AC||null}
 const setVol=v=>{S.vol=v;if(MG)MG.gain.value=v;try{if(window.Howler)Howler.volume(v)}catch(e){}};
 function tone(f,d,type,v,f2,dl){const a=actx();if(!a)return;const t=a.currentTime+DL+(dl||0),o=a.createOscillator(),g=a.createGain();
 o.type=type;o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f2||f/2),t+d);
-g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(OUT());o.start(t);o.stop(t+d+.03)}
+const A=Math.min(.003,d*.2);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(Math.max(.0009,v),t+A);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(OUT());o.start(t);o.stop(t+d+.03)}
 function hiss(d,v,fq,dl){const a=actx();if(!a||!NB)return;const t=a.currentTime+DL+(dl||0),s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();
-s.buffer=NB;f.type="highpass";f.frequency.value=fq;g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);
+s.buffer=NB;f.type="highpass";f.frequency.value=fq;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(Math.max(.0009,v),t+Math.min(.003,d*.2));g.gain.exponentialRampToValueAtTime(.0008,t+d);
 s.connect(f);f.connect(g);g.connect(OUT());s.start(t);s.stop(t+d)}
 const SND={
-sh:(v,r)=>{hiss(.09,.26*v,900*r);tone(190*r,.11,"sawtooth",.13*v,60)},
-ktick:(v,r)=>{tone(2300*r,.05,"square",.07*v,1800*r);tone(3400*r,.04,"sine",.06*v,0,.035)},
+sh:(v,r)=>{hiss(.09,.26*v,900*r);tone(190*r,.12,"triangle",.14*v,60)},
+ktick:(v,r)=>{tone(2300*r,.06,"triangle",.1*v,1800*r);tone(3400*r,.05,"sine",.06*v,0,.03)},
 whizz:(v,r)=>{nz(.16,.32*v,"bandpass",4200*r,0,1100*r,5);tone(2400*r,.12,"sine",.05*v,900*r)},
 hit:v=>tone(900,.05,"square",.06*v,600),
 head:v=>{tone(1300,.07,"square",.07*v,900);tone(1900,.05,"sine",.05*v,1500,.03)},
 rl:v=>{tone(300,.08,"triangle",.08*v,200);tone(420,.1,"triangle",.09*v,300,.5)},
 kill:v=>{tone(520,.12,"sine",.14*v,700);tone(780,.2,"sine",.14*v,1000,.1)},
 hurt:v=>{tone(120,.16,"sawtooth",.15*v,50);hiss(.08,.1*v,300)},
-jump:v=>tone(260,.1,"sine",.05*v,420),
+jump:v=>tone(260,.12,"sine",.08*v,420),
 // kill confirm (rate 1.26 on headshots), heartbeat, last-rounds tick, empty-mag clack, wave-clear chord, pre-wave riser, the quiet beat before a boss
 // footsteps by surface: a hollow knock on crates and roofs, a crunch on snow
 stepw:v=>{tone(170,.06,"triangle",.09*v,110);hiss(.035,.04*v,2600)},
 steps:v=>{hiss(.09,.1*v,1500);hiss(.05,.06*v,3800,.03)},
 kc:(v,r)=>{tone(660*r,.09,"triangle",.13*v,700*r);tone(990*r,.16,"sine",.13*v,1050*r,.075)},
 hb:v=>{tone(62,.13,"sine",.32*v,40);tone(55,.16,"sine",.24*v,36,.2)},
-lastr:(v,r)=>tone(1500*r,.035,"square",.04*v,1300*r),
-mclack:v=>{tone(240,.05,"square",.09*v,90);hiss(.05,.1*v,1800)},
+lastr:(v,r)=>tone(1500*r,.045,"triangle",.08*v,1300*r),
+mclack:v=>{tone(240,.06,"triangle",.11*v,90);hiss(.05,.1*v,1800)},
 chord:v=>{tone(523,.6,"triangle",.08*v,523);tone(659,.6,"triangle",.07*v,659,.06);tone(784,.7,"triangle",.07*v,784,.12)},
 riser:v=>{tone(180,.9,"sawtooth",.045*v,720);hiss(.9,.04*v,2500)},
 lowbeat:v=>{tone(70,.25,"sine",.3*v,45);tone(70,.25,"sine",.3*v,45,.5)},
 djump:v=>{tone(420,.13,"sine",.06*v,900);tone(640,.1,"triangle",.03*v,1200,.04)},
 land:v=>{hiss(.07,.12*v,200);tone(90,.09,"sine",.12*v,50)},
-step:v=>hiss(.04,.035*v,500),
+step:v=>{hiss(.05,.06*v,600);tone(140,.045,"sine",.05*v,80)},
 pick:v=>{tone(660,.08,"sine",.1*v,880);tone(990,.1,"sine",.1*v,1200,.07)},
 ui:v=>tone(700,.04,"sine",.05*v,500),
-tick:v=>tone(880,.06,"square",.04*v,880),
+tick:v=>tone(880,.07,"triangle",.09*v,880),
 go:v=>{tone(660,.25,"square",.06*v,990)},
 win:v=>{[523,659,784,1046].forEach((f,i)=>tone(f,.25,"triangle",.12*v,f*1.01,i*.11))},
 lose:v=>{[392,330,262].forEach((f,i)=>tone(f,.3,"triangle",.1*v,f*.9,i*.15))},
@@ -74,7 +74,7 @@ function sndLive(k,vol,rate){try{if(!actx())return;const f=SND[k];if(f)f(vol==nu
 function nz(d,v,type,fq,dl,f2,q){const a=actx();if(!a||!NB)return;const t=a.currentTime+DL+(dl||0),s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain();d=Math.min(d,.38);
 s.buffer=NB;s.playbackRate.value=.8+Math.random()*.4;f.type=type;f.frequency.setValueAtTime(fq,t);if(f2)f.frequency.exponentialRampToValueAtTime(Math.max(40,f2),t+d);if(q)f.Q.value=q;
 g.gain.setValueAtTime(Math.max(.0009,v),t);g.gain.exponentialRampToValueAtTime(.0008,t+d);s.connect(f);f.connect(g);g.connect(OUT());s.start(t);s.stop(t+d)}
-const clk=(f,v,dl)=>{tone(f,.022,"square",.05*v,f*.5,dl);nz(.025,.06*v,"highpass",3500,dl)};
+const clk=(f,v,dl)=>{tone(f,.03,"triangle",.06*v,f*.5,dl);nz(.025,.06*v,"highpass",3500,dl)};
 const GF={ // fire: crack (noise), body (low tone), tail (room) and a signature layer per family
 pistol:(v,p,x)=>{nz(.05,.34*v,"highpass",2100*p);tone(260*p,.09,"sawtooth",.16*v,68*p);tone(1700*p,.025,"square",.06*v,700);if(x)nz(.16,.07*v,"lowpass",1800,.01,500)},
 smg:(v,p,x)=>{nz(.035,.26*v,"highpass",2800*p);tone(330*p,.055,"square",.09*v,110*p);tone(2400*p,.015,"square",.04*v,900);if(x)tone(210*p,.05,"sawtooth",.07*v,90,.045)},
@@ -113,7 +113,7 @@ return g._v={f:GF[fam]?fam:"pistol",p:t?t[1]:.85+(h%45)/100,x:t?t[2]:h&1,b:t?t[3
 function gunLive(g,k,v,T){try{if(!actx()||!g)return;const o=gunVoice(g);v=v==null?1:v;
 if(k==="fire"){GF[o.f](v,o.p,o.x);if(o.b)setTimeout(()=>{try{GF[o.f](v*.7,o.p*1.05,o.x)}catch(e){}},40)}
 else if(k==="rl")(GR[RLF[o.f]||"ar"])(v,Math.max(.5,T||g.rl||1.5),o.p);
-else if(k==="dry"){if(/energy|rail/.test(RLF[o.f]||""))tone(700*o.p,.12,"sine",.06*v,200);else{tone(1300*o.p,.016,"square",.07*v,800);tone(190*o.p,.05,"triangle",.07*v,110)}}
+else if(k==="dry"){if(/energy|rail/.test(RLF[o.f]||""))tone(700*o.p,.12,"sine",.06*v,200);else{nz(.03,.1*v,"bandpass",1800*o.p,0,900,2);tone(190*o.p,.06,"triangle",.08*v,110)}}
 }catch(e){}}
 // knives: whoosh, edge accent, flesh hit, wall stick; each blade has its own pitch, weight and character
 const KV={"Combat Knife":{w:.8,p:1,k:"steel"},"Kunai":{w:.6,p:1.3,k:"ring"},"Machete":{w:1.3,p:.7,k:"steel"},"Karambit":{w:.7,p:1.2,k:"curve"},"Katana":{w:1,p:1.05,k:"shing"},"Plasma Blade":{w:1,p:.9,k:"plasma"},"Solar Edge":{w:1.1,p:.8,k:"fire"},"Tanto":{w:.8,p:1.1,k:"ring"},"Butterfly":{w:.5,p:1.4,k:"flip"},"Cleaver":{w:1.5,p:.6,k:"heavy"},"Void Fang":{w:.9,p:.75,k:"void"},"Star Piercer":{w:.8,p:1.35,k:"star"},"Season Blade":{w:1,p:.95,k:"steel"},"Echo Kunai":{w:.6,p:1.2,k:"echo"},"Apex Edge":{w:1,p:1.1,k:"apex"}};
@@ -189,9 +189,9 @@ tab:v=>{tone(480,.05,"sine",.04*v,680);tone(960,.04,"sine",.015*v,1100,.02)},
 whoosh:v=>nz(.28,.14*v,"bandpass",500,0,3200,.9),
 open:v=>{nz(.2,.1*v,"bandpass",600,0,2400,1.2);tone(300,.16,"sine",.05*v,600)},
 shut:v=>{nz(.16,.09*v,"bandpass",2400,0,500,1.2);tone(520,.12,"sine",.04*v,260)},
-err:v=>{tone(200,.1,"square",.07*v,180);tone(160,.16,"square",.07*v,140,.12)},
+err:v=>{tone(200,.12,"triangle",.1*v,180);tone(160,.18,"triangle",.09*v,140,.12)},
 equip:v=>{clk(700,v*1.3);tone(150,.1,"triangle",.14*v,70,.02);nz(.12,.08*v,"bandpass",1800,.03,900,1.5)},
-swap:v=>{nz(.1,.1*v,"bandpass",1400,0,700,1.3);clk(520,v,.07);tone(110,.07,"sine",.1*v,70,.07)},
+swap:v=>{nz(.12,.07*v,"bandpass",1400,0,700,1.3);clk(520,v*.8,.07);tone(110,.08,"sine",.07*v,70,.07)},
 coin:v=>{tone(1318,.12,"sine",.1*v,1330);tone(1760,.3,"sine",.1*v,1770,.07);tone(3520,.2,"sine",.025*v,3500,.07)},
 pour:v=>{for(let i=0;i<9;i++)tone(1500+(i*137)%900,.07,"sine",.06*v,1200+(i*91)%600,i*.05+((i*7)%3)*.01)},
 chest:v=>{tone(70,.28,"sine",.25*v,48);nz(.25,.12*v,"lowpass",700,0,200);tone(180,.4,"sawtooth",.05*v,330,.05);nz(.3,.07*v,"highpass",5000,.18);[1046,1318,1568].forEach((f,i)=>tone(f,.35,"sine",.06*v,f*1.01,.2+i*.08))},
@@ -218,8 +218,8 @@ if(r>=4)[392,494,587,784].forEach(f=>tone(f,.9,"sine",.04*v,f*1.01,n*.07));if(r>
 // ----- arcade sounds: chiptune blips, coin and power-up jingles, combo ladders, plus the monster, rift and thunder effects -----
 const sq=(f,d,v,dl,f2)=>tone(f,d,"square",v,f2||f,dl),tri=(f,d,v,dl,f2)=>tone(f,d,"triangle",v,f2||f,dl);
 Object.assign(SND,{
-ui:v=>{sq(988,.035,.045*v);sq(1318,.05,.04*v,.03)},
-hover:v=>sq(1760,.018,.012*v),
+ui:v=>{tri(988,.04,.07*v);tone(1318,.05,"sine",.04*v,1318,.03)},
+hover:v=>tone(1760,.03,"sine",.04*v,1760),
 tab:v=>{sq(660,.04,.04*v,0,880);sq(990,.05,.03*v,.04)},
 pick:v=>[523,659,784,1046,1318].forEach((f,i)=>{sq(f,.07,.055*v,i*.045);tri(f/2,.07,.05*v,i*.045)}),
 coin:v=>{sq(988,.07,.07*v);sq(1319,.45,.07*v,.07);tone(2637,.25,"sine",.03*v,2637,.07)},

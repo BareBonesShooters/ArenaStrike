@@ -8,14 +8,17 @@ const dir=new T.Vector3(),fw=new T.Vector3(),TMP=new T.Color();
 const DARK={sky:[0x010104,0x030409,0x070a13],cloud:0x0b0d16,fog:0x020308,hc:0x3a4670,hg:0x040509,sun:0x5060a0};
 let K=0,TG=0,snap=null;
 function take(){const u=Sky.u;return{cT:u.cT.value.clone(),cM:u.cM.value.clone(),cH:u.cH.value.clone(),cc:u.cc.value.clone(),stars:u.stars.value,
-fog:sc.fog.color.clone(),near:sc.fog.near,far:sc.fog.far,hc:hemi.color.clone(),hg:hemi.groundColor.clone(),hi:hemi.intensity,sc:sun.color.clone(),si:sun.intensity}}
+fog:sc.fog.color.clone(),near:sc.fog.near,far:sc.fog.far,hc:hemi.color.clone(),hg:hemi.groundColor.clone(),hi:hemi.intensity,sc:sun.color.clone(),si:sun.intensity,ei:sc.environmentIntensity==null?1:sc.environmentIntensity,lamps:lamps()}}
+// every other light in the scene (street lamps, torches, glows) dims with the sky, so the dark is real and not a screen overlay
+function lamps(){const o=[];sc.traverse(x=>{if(x.isLight&&x!==sun&&x!==hemi&&x!==flashL&&!x.isAmbientLight)o.push([x,x.intensity])});return o}
 function apply(k){const B=snap,u=Sky.u;if(!B||!sc.fog)return;
 u.cT.value.copy(B.cT).lerp(TMP.setHex(DARK.sky[0]),k);u.cM.value.copy(B.cM).lerp(TMP.setHex(DARK.sky[1]),k);u.cH.value.copy(B.cH).lerp(TMP.setHex(DARK.sky[2]),k);u.cc.value.copy(B.cc).lerp(TMP.setHex(DARK.cloud),k);
 u.stars.value=B.stars+(1-B.stars)*k*.6;
 sc.fog.color.copy(B.fog).lerp(TMP.setHex(DARK.fog),k);if(sc.background&&sc.background.isColor)sc.background.copy(sc.fog.color);
 sc.fog.near=B.near+(3-B.near)*k;sc.fog.far=B.far+(30-B.far)*k;
 hemi.color.copy(B.hc).lerp(TMP.setHex(DARK.hc),k);hemi.groundColor.copy(B.hg).lerp(TMP.setHex(DARK.hg),k);hemi.intensity=B.hi*(1-.8*k);
-sun.color.copy(B.sc).lerp(TMP.setHex(DARK.sun),k);sun.intensity=B.si*(1-.92*k)}
+sun.color.copy(B.sc).lerp(TMP.setHex(DARK.sun),k);sun.intensity=B.si*(1-.92*k);
+if("environmentIntensity"in sc)sc.environmentIntensity=B.ei*(1-Tune.n("lv.darkEnv",.9,0,1)*k);const lk=1-Tune.n("lv.darkLamps",.8,0,1)*k;for(const[l,i]of B.lamps)l.intensity=i*lk}
 function restore(){if(snap){apply(0);snap=null}K=TG=0;flashL.intensity=0}
 // keeps the sun's shadow box centred a little ahead of the camera, so the whole shadow map is spent where you look (about twice as sharp as one box over the arena)
 // the title and lobby cameras look out over the whole map, so there the box covers the whole arena instead
