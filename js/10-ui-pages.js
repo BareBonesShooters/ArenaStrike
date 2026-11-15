@@ -134,7 +134,8 @@ const e=el("sbd");if(e._s!==h){e._s=h;e.innerHTML=h}}
 // ---------- liquid thumb: slides a glass highlight to the active option of every segmented strip, from wherever the last one stood ----------
 const Glide=(()=>{const seen=new Map(),RM=matchMedia("(prefers-reduced-motion:reduce)");let raf=0;
 const key=(el,i)=>el.id||el.getAttribute("aria-label")||"seg"+i;
-function sync(){raf=0;document.querySelectorAll(".seg:not(.tg),.shtabs").forEach((el,i)=>{
+function sync(){raf=0;if(state==="play"&&!menuOpen)return; // mid-fight the HUD flips classes every frame; measuring hidden menu strips then forced a layout per frame
+document.querySelectorAll(".seg:not(.tg),.shtabs").forEach((el,i)=>{
 const on=el.querySelector(".b.on");let t=el.querySelector(":scope>.gthumb");
 if(!on||!el.offsetWidth){if(t)t.classList.remove("go");el.classList.remove("glided");return}
 const k=key(el,i),r={x:on.offsetLeft,y:on.offsetTop,w:on.offsetWidth,h:on.offsetHeight},p=seen.get(k);

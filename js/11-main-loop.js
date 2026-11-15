@@ -85,9 +85,18 @@ function fpsCap(){const o=S.opt||{},bs=o.bsave==="on"||(o.bsave!=="off"&&Batt.lo
 // Shader warm-up. A freshly built world compiled its shaders on the first draw, which froze the title reel, the lobby and the start of a match
 // for 0.2-0.7 s on a fast Mac (seconds on weaker GPUs). After any world build we compile in parallel (KHR_parallel_shader_compile) and hold
 // frames, game time included, until the programs are ready. Capped (warm.maxMs) so a slow driver can never hang the game.
+// compile for the target the frame really draws into: shader keys include it (Post renders into linear render targets with no tone mapping, the plain path
+// draws to the screen in sRGB), so compiling only against the screen left every Post-mode shader to compile again on first draw, mid-fight. vm: the
+// viewmodel pass can end on either, so it gets both.
+// world: unhide hidden objects (pooled sparks, rings; compile() skips hidden ones) just for the compile call, so effects do not compile mid-fight
+let WRT=null;function warmFor(s,c,vm){const L=[],prev=rd.getRenderTarget(),hid=[];
+if(!vm)s.traverse(o=>{if(!o.visible){o.visible=true;hid.push(o)}});
+const post=typeof Post==="object"&&Post.on; // only touch the render target in Post mode: setRenderTarget() re-applies the viewport, which shifted Potato's reduced-resolution frame
+try{if(post){rd.setRenderTarget(WRT||(WRT=new T.WebGLRenderTarget(1,1)));L.push(rd.compileAsync(s,c));if(vm){rd.setRenderTarget(null);L.push(rd.compileAsync(s,c))}}
+else L.push(rd.compileAsync(s,c))}catch(e){}finally{if(post)rd.setRenderTarget(prev);hid.forEach(o=>o.visible=false)}return L}
 const Warm=(()=>{let busy=0,since=0,gen=0;return{
 kick(){if(typeof rd.compileAsync!=="function")return;const g=++gen;busy=1;since=performance.now();
-const L=[rd.compileAsync(sc,cam)];try{if(VM.scene&&VM.cam)L.push(rd.compileAsync(VM.scene,VM.cam))}catch(e){}
+const L=warmFor(sc,cam,0);try{if(VM.scene&&VM.cam)L.push(...warmFor(VM.scene,VM.cam,1))}catch(e){}
 Promise.all(L).catch(()=>{}).finally(()=>{if(g===gen)busy=0})},
 get busy(){if(busy&&performance.now()-since>Tune.n("warm.maxMs",1500,200,5000))busy=0;return!!busy}}})();
 function loop(now){
@@ -107,7 +116,7 @@ else if(!paused){
 const a=.72+Math.sin(clock*.035)*.075;
 if(cam.fov!==58){cam.fov=58;cam.updateProjectionMatrix()}
 cam.position.set(Math.sin(a)*34,Tune.n("lobby.camY",10,4,24),Math.cos(a)*34);cam.lookAt(-9,Tune.n("lobby.lookY",5,0,12),-15)}// framed toward the horizon so the pale centre platform sits low and out of the panels' way
-worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
+worldFrame(dt,clock);animSkins(clock);if(playing){HB.update(dt);warmGunsOnce()}else LH.frame(dt); // low-health muffle and red edge ease out after leaving a match too, or the menus stay dulled at ~2 kHz
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
 Light.frame(dt);Cleaner.frame(dt);BossLit.tick();
 rd.shadowMap.needsUpdate=S.gfx<2||!(fr&1);
@@ -134,6 +143,12 @@ sc.remove(a);VM.scene.remove(b);disposeGeo(a);disposeGeo(b)}
 // once a match has its own lights, build one boss-shaped model off-screen (the same parts spawnBoss uses) and compile it, so the first boss does not stall the fight
 function warmBoss(){const a=new T.Group();try{a.add(mkMon(2),new T.Mesh(new T.TorusGeometry(1.1,.07,8,32),new T.MeshBasicMaterial({color:0xff3344})));sc.add(a);rd.compile(sc,cam)}catch(e){}sc.remove(a);disposeGeo(a)}
 setTimeout(()=>{if(state!=="play")prewarm()},1200);
+// every gun, skin and knife once, off-screen in its own scene but lit like the viewmodel, compiled in the background: a gun-game swap or a pickup then never compiles a shader mid-fight
+function prewarmGuns(){if(typeof rd.compileAsync!=="function")return;const s=new T.Group(),add=f=>{try{s.add(f().grp)}catch(e){}};G.forEach(x=>add(()=>{const b=buildGun(x,SK[0]);try{Scope.buildLens(b,x)}catch(e){}return b}));SK.forEach(k=>add(()=>buildGun(G[0],k)));KN.forEach(k=>add(()=>buildKnife(k)));
+// inside the real viewmodel scene so every shader key matches; programs are created synchronously, so it is removed before any frame draws it
+VM.scene.add(s);let L=[];try{L=warmFor(VM.scene,VM.cam,1)}catch(e){}VM.scene.remove(s);Promise.all(L).catch(()=>{}).finally(()=>disposeGeo(s))}
+let gunsWarm=0; // run once, on the first match: the viewmodel only gets its lights then, and shader keys include the light setup
+function warmGunsOnce(){if(gunsWarm)return;gunsWarm=1;const go=()=>{try{prewarmGuns()}catch(e){}};setTimeout(()=>window.requestIdleCallback?requestIdleCallback(go,{timeout:2000}):go(),600)}
 
 // ---------- title screen: a live Monster Rush wave with a squad shooting it ----------
 const Title=(()=>{

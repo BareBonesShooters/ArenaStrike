@@ -158,8 +158,10 @@ if(pk<.0005){res(false);return}
 const url=wavOf(b,o.loop),x={ok:false};x.h=new Howl({src:[url],format:["wav"],loop:!!o.loop,onload(){x.ok=true;try{URL.revokeObjectURL(url)}catch(e){}if(key[0]==="m")Mus.go()},onloaderror(){x.ok=false}});
 SB.h[key]=x;res(true)}).catch(()=>res(false))
 }catch(e){res(false)}})}
-function bq(key,dur,fn,o,front){if(!SB.on||SB.h[key]||SB.pend[key])return;SB.pend[key]=1;const j=[key,dur,fn,o];front?SB.q.unshift(j):SB.q.push(j);if(!SB.busy)pump()}
-function pump(){SB.busy=true;const j=SB.q.shift();if(!j){SB.busy=false;return}
+function bq(key,dur,fn,o,front){if(!SB.on||SB.h[key]||SB.pend[key])return;SB.pend[key]=1;const j=[key,dur,fn,o,front||/^[sm]:/.test(key)];front?SB.q.unshift(j):SB.q.push(j);if(!SB.busy)pump()}
+function pump(){SB.busy=true;if(!SB.q.length){SB.busy=false;return}
+// mid-match only bake what is needed now (UI/effect sounds, music, guns being fired); the full gun and knife catalogue waits for the menus, so it never eats frame time in a fight
+let i=0;if(document.body.classList.contains("playing")){i=SB.q.findIndex(q=>q[4]);if(i<0){setTimeout(pump,1000);return}}const j=SB.q.splice(i,1)[0];
 bake(j[0],j[1],j[2],j[3]).then(()=>{const ms=j[0][0]==="m"?120:20;if(window.requestIdleCallback)requestIdleCallback(pump,{timeout:ms+300});else setTimeout(pump,ms)})} // bake in idle gaps, not mid-frame, so the title reel stays smooth
 function bplay(keys,v,rate){ // play one of the baked variants; false = not ready, caller falls back to the live synth
 if(!SB.on)return false;let c=[];for(const k of keys){const x=SB.h[k];if(x&&x.ok)c.push(x)}if(!c.length)return false;
