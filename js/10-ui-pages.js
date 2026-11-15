@@ -570,6 +570,12 @@ return`<div class="qr" style="--qt:${QTC[q.t]};--i:${n|0}"><span class="qd" titl
 function qRefresh(){try{if(view==="pg"&&PAGE==="quests")renderPage(true)}catch(e){}try{if(state==="pause")pauseQuests()}catch(e){}}
 function pUpdates(){
 const U=[
+["Beta 2.0","The original logo and title screen are back, plus a lot of fixes",
+["The original shield logo and title screen are back, cleaned up, and Arena Strike 3D can now be installed as an app on Android and iPhone (Add to Home Screen)",
+"Bosses in Grind mode have far less health, and their health no longer grows with your power-ups stage after stage",
+"Damage numbers now show the damage that actually landed, after headshots, crits and power-ups",
+"Open the map after pausing and it sits on top of the pause screen; pause with the map open and it stays underneath",
+"Music builds as fights heat up, gunfire echoes differently on each map, and there are colour-blind modes, key rebinding, gyro aiming and a touch button layout editor"]],
 ["Beta 1.6","Roofs, radar, music, shop and menu polish",
 ["Aether Rifle scope fixed: the gun now drops out of your sightline while aiming, the view is wider, and the sight is a clear centre with a fine iridescent ring, ticks and diamond nodes around the edge",
 "Monsters now path around walls and crates, hop up ledges they cannot step onto, and burrow free if they ever get stuck; their stride matches the distance they cover",

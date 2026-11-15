@@ -1,4 +1,4 @@
-Arena Strike 3D - Beta 1.6.5
+Arena Strike 3D - Beta 2.0
 
 ## Trailer
 

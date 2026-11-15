@@ -2,14 +2,15 @@
 <html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark"><meta name="theme-color" content="#0a1020"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Arena Strike">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=4">
-<link rel="icon" type="image/svg+xml" href="arena-logo.svg?v=4">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=4">
-<link rel="manifest" href="site.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Arena Strike 3D">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=5">
+<link rel="icon" type="image/svg+xml" href="arena-logo.svg?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=5">
+<link rel="manifest" href="site.webmanifest?v=5">
+<script>if("serviceWorker"in navigator&&location.protocol==="https:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>
 <script src="js/00a-tune.js"></script>
 <script src="js/00-mobile.js"></script>
-<title>Arena Strike 3D v1.6.5_beta</title>
+<title>Arena Strike 3D · Beta 2.0</title>
 <!-- Social link previews -->
 <meta name="description" content="Fight monsters, test your aim, and create battles in Arena Strike. Play Monster Rush, Battle Simulator, and Sandbox in your browser!">
 <link rel="canonical" href="https://barebonesshooters.github.io/ArenaStrike/">
@@ -18,8 +19,8 @@
 <meta property="og:url" content="https://barebonesshooters.github.io/ArenaStrike/">
 <meta property="og:title" content="Arena Strike">
 <meta property="og:description" content="Fight monsters, test your aim, and create battles in Arena Strike. Play Monster Rush, Battle Simulator, and Sandbox in your browser!">
-<meta property="og:image" content="https://barebonesshooters.github.io/ArenaStrike/preview-image.png?v=4">
-<meta property="og:image:secure_url" content="https://barebonesshooters.github.io/ArenaStrike/preview-image.png?v=4">
+<meta property="og:image" content="https://barebonesshooters.github.io/ArenaStrike/preview-image.png?v=5">
+<meta property="og:image:secure_url" content="https://barebonesshooters.github.io/ArenaStrike/preview-image.png?v=5">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -28,7 +29,7 @@
 <meta name="twitter:url" content="https://barebonesshooters.github.io/ArenaStrike/">
 <meta name="twitter:title" content="Arena Strike">
 <meta name="twitter:description" content="Fight monsters, test your aim, and create battles in Arena Strike. Play Monster Rush, Battle Simulator, and Sandbox in your browser!">
-<meta name="twitter:image" content="https://barebonesshooters.github.io/ArenaStrike/preview-image.png?v=4">
+<meta name="twitter:image" content="https://barebonesshooters.github.io/ArenaStrike/preview-image.png?v=5">
 <meta name="twitter:image:alt" content="Arena Strike: the logo over a low-poly arena battle.">
 <!-- End social link previews -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -61,10 +62,10 @@
 <div id="cross"><i class="xh xl"></i><i class="xh xr"></i><i class="xv xt"></i><i class="xv xb"></i><u></u><div id="hm"></div></div>
 </div>
 
-<div id="title"><div class="tw"><div class="lockup"><svg class="amark tmark" viewBox="0 0 64 64" aria-hidden="true"><path class="am-a" d="M26.5 9h11l9.6 22.600-10.200 3.200L32 22.500l-6.400 16-13.400 4.200zM49.700 37.850 57 55H45l-4.900-12.200z"/><path class="am-s" d="M4 47.500 61 29.500 9 56.500z"/></svg><h1 aria-label="Arena Strike"><span><i>Arena</i></span> <span><i>Strike</i></span></h1></div><div class="tv">Beta 1.6</div></div><div class="pr"><b class="pr-k">Press any key</b><b class="pr-t">Tap anywhere</b> to start</div></div>
+<div id="title"><div class="tw"><img class="arena-title-mark" src="arena-logo.svg" width="112" height="112" alt="Arena Strike 3D logo"><h1>Arena Strike <span>3D</span></h1><div class="tv">Beta Version 2.0</div></div><div class="pr"><span class="pr-k">Press any button</span><span class="pr-t">Tap anywhere</span> to continue</div></div>
 <div id="lobby" class="ov hid">
 <nav class="gl rail" aria-label="Menu">
-<div class="brand"><svg class="amark bmark" viewBox="0 0 64 64" aria-hidden="true"><path class="am-a" d="M26.5 9h11l9.6 22.600-10.200 3.200L32 22.500l-6.400 16-13.400 4.200zM49.700 37.850 57 55H45l-4.900-12.200z"/><path class="am-s" d="M4 47.500 61 29.500 9 56.500z"/></svg><h1>Arena Strike</h1><small class="ver">Beta 1.6</small></div>
+<div class="brand"><img class="bmark" src="arena-logo.svg" width="40" height="40" alt=""><h1>Arena Strike</h1><small class="ver">Beta 2.0</small></div>
 <div class="ng" role="group" aria-label="Play"><h2 class="ngh">Play</h2><button class="b" data-a="page" data-v="servers"><svg class="ic ln" aria-hidden="true"><use href="#i-n-globe"/></svg>Servers</button><button class="b" data-a="page" data-v="help"><svg class="ic ln" aria-hidden="true"><use href="#i-n-help"/></svg>How to play</button></div>
 <div class="ng" role="group" aria-label="Collection"><h2 class="ngh">Collection</h2><button class="b" data-a="page" data-v="shop"><svg class="ic ln" aria-hidden="true"><use href="#i-n-shop"/></svg>Shop</button><button class="b" data-a="page" data-v="load"><svg class="ic ln" aria-hidden="true"><use href="#i-n-load"/></svg>Loadout</button><button class="b" data-a="page" data-v="index"><svg class="ic ln" aria-hidden="true"><use href="#i-n-index"/></svg>Index</button></div>
 <div class="ng" role="group" aria-label="Progress"><h2 class="ngh">Progress</h2><button class="b" data-a="page" data-v="bp"><svg class="ic ln" aria-hidden="true"><use href="#i-n-pass"/></svg>Battle Pass</button><button class="b" data-a="page" data-v="quests"><svg class="ic ln" aria-hidden="true"><use href="#i-n-quest"/></svg>Quests</button><button class="b" data-a="page" data-v="codes"><svg class="ic ln" aria-hidden="true"><use href="#i-n-code"/></svg>Redeem codes</button></div>

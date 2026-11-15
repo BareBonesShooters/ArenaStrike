@@ -55,38 +55,32 @@ svg.ic.ln{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;s
 .sec>h3,.pgrp h4{font-size:var(--fs-2);letter-spacing:0;text-transform:none;color:var(--ink2);font-weight:600}
 .sh-h h2,#pst{font-family:var(--font-head);font-weight:800;font-size:var(--fs-5);letter-spacing:.01em;text-transform:uppercase;line-height:1}
 
-/* ---------- title screen ---------- */
-#title{padding:8vh 20px 9vh;background:linear-gradient(rgba(6,10,20,.82),rgba(6,10,20,.38) 30%,rgba(6,10,20,0) 52%,rgba(6,10,20,0) 70%,rgba(6,10,20,.7))}
-#title .tw{display:flex;flex-direction:column;align-items:center;gap:14px}
-#title .lockup{display:flex;align-items:center;justify-content:center;gap:.16em;font-size:clamp(2.8rem,10vw,7rem)}
-#title .tmark{width:1.02em;height:1.02em;filter:drop-shadow(0 6px 14px rgba(0,0,0,.45))}
-#title h1{font-family:var(--font-head);font-size:1em;font-weight:800;letter-spacing:.005em;line-height:1;text-transform:uppercase;color:var(--bone);text-shadow:0 4px 18px rgba(0,0,0,.5);white-space:nowrap}
-#title h1 span{display:inline-block;overflow:hidden;vertical-align:bottom;padding:.06em .02em 0;margin-bottom:-.04em}
-#title h1 i{display:inline-block;font-style:normal}
-#title h1 span+span i{color:var(--ember)}
-#title .tv{margin:0;padding:5px 12px;border-radius:8px;background:rgba(11,19,34,.82);border:1px solid var(--line-2);font-size:var(--fs-2);font-weight:600;letter-spacing:.02em;text-transform:none;color:var(--bone)}
-#title .pr{display:inline-flex;align-items:center;gap:10px;padding:7px 18px 7px 7px;border-radius:14px;background:rgba(11,19,34,.82);border:1px solid var(--line-2);font-size:var(--fs-3);font-weight:600;letter-spacing:0;text-transform:none;color:var(--bone);text-shadow:none;animation:none}
-#title .pr b{padding:7px 12px;border-radius:9px;background:var(--bone);color:var(--navy);font-weight:700}
+/* ---------- title screen: the original look (logo, big glowing title, blinking prompt), on glass ---------- */
+#title{padding:9vh 20px 10vh;background:radial-gradient(120% 90% at 50% 45%,rgba(0,0,0,0) 40%,rgba(0,0,0,.66)),linear-gradient(rgba(4,8,16,.62),rgba(0,0,0,0) 34%,rgba(0,0,0,0) 66%,rgba(4,8,16,.66))}
+#title .tw{display:flex;flex-direction:column;align-items:center}
+.arena-title-mark{display:block;width:112px;height:112px;margin:0 auto 18px;border-radius:26px;filter:drop-shadow(0 14px 30px rgba(0,0,0,.5)) drop-shadow(0 0 26px rgba(255,120,50,.28))}
+#title h1{font-family:var(--font-head);font-size:clamp(2.4rem,9vw,6.8rem);font-weight:900;letter-spacing:.06em;line-height:.95;text-transform:uppercase;color:#fff;text-shadow:0 0 34px rgba(255,90,50,.5),0 5px 0 rgba(0,0,0,.85)}
+#title h1 span{color:var(--ember)}
+#title .tv{margin-top:16px;padding:6px 16px;border-radius:99px;font-size:.78rem;font-weight:700;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.82);background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 24px -10px rgba(0,0,0,.6);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%)}
+#title .pr{padding:14px 28px;border-radius:99px;font-size:clamp(.9rem,2.2vw,1.15rem);font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 14px 34px -14px rgba(0,0,0,.7);-webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%);animation:t-blink 1.8s ease-in-out infinite}
 #title .pr-t,html.mobile-ui #title .pr-k{display:none}
 html.mobile-ui #title .pr-t{display:inline}
-@keyframes am-rise{from{opacity:0;transform:translateY(14%)}}
-@keyframes am-cut{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 -10% 0 0)}}
-@keyframes wm-up{from{transform:translateY(108%)}}
-@keyframes t-fade{from{opacity:0}}
-@keyframes pr-pulse{50%{background-color:var(--ember);color:var(--ember-ink)}}
+html.mobile-ui #title .pr{align-self:center;letter-spacing:.12em;padding:12px 22px;white-space:nowrap}
+html.mobile-ui .arena-title-mark{width:84px;height:84px;margin-bottom:12px;border-radius:20px}
+@media (orientation:landscape) and (max-height:520px){#title .tw{display:grid;grid-template-columns:auto auto;column-gap:18px;align-items:center;text-align:left}html.mobile-ui #title .arena-title-mark,#title .arena-title-mark{grid-row:1 / span 2;margin:0;width:76px;height:76px;border-radius:18px}#title .tv{justify-self:start;margin-top:8px}}
+@media (min-width:700px) and (min-height:700px){html.mobile-ui #title h1{font-size:clamp(3.4rem,8vw,5.8rem)}html.mobile-ui #title .arena-title-mark{width:108px;height:108px;margin-bottom:16px;border-radius:24px}html.mobile-ui #title .tv{font-size:.9rem}html.mobile-ui #title .pr{font-size:1.1rem;padding:15px 30px}}
+@keyframes t-in{from{opacity:0;transform:translateY(14px) scale(.96)}}
+@keyframes t-float{50%{transform:translateY(-6px)}}@keyframes t-blink{50%{opacity:.5}}
 @media (prefers-reduced-motion:no-preference){
-#title .tmark .am-a{animation:am-rise .5s cubic-bezier(.16,1,.3,1) backwards}
-#title .tmark .am-s{animation:am-cut .42s .28s cubic-bezier(.16,1,.3,1) backwards}
-#title h1 i{animation:wm-up .62s .12s cubic-bezier(.16,1,.3,1) backwards}
-#title h1 span+span i{animation-delay:.2s}
-#title .tv{animation:t-fade .4s .6s backwards}
-#title .pr{animation:t-fade .4s .85s backwards}
-#title .pr b{animation:pr-pulse 2.4s 1.6s ease-in-out infinite}}
+.arena-title-mark{animation:t-in .6s cubic-bezier(.16,1,.3,1) backwards,t-float 5s 1s ease-in-out infinite}
+#title h1{animation:t-in .6s .1s cubic-bezier(.16,1,.3,1) backwards}
+#title .tv{animation:t-in .5s .3s cubic-bezier(.16,1,.3,1) backwards}}
+@media (prefers-reduced-motion:reduce){#title .pr{animation:none}}
 
 /* ---------- lobby rail: brand, then nav in named groups ---------- */
 .rail{width:232px;padding:14px 12px;gap:0}
 .rail .brand{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:2px 6px 12px;margin:0 0 4px;border-bottom:1px solid var(--line)}
-.rail .bmark{grid-row:1 / span 2;width:38px;height:38px}
+.rail .bmark{grid-row:1 / span 2;width:40px;height:40px;border-radius:10px}
 .rail .brand h1{font-family:var(--font-head);font-size:1.55rem;font-weight:800;letter-spacing:.01em;line-height:1;text-transform:uppercase;white-space:nowrap}
 .rail .brand .ver{font-size:var(--fs-1);color:var(--ink3);line-height:1.3}
 .ng{display:flex;flex-direction:column;gap:2px;padding:9px 0 3px}

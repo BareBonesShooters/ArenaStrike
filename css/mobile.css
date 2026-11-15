@@ -11,7 +11,7 @@ html.mobile-ui :is(.sheet,.sh-b,.lk,.lkp,.lkc,.lkg,.detail,.profile,.pfi,.stage,
 html.mobile-ui :is(.b,.mode,.lkc,.cb-actions){overflow-wrap:anywhere}
 html.mobile-ui .b:hover,html.mobile-ui .it:hover{transform:none}
 html.mobile-ui #title{justify-content:space-between;overflow:auto;gap:20px}
-html.mobile-ui #title .lockup{font-size:clamp(2.3rem,11vw,4.8rem)}
+html.mobile-ui #title h1{font-size:clamp(2.3rem,10vw,4.8rem)}
 html.mobile-ui #title .pr{font-size:16px}
 html.mobile-ui #lobby{display:flex;flex-direction:column;align-items:stretch;gap:12px;overflow:auto;flex-wrap:nowrap}
 html.mobile-ui #lobby .rail{width:100%;max-height:none;flex:none;display:flex;flex-direction:column;flex-wrap:nowrap;padding:10px;gap:0;overflow:visible}
@@ -155,7 +155,7 @@ html.mobile-ui body.custom-battle.custom-joined #tc :is(#tps,#tsc,#tem,#tmp){top
 @media (orientation:landscape) and (max-height:600px){
  html.mobile-ui #lobby{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,1fr);grid-template-rows:auto 1fr;align-items:start;gap:10px}
  html.mobile-ui #lobby .rail{grid-column:1;grid-row:1;max-height:none}html.mobile-ui #lobby .stage{grid-column:1;grid-row:2}html.mobile-ui #lobby .play{grid-column:2;grid-row:1 / span 2}
- html.mobile-ui #title{padding-top:max(var(--mt),5vh);padding-bottom:max(var(--mb),5vh)}html.mobile-ui #title .lockup{font-size:clamp(2.4rem,9vw,4rem)}html.mobile-ui #title .tw{gap:8px}
+ html.mobile-ui #title{padding-top:max(var(--mt),5vh);padding-bottom:max(var(--mb),5vh)}html.mobile-ui #title h1{font-size:clamp(2.1rem,7vw,3.6rem)}html.mobile-ui .arena-title-mark{width:64px;height:64px;margin-bottom:8px}html.mobile-ui #title .tw{gap:8px}
  html.mobile-ui #ps{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-content:start}html.mobile-ui #ps .card2{height:auto}
  html.mobile-ui .lk{grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr)}html.mobile-ui .lkp{position:static}html.mobile-ui .lk-live{height:170px}
  html.mobile-ui #tc{--control:48px}html.mobile-ui #tgr{bottom:calc(var(--tsb) + 126px)}
