@@ -321,7 +321,7 @@ const YardArt = (() => {
       ctx.fillStyle='#e5cf9d';ctx.fillRect(0,0,256,160);ctx.fillStyle='#304d41';ctx.fillRect(8,8,240,144);ctx.fillStyle='#e5cf9d';
       ctx.font='bold 22px sans-serif';ctx.textAlign='center';ctx.fillText('FOUNDRY',128,42);ctx.font='bold 69px sans-serif';ctx.fillText('07',128,112);
       ctx.fillStyle='#cd764e';for(let i=0;i<7;i++)ctx.fillRect(25+i*31,132,21,9);
-      const map=new T.CanvasTexture(cv),sign=new T.MeshBasicMaterial({map});
+      const map=new T.CanvasTexture(cv),sign=new T.MeshBasicMaterial({map,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
       for(const side of[-1,1]){const m=new T.Mesh(new T.PlaneGeometry(4.6,2.875),sign);m.position.set(side*39.85,3.3,-6);m.rotation.y=-side*Math.PI/2;group.add(m);}
     }else if(!opt.level){
       // Broad polygon cloud silhouettes are batched into one draw call with the scenery.

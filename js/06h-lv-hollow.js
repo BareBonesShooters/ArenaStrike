@@ -33,7 +33,7 @@ if(rng()<.4){const y=h*.6;P("box",x+.3,y-.3,z,.05,.6,.05,0x1a1410,0,1);P("box",x
 // log cabin: stacked logs with ends poking past the corners, stone chimney, porch with a lean-to roof, framed and shuttered windows
 const cabin=(x,z,rot)=>{const w=rr(5,6.5),d=rr(4.5,5.5),h=2.8,sw=rot&1?d:w,sd=rot&1?w:d;if(!free(x,z,Math.max(sw,sd)/2+1.6))return false;const ry=rot*PI/2,cs=Math.cos(ry),sn=Math.sin(ry),L=(a,b)=>[x+a*cs+b*sn,z-a*sn+b*cs];
 reg(x,z,sw,sd,h+2.4,1);const lc=pick(wood),dark=lerpC(lc,0x000000,.3),end=lerpC(lc,0xffffff,.18),roof=pick(c.th.roof);
-P("box",x,.12,z,w+.3,.24,d+.3,0x4a4a4e,ry,.7);
+P("box",x,.12,z,w+.3,.24,d+.3,lerpC(c.th.trim,0x000000,.1),ry,.7);
 for(let i=0;i<6;i++){const y=.42+i*.42,lg=i%2?lc:lerpC(lc,0x000000,.15);P("box",x,y,z,w,.4,d,lg,ry,.6);
 for(const [a,b] of[[-w/2,-d/2],[w/2,-d/2],[-w/2,d/2],[w/2,d/2]]){const q=L(a+Math.sign(a)*.12,b+Math.sign(b)*.12);P("cyl",q[0],y,q[1],.4,.4,.4,i%2?end:lerpC(end,0x000000,.12),ry+(i%2?PI/2:0),.7,null,0,PI/2)}}
 P("gab",x,h+1.1,z,d+.9,2.2,w+.9,roof,ry+PI/2,.75);
@@ -46,7 +46,7 @@ q=L(0,d/2+.75);P("box",q[0],.14,q[1],2.6,.12,1.4,lerpC(lc,0x000000,.1),ry,.8);
 for(const s of[-1,1]){q=L(s*1.15,d/2+1.3);P("box",q[0],1.2,q[1],.16,2.2,.16,dark,ry,.75);reg(q[0],q[1],.22,.22,2.3,1)}
 q=L(0,d/2+.8);P("box",q[0],2.4,q[1],1.7,.1,2.9,roof,ry+PI/2,.8,null,0,.22);
 // stone chimney up the side wall
-for(let i=0;i<7;i++){q=L(-w/2-.32,-d*.15);P("box",q[0],.3+i*.62,q[1],.7-(i>4?.12:0),.6,.9-(i>4?.12:0),i&1?0x6e6f72:0x5c5e62,ry,.65)}q=L(-w/2-.32,-d*.15);P("box",q[0],4.65,q[1],.8,.12,1,0x4a4a4e,ry,.8);reg(q[0],q[1],rot&1?.9:.7,rot&1?.7:.9,4.7,1);
+for(let i=0;i<7;i++){q=L(-w/2-.32,-d*.15);P("box",q[0],.3+i*.62,q[1],.7-(i>4?.12:0),.6,.9-(i>4?.12:0),i&1?lerpC(c.th.wall,0xffffff,.16):c.th.wall,ry,.65)}q=L(-w/2-.32,-d*.15);P("box",q[0],4.65,q[1],.8,.12,1,dark,ry,.8);reg(q[0],q[1],rot&1?.9:.7,rot&1?.7:.9,4.7,1);
 // woodpile by the wall
 q=L(w/2+.45,d*.1);for(let i=0;i<3;i++)P("cyl",q[0],.2+i*.32,q[1],.32,1.3,.32,i&1?end:lc,ry+PI/2,.7,null,0,PI/2);return true};
 // jack-o'-lantern with a glowing face

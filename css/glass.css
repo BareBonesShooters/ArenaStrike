@@ -1,0 +1,94 @@
+/* ---------- Liquid glass: one material for every menu surface, loaded last ----------
+   Three tiers only: --gs (subtle, rows and chips, never blurs), --gm (panels), --gx (focus dialogs: pause, end, power-ups).
+   Every pane has the five layers: translucent fill, backdrop blur + saturate, a specular rim brighter on top,
+   an inner top highlight, and a soft lift shadow. Nested panes never blur again (cost and mud).
+   Low/Potato (body.lite) and reduced transparency fall back to near-opaque fills with no blur. */
+:root{
+--g-fill:rgba(16,24,42,.46);--g-fill-x:rgba(12,18,34,.58);--g-sheen:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.035) 38%,rgba(255,255,255,0) 62%);
+--g-rim:rgba(255,255,255,.16);--g-rim-top:rgba(255,255,255,.34);
+--g-hi:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.03);
+--g-lift:0 24px 60px -24px rgba(0,0,0,.65),0 2px 6px rgba(0,0,0,.18);
+--g-blur:blur(22px) saturate(1.7);--g-blur-x:blur(28px) saturate(1.8);--g-blur-s:blur(14px) saturate(1.5)}
+
+/* tier 2: panels */
+.gl{background:var(--g-sheen),var(--g-fill);border:1px solid var(--g-rim);border-top-color:var(--g-rim-top);box-shadow:var(--g-hi),var(--g-lift)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){
+.gl{-webkit-backdrop-filter:var(--g-blur);backdrop-filter:var(--g-blur)}
+.stage>.gl{background:var(--g-sheen),rgba(16,24,42,.4);border-color:var(--g-rim);border-top-color:var(--g-rim-top);box-shadow:var(--g-hi),var(--g-lift);-webkit-backdrop-filter:var(--g-blur-s);backdrop-filter:var(--g-blur-s)}}
+.gl .gl{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.05);box-shadow:var(--g-hi)}
+
+/* tier 1: rows, chips, wells inside a panel: fill + rim + highlight, no blur */
+.play .opts,.mode,.it,.seg,.stat,.qcard,.slot,.bpt,.code-panel{background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+
+/* buttons: glass that reacts. Hover lifts the fill one step, press squeezes, the primary is tinted glass, not a solid slab */
+.b{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.14);border-top-color:rgba(255,255,255,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 16px -10px rgba(0,0,0,.6);transition:background-color .2s ease-out,border-color .2s ease-out,transform .14s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease-out}
+@media (hover:hover) and (pointer:fine){.b:hover{background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.07));border-color:rgba(255,255,255,.22)}}
+.b:active{transform:scale(.97)}
+.b.p{background:linear-gradient(180deg,rgba(255,170,110,.55),rgba(255,110,40,.42)),rgba(255,122,41,.28);border-color:rgba(255,200,160,.45);color:#fff;text-shadow:0 1px 2px rgba(80,20,0,.45);box-shadow:inset 0 1px 0 rgba(255,235,215,.5),0 10px 24px -10px rgba(255,110,40,.75)}
+@media (hover:hover) and (pointer:fine){.b.p:hover{background:linear-gradient(180deg,rgba(255,185,130,.68),rgba(255,120,50,.55)),rgba(255,122,41,.32)}}
+.b:focus-visible,.puc:focus-visible,.mode:focus-visible{outline:2px solid rgba(255,214,170,.85);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.b:active{transform:none}}
+
+/* tier 3: the screens that take focus mid-match. Pause and end: glass card over a dim, blurred game */
+#ps,#end{background:radial-gradient(90% 70% at 50% 40%,rgba(4,8,18,.18),rgba(3,6,14,.62))}
+#ps>.gl,#end .gl:not(.gl .gl){background:var(--g-sheen),var(--g-fill-x)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){
+#ps>.gl,#end .gl:not(.gl .gl){-webkit-backdrop-filter:var(--g-blur-x)!important;backdrop-filter:var(--g-blur-x)!important}}
+
+/* power-up picker: the dim stays, the cards become glass with a rarity-tinted rim and a lift on hover */
+#puov{background:radial-gradient(80% 70% at 50% 45%,rgba(6,10,22,.35),rgba(4,6,16,.78))}
+#puov h2{text-shadow:0 2px 18px rgba(0,0,0,.6)}
+.puc{background:var(--g-sheen),rgba(18,26,46,.5);border:1px solid var(--rim,rgba(255,255,255,.18));border-top-color:rgba(255,255,255,.34);box-shadow:var(--g-hi),0 18px 40px -18px rgba(0,0,0,.7);transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease-out,border-color .2s ease-out}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){.puc{-webkit-backdrop-filter:var(--g-blur-s);backdrop-filter:var(--g-blur-s)}}
+@media (hover:hover) and (pointer:fine){.puc:hover{transform:translateY(-4px);box-shadow:var(--g-hi),0 26px 50px -18px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.12)}}
+.puc:active{transform:scale(.98)}
+@media (prefers-reduced-motion:no-preference){#puov .puc{animation:g-rise .38s cubic-bezier(.16,1,.3,1) backwards}#puov .puc:nth-child(2){animation-delay:.05s}#puov .puc:nth-child(3){animation-delay:.1s}#puov .puc:nth-child(4){animation-delay:.15s}}
+@keyframes g-rise{from{opacity:0;transform:translateY(16px) scale(.97)}}
+
+/* the in-match HUD stays cheap: fill only, no blur */
+body.playing #hud .gl{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(10,14,26,.55)}
+
+/* phones and tablets: blur is back, but only on top-level panels and dialogs, and lighter */
+html.mobile-ui{--g-blur:blur(16px) saturate(1.6);--g-blur-x:blur(20px) saturate(1.7);--g-blur-s:blur(10px) saturate(1.4)}
+html.mobile-ui .puc{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--g-sheen),rgba(18,26,46,.82)}
+
+/* tablets: a roomier layout than phones. Landscape tablets read like a small desktop, portrait like a big phone */
+@media (min-width:768px) and (min-height:600px){
+html.mobile-ui .gl{border-radius:22px}
+html.mobile-ui .b{min-height:46px;font-size:1rem}
+html.mobile-ui #puov .pucs{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+html.mobile-ui .puc{padding:22px 16px}}
+@media (min-width:1000px) and (orientation:landscape) and (min-height:640px){
+html.mobile-ui #ps{grid-template-columns:minmax(0,440px) minmax(0,500px)}}
+
+/* fallbacks */
+body.lite .gl,body.lite .puc,body.lite .stage>.gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.95)!important}
+@media (prefers-reduced-transparency:reduce){.gl,.puc,.stage>.gl,#ps>.gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.96)!important}}
+
+/* settings: groups as glass wells in a responsive grid; each row is label + value on the left, control on the right */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;align-items:start}
+.sgrp{padding:14px 16px 8px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.11);box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+.sgrp>h3{margin:0 0 6px;font-size:.8125rem;font-weight:700;color:var(--ink2,#b9c2d8)}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px;padding:6px 0;border-top:1px solid rgba(255,255,255,.07)}
+.sgrp>h3+.srow{border-top:0}
+.srow .sl{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 auto}
+.srow .sl>span{font-weight:600}
+.srow .sv{font-style:normal;font-size:.78rem;color:var(--ink2,#b9c2d8);font-variant-numeric:tabular-nums}
+.srow>input[type=range]{flex:0 1 46%;min-width:120px}
+.srow>select,.srow>.seg,.srow>.b{flex:0 0 auto;max-width:56%}
+.scred{margin-top:10px;font-size:.78rem;color:var(--ink2,#b9c2d8)}
+.kb{display:inline-flex;align-items:center;justify-content:center;min-width:2.2em;padding:3px 8px;border-radius:7px;font-weight:700;font-size:.8rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-bottom-width:2px}
+@media (max-width:520px){.srow{flex-wrap:wrap}.srow>input[type=range]{flex:1 1 100%}}
+
+/* pause cards: style.css styles them as #ps .pc, so match that specificity */
+#ps .pc{background:var(--g-sheen),var(--g-fill-x)!important;border:1px solid var(--g-rim)!important;border-top-color:var(--g-rim-top)!important;box-shadow:var(--g-hi),var(--g-lift)!important}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#ps .pc{-webkit-backdrop-filter:var(--g-blur-x)!important;backdrop-filter:var(--g-blur-x)!important}}
+body.lite #ps .pc{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.95)!important}
+
+/* phones: power-up cards become compact rows (icon left, text right) so all choices fit on one screen */
+@media (max-width:600px){
+html.mobile-ui #puov .pucs,html #puov .pucs{grid-template-columns:1fr!important;gap:10px}
+html.mobile-ui #puov .puc,html #puov .puc{min-height:0;display:grid;grid-template-columns:56px 1fr;grid-auto-rows:auto;align-items:center;justify-items:start;text-align:left;column-gap:14px;row-gap:2px;padding:12px 14px}
+html #puov .puc>*:first-child{grid-row:1 / span 3;width:56px;height:56px}
+html #puov .puc>*:not(:first-child){grid-column:2}
+html #puov h2{font-size:1.6rem;margin-bottom:12px}}

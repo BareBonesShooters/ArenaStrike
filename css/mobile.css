@@ -207,9 +207,7 @@ html.mobile-ui #tut{top:auto;width:max-content}
 /* Battle HUD buttons: the #id rule in style.css outranks the class rule above, so
    restate the 40px touch size at matching specificity. */
 html.mobile-ui #custom-battle-ui .cb-top>nav .b{min-height:40px;min-width:40px}
-/* Phase 10: phones never pay for live blur. Panels and overlays use solid fills instead. */
-html.mobile-ui *,html.mobile-ui *::before,html.mobile-ui *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-html.mobile-ui .gl{background:var(--s-solid)}
-html.mobile-ui .stage>.gl{background:var(--s-solid)}
 html.mobile-ui #lobby .rail .rdot{top:5px;right:5px;margin:0;width:9px;height:9px}
 html.mobile-ui #title .pr{margin-bottom:26px}
+/* blur on phones and tablets is handled in glass.css: top-level panels only, lighter radius; HUD and Low/Potato stay blur-free */
+html.mobile-ui #hud *,html.mobile-ui #tc *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
