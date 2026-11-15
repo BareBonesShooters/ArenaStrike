@@ -220,10 +220,10 @@ if(r>=4)[392,494,587,784].forEach(f=>tone(f,.9,"sine",.04*v,f*1.01,n*.07));if(r>
 // ----- arcade sounds: chiptune blips, coin and power-up jingles, combo ladders, plus the monster, rift and thunder effects -----
 const sq=(f,d,v,dl,f2)=>tone(f,d,"square",v,f2||f,dl),tri=(f,d,v,dl,f2)=>tone(f,d,"triangle",v,f2||f,dl);
 Object.assign(SND,{
-// UI blips: a short square transient up front gives each click a crisp edge (a bare triangle/sine reads as muffled), then the tone
-ui:v=>{sq(1568,.012,.05*v);tri(988,.05,.1*v);tone(1318,.06,"sine",.06*v,1318,.03)},
-hover:v=>{tri(1760,.03,.07*v);sq(2637,.008,.02*v)},
-tab:v=>{sq(660,.04,.06*v,0,880);sq(990,.05,.045*v,.04)},
+// UI clicks: a tactile pop, not a beep. A few ms of bright noise is the 'tick' of a physical button, and a sine that drops fast in pitch is the body; no square waves, which buzz
+ui:v=>{hiss(.014,.11*v,3200);tone(1500,.04,"sine",.16*v,560);tone(2900,.018,"sine",.035*v,2200)},
+hover:v=>{hiss(.009,.045*v,5200);tone(2300,.022,"sine",.05*v,1700)},
+tab:v=>{hiss(.012,.055*v,3600);tone(1100,.035,"sine",.085*v,620);tone(1650,.045,"sine",.07*v,980,.05)},
 pick:v=>[523,659,784,1046,1318].forEach((f,i)=>{sq(f,.07,.055*v,i*.045);tri(f/2,.07,.05*v,i*.045)}),
 coin:v=>{sq(988,.07,.07*v);sq(1319,.45,.07*v,.07);tone(2637,.25,"sine",.03*v,2637,.07)},
 buy:v=>{for(let i=0;i<4;i++){sq(988+i*120,.06,.05*v,i*.07);sq(1319+i*160,.18,.05*v,i*.07+.05)}},
