@@ -154,3 +154,123 @@ html.mobile-ui #lobby{background:radial-gradient(120% 90% at 50% 0%,rgba(6,10,22
 /* the primary shine (::before) must stay inside its own button: a static .b.p let a 1300px skewed bar escape across the lobby (the "triangle") */
 .b.p{position:relative;overflow:hidden;isolation:isolate}
 html.mobile-ui #lobby #go{position:relative}
+
+/* ================= UX pass (items 1-20) =================
+   Appended last on purpose. Touch rules are prefixed html.mobile-ui; desktop-only rules sit behind (pointer:fine).
+   No new blur and no new looping animation, so Low/Potato (body.lite) costs the same as before. */
+
+/* 1-2 Settings rows: the control wraps under its label instead of overlapping it; buttons never break per letter */
+.srow{flex-wrap:wrap}
+.srow .sl{flex:1 1 140px}
+.srow>select{flex:1 1 180px;max-width:100%;min-width:150px}
+html.mobile-ui :is(.srow,.row)>.b{white-space:nowrap;flex:none;overflow-wrap:normal}
+
+/* 5 Empty states: one line of explanation and a primary action */
+.sh-b .empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:22px 16px;border:1px dashed var(--rim,rgba(255,255,255,.3));border-radius:10px}
+.sh-b .empty b{font-size:1.05rem}
+.sh-b .empty p{margin:0;color:var(--ink2);max-width:36ch}
+
+/* 6 Page header: ghost Back with icon, readable title, coin pill pushed right */
+#pg .sh-h #btnBack{background:transparent;border-color:transparent;min-width:0;padding:0 12px 0 8px;gap:6px;color:inherit}
+#pg .sh-h #btnBack:hover:not(:disabled){background:#0000000d;border-color:transparent;transform:none}
+#pg .sh-h h2{flex:1 1 auto;min-width:0;font-size:clamp(1.05rem,1.6vw,1.3rem)}
+#pg .sh-h .pill{margin-left:auto}
+html.mobile-ui #pg .sh-h{flex-wrap:nowrap}
+html.mobile-ui #pg .sh-h h2{font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 4 + 19 Type floor: nothing a player has to read is under 12px on menu pages and the lobby */
+.eyebrow,.rar,.slot small,.rs em,.qa .rsb small,.lkh small,.lkr small,.eqb,.eqb.big,.qc .qtier,.pgrp h4,.bpring small,.bpt .tn,.mode .tag,.csb h3,.pc kbd,.qr small,.qa .rsb,.rsb{font-size:max(.75rem,12px)}
+.brand .eyebrow,.joinbox .eyebrow,#lobby .play .eyebrow,.yard-welcome .yard-kicker,#title .yard-kicker,.profile::after,#lobby .mode .tag,#lobby .mode::before,.yard-badge>span{font-size:max(.75rem,12px)}
+#lobby .play .perk,.joinbox small,#lobby .play .seg .b,#lobby .minfo{font-size:max(.8rem,12.5px)}
+html.mobile-ui .rs em,html.mobile-ui .it .rar,html.mobile-ui .qa .rsb small{font-size:max(.75rem,12px)}
+@media (pointer:fine){
+  .b.sm{min-height:40px}
+  #lobby .play .seg .b{min-height:38px}
+  .seg .b{min-height:40px}
+  input[type=range]{height:28px}
+}
+
+/* 3 Focus ring: the sheet Back button is no longer forced gold; the global ring is the same 2px glass ring everywhere */
+.sh-h .b:focus-visible{outline:2px solid rgba(255,214,170,.9);outline-offset:2px}
+
+/* 10 + 11 One scrolling row with an edge fade instead of clipped or ragged wrapped chips */
+html.mobile-ui :is(.shbar .seg,.shtabs,.tabs,.lkc){flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-right:28px;justify-content:flex-start;max-width:100%;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+html.mobile-ui :is(.shbar .seg,.shtabs,.tabs,.lkc)::-webkit-scrollbar{display:none}
+html.mobile-ui :is(.shbar .seg,.shtabs,.tabs,.lkc)>*{flex:none;white-space:nowrap}
+html.mobile-ui .shtabs{width:100%;min-width:0;margin-inline:0}
+html.mobile-ui .shbar{flex-wrap:wrap}
+html.mobile-ui .shbar .seg{width:100%}
+html.mobile-ui .shbar .seg small{align-self:center;padding:0 8px}
+
+/* 9 Phone and tablet lobby menu: flat two or three column grid, group headings dropped (the buttons say it) */
+html.mobile-ui #lobby .rail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:10px}
+html.mobile-ui #lobby .rail .ng{display:contents}
+html.mobile-ui #lobby .ngh{display:none}
+html.mobile-ui #lobby .brand{grid-column:1/-1}
+html.mobile-ui #lobby .rail .ng .b:not(.p):not(.on){flex:none;font-size:13px;justify-content:flex-start;padding:4px 10px;gap:8px;min-height:46px}
+@media (min-width:560px){html.mobile-ui #lobby .rail{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* 8 + 14 Game mode comes first, Play stays pinned to the bottom edge, the menu grid sits below it */
+html.mobile-ui #lobby .play{order:-2}
+html.mobile-ui #lobby .stage{order:-1}
+html.mobile-ui #lobby .rail{order:0}
+html.mobile-ui #lobby{padding-bottom:calc(var(--mb) + 8px)}
+.play #go{order:99}
+html.mobile-ui #lobby #go{position:sticky;bottom:var(--mb);z-index:3;order:99}
+@media (min-width:700px) and (pointer:coarse){
+  html.mobile-ui #lobby .rail .ng .b:not(.p):not(.on){min-height:48px;font-size:.95rem}
+  html.mobile-ui #lobby .modes{grid-template-columns:repeat(3,minmax(0,1fr))}
+  html.mobile-ui #lobby .mode b{font-size:15px}
+}
+@media (min-width:900px) and (orientation:landscape) and (pointer:coarse){
+  html.mobile-ui #lobby{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto 1fr;align-content:start;align-items:start;gap:12px}
+  html.mobile-ui #lobby .play{grid-column:1;grid-row:1/span 2;order:0}
+  html.mobile-ui #lobby .stage{grid-column:2;grid-row:1;order:0}
+  html.mobile-ui #lobby .rail{grid-column:2;grid-row:2;order:0}
+}
+
+/* 12 Pause on phones: Resume stays on top, Leave sits right under the Map and Restart row, quests fold behind a button */
+html.mobile-ui .pqt{display:inline-flex;min-height:36px;margin-left:auto}
+html.mobile-ui .pqt[aria-expanded=true]::after{content:"\2212";margin-left:6px}
+html.mobile-ui .pqt[aria-expanded=false]::after{content:"+";margin-left:6px}
+html.mobile-ui .pqh{flex-wrap:wrap}
+html.mobile-ui #pq.closed .pql{display:none}
+.pqt{display:none}
+@media (max-width:699px){
+  html.mobile-ui #ps .pc{display:flex;flex-direction:column}
+  html.mobile-ui #ps .pc .psh{order:0}
+  html.mobile-ui #ps .pc .pgo{order:1}
+  html.mobile-ui #ps .pc .pact{order:2}
+  html.mobile-ui #ps .pc .pleave{order:3}
+  html.mobile-ui #ps .pc .pset{order:4}
+}
+@media (min-width:700px) and (min-height:700px){html.mobile-ui .pqt{display:none}html.mobile-ui #pq.closed .pql{display:flex}}
+
+/* 15 Pause on tablets: a wider column and larger type */
+@media (min-width:700px){
+  html.mobile-ui #ps>.card2{width:min(640px,100%);margin-inline:auto}
+  #ps .pgrp .sf>span,#ps .pgrp label{font-size:1rem}
+  #ps .pgrp h4{font-size:.8rem}
+  #ps .pact .b,#ps .pleave,#ps .pgrp select{min-height:48px}
+  #ps .qr b{font-size:1rem}
+  #ps .qr small{font-size:.85rem}
+}
+
+/* 13 + 16 Power-ups: roomy tap targets, the text never eats the tap, readable descriptions */
+.puc{min-height:72px}
+#puov .puc>*{pointer-events:none}
+#puov .puc small{font-size:max(.8125rem,13px)}
+@media (min-width:700px){html.mobile-ui #puov .pucs{grid-template-columns:repeat(3,minmax(220px,1fr))}html.mobile-ui #puov .puw{width:min(900px,100%)}}
+
+/* 17 Quest Switch and Skip get a full touch target */
+html.mobile-ui .rsb,html.mobile-ui .qa .rsb{min-height:44px;min-width:88px}
+
+/* 18 Desktop lobby: a wider stage so the profile and join card are not lost, Play pinned as a full-width bar */
+@media (min-width:1181px){.stage{max-width:720px}.profile{min-height:270px}}
+@media (min-width:1181px) and (pointer:fine){.play{width:min(420px,32vw)}}
+.play #go{width:100%}
+
+/* 20 Wide sheets and quest grid on large screens */
+@media (min-width:1181px) and (pointer:fine){.sheet{width:min(1280px,94vw);max-width:min(1280px,94vw)}.qgrid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}}
+/* the sticky Play bar floats over scrolling content: solid tinted, not see-through */
+html.mobile-ui #lobby #go{background:linear-gradient(180deg,#ff9a55,#ec6a26);box-shadow:inset 0 1px 0 rgba(255,235,215,.55),0 -8px 22px rgba(4,8,20,.45),0 10px 24px -10px rgba(255,110,40,.75)}

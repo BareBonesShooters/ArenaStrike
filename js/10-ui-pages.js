@@ -68,7 +68,7 @@ MD.splice(MD.findIndex(m=>m[0]==="tut"),0,
 // the party stays together between matches, so the lobby keeps saying so
 function roomLine(){const s=Net.state;if(s!=="hosting"&&s!=="joined")return "";const n=Net.roster().length;return (s==="hosting"?"Hosting party ":"In party ")+Net.code+" \u00b7 "+n+" player"+(n===1?"":"s")+(s==="hosting"?" \u00b7 open Servers to manage teams and start":"")}
 // picture for each mode card
-const MIC={duel:"duel",gg:"gg",party:"party",waves:"ghost",duel1:"swords",coop:"coop",range:"target",parkour:"run",battle_sim:"flag",sandbox:"cube",tut:"cap"};
+const MIC={duel:"duel",gg:"gg",party:"party",waves:"horde",duel1:"swords",coop:"coop",range:"target",parkour:"run",battle_sim:"flag",sandbox:"cube",tut:"cap"};
 function lobbyUI(msg){
 if(sel==="duel1"||sel==="coop")S.mp.mode=sel;
 const nm=$("nm");if(document.activeElement!==nm)nm.value=S.name;
@@ -147,11 +147,18 @@ new MutationObserver(m=>{if(m.some(x=>x.type==="attributes"?!th(x.target):(x.add
 addEventListener("resize",go);document.fonts&&document.fonts.ready.then(go);
 return{sync:go}})();
 // ---------- pages ----------
+// UX pass: focus the Back button only when the player is on a keyboard (a forced ring after every tap looked like an error);
+// each page also takes one history entry so the browser/hardware Back button returns to the lobby.
+let kbNav=false,pgHist=false;
+addEventListener("keydown",()=>{kbNav=true},true);addEventListener("pointerdown",()=>{kbNav=false},true);
+addEventListener("popstate",()=>{if(view==="pg"&&state==="lobby"){pgHist=false;goLobby()}else if(view!=="pg")pgHist=false});
+function pgHistPop(){if(!pgHist)return;pgHist=false;try{history.back()}catch(e){}}
 function openPage(v){if(v==="bp")BPV.ch=-1;
 if(!PG[v])return;
 if(PAGE==="load"&&v!=="load"&&Mus.prev){Mus.prev=null;Mus.go()}
 PAGE=v;Thumb.flush();$("pgt").textContent=PG[v].t;$("pgb").classList.remove("still");$("pgb").scrollTop=0;
-renderPage(false);show("pg");const b=document.querySelector("#pg .sh-h .b");if(b)b.focus({preventScroll:true});
+renderPage(false);show("pg");try{if(!pgHist&&state==="lobby"){history.pushState({pg:v},"");pgHist=true}}catch(e){}
+const b=document.querySelector("#pg .sh-h .b");if(b&&kbNav)b.focus({preventScroll:true});
 }
 function renderPage(still){
 LoadoutPreview.stop();
@@ -405,7 +412,7 @@ let note="";if(pv){const c=PRE(pv.id);note=owns(pv)?(c==="u"?(pv.id===S.mh&&pv.i
 if(pv&&C[0]==="f")note=(owns(pv)?(isEq(pv)?"Equipped. It plays on every elimination. ":"Owned. Tap it to equip. "):"Locked. "+foundIn(pv)+". ")+pv.d;
 let st="";if(pv&&C[0]==="g")st=statRow("Damage",pv.d*(pv.pel||1),mx(g=>g.d*(g.pel||1)),pv.d+(pv.pel?" x"+pv.pel:""))+statRow("Fire rate",1/pv.t,mx(g=>1/g.t),(1/pv.t).toFixed(1)+"/s")+statRow("Magazine",pv.m,mx(g=>g.m),pv.m)+statRow("Reload",pv.rl,3.2,pv.rl+"s",1);
 else if(pv&&C[0]==="k")st=statRow("Damage",KNIFE_D*KNM[pv.r],100,Math.round(KNIFE_D*KNM[pv.r]))+statRow("Reach",pv.s.len*(1+.04*pv.r),.75,Math.round(pv.s.len*(1+.04*pv.r)*100)+" cm");
-const rows=[["g","Gun",e.g],["s","Skin",e.s],["k","Knife",e.k],["p","Outfit",e.p],["f","Finisher",finId()],["bg","Background",S.bg],["av","Avatar",S.av],["mh","Home music",S.mh],["mm","Match music",S.mm]].map(([c,l,id])=>{const it=I(id),ms=c==="mh"||c==="mm";return`<button class="lkr${ms?(C[0]==="u"&&(LK.ms||"mh")===c?" on":""):C[0]===c?" on":""}" data-a="${ms?"lkms":"lkcat"}" data-v="${c}" style="--rc:${it?rcol(it):"#94a3b8"}"><small>${l}</small><b>${it?esc(it.n):"None"}</b><i></i></button>`}).join("");
+const rows=[["g","Gun",e.g],["s","Skin",e.s],["k","Knife",e.k],["p","Outfit",e.p],["f","Finisher",finId()],["bg","Background",S.bg],["av","Avatar",S.av],["mh","Home music",S.mh],["mm","Match music",S.mm]].map(([c,l,id])=>{const it=I(id),ms=c==="mh"||c==="mm";return`<button class="lkr${ms?(C[0]==="u"&&(LK.ms||"mh")===c?" on":""):C[0]===c?" on":""}" data-a="${ms?"lkms":"lkcat"}" data-v="${c}" style="--rc:${it?rcol(it):"#94a3b8"}"><small>${l}</small><b>${it?esc(it.n):"Nothing equipped"}</b><i></i></button>`}).join("");
 h+=`<div class="lk"><aside class="lkp gl" aria-label="Preview"><div class="lkpv" style="--rc:${pv?rcol(pv):"#94a3b8"}">${pv?LoadoutPreview.markup(pv,C[0]):""}${pv&&isEq(pv)?`<span class="eqb big">${ico("check",14)}Equipped</span>`:pv&&!owns(pv)?`<span class="eqb lockb">${ico("n-lock",13)}Locked</span>`:""}</div>
 <div class="lkn" style="--rc:${pv?rcol(pv):"#94a3b8"}"><small class="rar">${pv?R[pv.r]:""} ${C[1].replace(/s$/,"")}</small><h3>${pv?esc(pv.n):"Nothing here"}</h3><p>${esc(note)}</p></div>${st?`<div class="stats lks">${st}</div>`:""}${wshBtn(pv)}${C[0]==="u"?discPanel(pv):""}
 <div class="lkh"><small>This loadout</small></div><div class="lkrs">${rows}</div>
@@ -560,10 +567,14 @@ return tabs+`<div class="row"><div class="l"><b>${b.length} daily quests</b><sma
 <div class="qgrid stg">${b.map((o,n)=>qCard(o.q,o.i,n,false)).join("")}</div>
 <p class="sm">Do the task anywhere in the game and the XP goes straight to your Battle Pass (tier ${bpTier()} of ${BP_TIERS}). Harder quests are rarer and pay much more. You can also check them any time from the pause screen.</p>`}
 // the quest list on the pause screen
+let PQ_CLOSED;
 function pauseQuests(){
 const host=$("pq");if(!host)return;
+// phones fold the quest list behind a disclosure so Resume and Leave stay in reach; the choice survives re-renders
+if(PQ_CLOSED===undefined)PQ_CLOSED=document.documentElement.classList.contains("mobile-ui")&&Math.min(innerWidth,innerHeight)<700;
+host.classList.toggle("closed",PQ_CLOSED);
 const b=questFill().map((q,i)=>({q,i})).sort((a,c)=>(c.q.p>0)-(a.q.p>0)||(c.q.p/c.q.need)-(a.q.p/a.q.need)||a.q.t-c.q.t);
-host.innerHTML=`<div class="pqh"><div><small class="eyebrow">Daily quests</small><h3>${b.length} active</h3></div><span class="pill">New in ${qLeft()} · ${S.qsw|0} switch${(S.qsw|0)===1?"":"es"}</span></div><div class="pql">${b.map((o,n)=>qRow(o.q,o.i,n)).join("")}</div>`}
+host.innerHTML=`<div class="pqh"><div><small class="eyebrow">Daily quests</small><h3>${b.length} active</h3></div><button type="button" class="b sm pqt" data-a="pqtoggle" aria-expanded="${!PQ_CLOSED}" aria-controls="pql">Quests</button><span class="pill">New in ${qLeft()} · ${S.qsw|0} switch${(S.qsw|0)===1?"":"es"}</span></div><div class="pql" id="pql">${b.map((o,n)=>qRow(o.q,o.i,n)).join("")}</div>`}
 function qRow(q,i,n){const v=Math.min(q.p,q.need),pc=v/q.need*100,sw=S.qsw|0,c=qSkipCost(q);
 return`<div class="qr" style="--qt:${QTC[q.t]};--i:${n|0}"><span class="qd" title="${QT[q.t]}"></span><div class="qm"><b>${esc(q.n)}</b><div class="qb" role="progressbar" aria-valuemin="0" aria-valuemax="${q.need}" aria-valuenow="${v}"><i style="width:${pc.toFixed(1)}%"></i></div><small>${v} / ${q.need} · <em>+${q.xp} XP</em> · ${QT[q.t]}</small></div>
 <div class="qa"><button class="rsb" data-a="qswap" data-v="${i}"${sw?"":" disabled"} title="Replace this quest with a new ${QT[q.t].toLowerCase()} one">Switch</button><button class="rsb" data-a="qskip" data-v="${i}"${S.coins>=c?"":" disabled"} title="Pay coins to finish this quest now and collect its XP">Skip <small>${c}</small></button></div></div>`}
@@ -722,7 +733,8 @@ return h+`</div><div class="sec"><h3>How to earn XP</h3><div class="keys">
 <p class="sm">${BP_TIERS} tiers in ${BP_CH.length} chapters. Every match counts toward the pass and quests are a bonus on top. Exclusive guns, skins, knives, emotes, outfits, avatars, backgrounds, finishers and music unlock as you climb, and tier ${BP_TIERS} is the grand prize.</p>`}
 function pBoard(){
 const rows=Object.entries(S.board).sort((a,b)=>b[1].w-a[1].w||b[1].k-a[1].k);
-return"<table><tr><th>#</th><th>Player</th><th>Wins</th><th>Kills</th></tr>"+rows.map(([n,v],i)=>`<tr class="${n===S.name?"me":""}"><td>${i+1}</td><td>${esc(n)}</td><td>${v.w|0}</td><td>${v.k|0}</td></tr>`).join("")+"</table>"}
+const none=!rows.some(([n,v])=>(v.w|0)+(v.k|0)>0);
+return(none?`<div class="empty" role="status"><b>No results yet</b><p>Win a match or get a kill and your name lands on the board.</p><button class="b p" data-a="back">${ico("n-play")}Pick a mode and play</button></div>`:"")+"<table><tr><th>#</th><th>Player</th><th>Wins</th><th>Kills</th></tr>"+rows.map(([n,v],i)=>`<tr class="${n===S.name?"me":""}"><td>${i+1}</td><td>${esc(n)}</td><td>${v.w|0}</td><td>${v.k|0}</td></tr>`).join("")+"</table>"}
 try{document.body.classList.toggle("comfort",!!S.comfort)}catch(e){}
 function keyLabels(){document.querySelectorAll('[data-a="rebind"]').forEach(x=>{const n=Keys.name(Keys.get(x.dataset.v));x.textContent=n;x.classList.remove("on");x.setAttribute("aria-label",x.closest(".srow").querySelector(".sl span").textContent+": "+n+". Change key")})}
 // settings: one row per control (label and value on the left, the control on the right), grouped by what the setting is about
@@ -963,7 +975,8 @@ keyreset(){Keys.reset();toast("Keys reset to defaults");keyLabels()},
 // rebinding: the button waits for the next key (Escape cancels); mouse buttons and the system keys stay as they are
 rebind(e){const id=e.dataset.v,b=e;b.textContent="Press a key…";b.classList.add("on");const f=ev=>{ev.preventDefault();ev.stopImmediatePropagation();removeEventListener("keydown",f,true);
 if(ev.code!=="Escape"&&ev.code!=="MetaLeft"&&ev.code!=="MetaRight"){Keys.set(id,ev.code);snd("ui",.5)}keyLabels()};addEventListener("keydown",f,true)},
-back(){goLobby()},
+back(){pgHistPop();goLobby()},
+pqtoggle(){const h=$("pq");if(!h)return;h.classList.toggle("closed");PQ_CLOSED=h.classList.contains("closed");const t=h.querySelector(".pqt");if(t)t.setAttribute("aria-expanded",String(!PQ_CLOSED))},
 mode(e){sel=e.dataset.v;lobbyUI()},
 df(e){S.opt.df=e.dataset.v;sv();lobbyUI()},
 pkknife(e){S.opt.pkKnife=e.dataset.v==="1";sv();lobbyUI()},

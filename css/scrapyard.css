@@ -29,7 +29,7 @@ h1,h2,h3{font-family:Yard Condensed,"Arial Narrow",sans-serif;letter-spacing:.01
 input[type=text],input[type=password],input[type=number],select,textarea{background:#152d29!important;border:1px solid #a5b39566!important;color:var(--paper);box-shadow:none!important;outline-offset:3px}
 input::placeholder{color:#a4ad96;opacity:1}select option{background:#203b37;color:var(--paper)}
 input[type=range]{accent-color:var(--gold)}
-:where(button,input,select,textarea,a):focus-visible{outline:3px solid var(--gold)!important;outline-offset:3px}
+:where(button,input,select,textarea,a):focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 .b:disabled{opacity:.48;transform:none}
 .pill{background:#162e29;color:var(--ink2);box-shadow:none;border-color:#a7b69a40;padding:5px 9px}
 .seg{background:#142f29;padding:4px;gap:4px;border:1px solid #b6c0a02b}
