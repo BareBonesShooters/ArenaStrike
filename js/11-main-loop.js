@@ -97,7 +97,7 @@ else if(state==="title"){Title.frame(dt,clock)}
 else if(!paused){
 const a=.72+Math.sin(clock*.035)*.075;
 if(cam.fov!==58){cam.fov=58;cam.updateProjectionMatrix()}
-cam.position.set(Math.sin(a)*34,18,Math.cos(a)*34);cam.lookAt(-3,2,-5)}
+cam.position.set(Math.sin(a)*34,Tune.n("lobby.camY",10,4,24),Math.cos(a)*34);cam.lookAt(-9,Tune.n("lobby.lookY",5,0,12),-15)}// framed toward the horizon so the pale centre platform sits low and out of the panels' way
 worldFrame(dt,clock);animSkins(clock);if(playing)HB.update(dt);
 if(!paused){Fx.step(dt);Fx.tracers(dt);Gfx.step(dt)}
 Light.frame(dt);Cleaner.frame(dt);BossLit.tick();

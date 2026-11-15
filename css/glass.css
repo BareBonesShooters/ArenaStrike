@@ -4,7 +4,7 @@
    an inner top highlight, and a soft lift shadow. Nested panes never blur again (cost and mud).
    Low/Potato (body.lite) and reduced transparency fall back to near-opaque fills with no blur. */
 :root{
---g-fill:rgba(16,24,42,.46);--g-fill-x:rgba(12,18,34,.58);--g-sheen:linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.035) 38%,rgba(255,255,255,0) 62%);
+--g-fill:rgba(16,24,42,.46);--g-fill-x:rgba(12,18,34,.58);--g-sheen:radial-gradient(140% 90% at 0% 0%,rgba(255,255,255,.12),rgba(255,255,255,.07) 22%,rgba(255,255,255,.03) 48%,rgba(255,255,255,.008) 70%,rgba(255,255,255,0) 88%);
 --g-rim:rgba(255,255,255,.16);--g-rim-top:rgba(255,255,255,.34);
 --g-hi:inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,255,255,.03);
 --g-lift:0 24px 60px -24px rgba(0,0,0,.65),0 2px 6px rgba(0,0,0,.18);
@@ -49,7 +49,7 @@
 body.playing #hud .gl{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(10,14,26,.55)}
 
 /* phones and tablets: blur is back, but only on top-level panels and dialogs, and lighter */
-html.mobile-ui{--g-blur:blur(16px) saturate(1.6);--g-blur-x:blur(20px) saturate(1.7);--g-blur-s:blur(10px) saturate(1.4)}
+html.mobile-ui{--g-blur:blur(16px) saturate(1.3) brightness(.84);--g-blur-x:blur(20px) saturate(1.7);--g-blur-s:blur(10px) saturate(1.4)}
 html.mobile-ui .puc{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--g-sheen),rgba(18,26,46,.82)}
 
 /* tablets: a roomier layout than phones. Landscape tablets read like a small desktop, portrait like a big phone */
@@ -62,7 +62,8 @@ html.mobile-ui .puc{padding:22px 16px}}
 html.mobile-ui #ps{grid-template-columns:minmax(0,440px) minmax(0,500px)}}
 
 /* fallbacks */
-body.lite .gl,body.lite .stage>.gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02) 50%),rgba(20,28,50,.74)!important}
+body.lite .gl,body.lite .stage>.gl{-webkit-backdrop-filter:blur(16px) saturate(1.3) brightness(.84)!important;backdrop-filter:blur(16px) saturate(1.3) brightness(.84)!important;background:var(--g-sheen),rgba(16,24,42,.5)!important}
+body.lite .gl .gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(255,255,255,.05)!important}
 body.lite .puc{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.04))!important}
 @media (prefers-reduced-transparency:reduce){.gl,.puc,.stage>.gl,#ps>.gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.96)!important}}
 
@@ -84,7 +85,7 @@ body.lite .puc{-webkit-backdrop-filter:none!important;backdrop-filter:none!impor
 /* pause cards: style.css styles them as #ps .pc, so match that specificity */
 #ps .pc{background:var(--g-sheen),var(--g-fill-x)!important;border:1px solid var(--g-rim)!important;border-top-color:var(--g-rim-top)!important;box-shadow:var(--g-hi),var(--g-lift)!important}
 @supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#ps .pc{-webkit-backdrop-filter:var(--g-blur-x)!important;backdrop-filter:var(--g-blur-x)!important}}
-body.lite #ps .pc{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 50%),rgba(20,28,50,.72)!important}
+body.lite #ps .pc{-webkit-backdrop-filter:blur(18px) saturate(1.3) brightness(.84)!important;backdrop-filter:blur(18px) saturate(1.3) brightness(.84)!important;background:var(--g-sheen),rgba(12,18,34,.5)!important}
 
 /* phones: power-up cards become compact rows (icon left, text right) so all choices fit on one screen */
 @media (max-width:600px){
@@ -102,14 +103,54 @@ html.mobile-ui #puov .puc{background:linear-gradient(180deg,rgba(255,255,255,.11
 #puov .puc .pue{background:radial-gradient(circle at 50% 0%,rgba(255,170,110,.4),rgba(255,120,50,.12) 60%,rgba(255,255,255,.04));border:1px solid rgba(255,200,160,.32);border-top-color:rgba(255,230,210,.55);box-shadow:inset 0 1px 0 rgba(255,240,225,.35),0 8px 18px -10px rgba(255,110,40,.6)}
 @media (hover:hover) and (pointer:fine){#puov .puc:hover{background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.06));border-color:rgba(255,200,160,.45)}}
 #puov .puc:focus-visible{border-color:rgba(255,214,170,.85)}
-body.lite #puov .puw{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.03) 55%,rgba(255,255,255,.06)),rgba(22,30,52,.5)!important}
+body.lite #puov .puw{-webkit-backdrop-filter:blur(18px) saturate(1.3) brightness(.84)!important;backdrop-filter:blur(18px) saturate(1.3) brightness(.84)!important;background:var(--g-sheen),rgba(18,26,46,.36)!important}
 body.lite #puov{background:radial-gradient(90% 80% at 50% 45%,rgba(6,10,22,.18),rgba(4,6,16,.5))}
 @media (prefers-reduced-transparency:reduce){#puov .puw{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.96)!important}}
 #puov .puw .eyebrow{display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--g-rim);border-top-color:var(--g-rim-top);box-shadow:var(--g-hi)}
 /* clear glass, not navy: light scrim so the world shows, white-tinted panel */
 #puov{background:radial-gradient(90% 80% at 50% 45%,rgba(6,10,22,.08),rgba(4,6,16,.42))}
-#puov .puw{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 55%,rgba(255,255,255,.08));border-color:rgba(255,255,255,.26);border-top-color:rgba(255,255,255,.5)}
-@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#puov .puw{-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%)}}
+#puov .puw{background:var(--g-sheen),rgba(18,26,46,.36);border-color:rgba(255,255,255,.26);border-top-color:rgba(255,255,255,.5)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#puov .puw{-webkit-backdrop-filter:blur(22px) saturate(1.35) brightness(.82);backdrop-filter:blur(22px) saturate(1.35) brightness(.82)}}
 #puov .puc,html.mobile-ui #puov .puc{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border-color:rgba(255,255,255,.2)}
 #puov h2,#puov .puc b{text-shadow:0 1px 10px rgba(0,0,0,.45)}#puov .puc small{text-shadow:0 1px 6px rgba(0,0,0,.5)}
-html.mobile-ui .cb-panel{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 50%),rgba(20,28,50,.74)!important;border:1px solid rgba(255,255,255,.2);border-top-color:rgba(255,255,255,.38)}
+html.mobile-ui .cb-panel{-webkit-backdrop-filter:blur(16px) saturate(1.3) brightness(.84);backdrop-filter:blur(16px) saturate(1.3) brightness(.84);background:var(--g-sheen),rgba(16,24,42,.5)!important;border:1px solid rgba(255,255,255,.2);border-top-color:rgba(255,255,255,.38)}
+
+/* ---- frosted pass (liquid-glass-web + apple-design + emil + impeccable/taste critique) ----
+   one light source: a soft long diagonal sheen (no hard wedge), a bright top rim, navy-tinted shadow.
+   Darken with brightness() inside the blur instead of stacking white, so glass stays clear, not grey. */
+:root{--g-sheen:linear-gradient(172deg,rgba(255,255,255,.10) 0,rgba(255,255,255,.055) 18%,rgba(255,255,255,.022) 42%,rgba(255,255,255,.006) 68%,rgba(255,255,255,0) 90%);
+--g-fill:rgba(10,18,40,.52);--g-fill-x:rgba(8,14,32,.62);
+--g-blur:blur(20px) saturate(1.35) brightness(.82);--g-blur-s:blur(12px) saturate(1.3) brightness(.85);--g-blur-x:blur(26px) saturate(1.4) brightness(.8);
+--g-rim:rgba(255,255,255,.10);--g-rim-top:rgba(255,255,255,.30);
+--g-hi:inset 0 1px 0 rgba(255,255,255,.20),inset 0 -1px 0 rgba(0,0,0,.18);
+--g-lift:0 22px 48px -22px rgba(2,6,20,.7),0 1px 3px rgba(2,6,20,.3);--ease-out:cubic-bezier(.23,1,.32,1)}
+html.mobile-ui{--g-blur:blur(16px) saturate(1.3) brightness(.82);--g-blur-s:blur(10px) saturate(1.25) brightness(.85);--g-blur-x:blur(20px) saturate(1.35) brightness(.8)}
+/* nested layers: dark tint, not white (white on navy turns grey) */
+.gl .gl{background:rgba(6,12,30,.28)}
+.play .opts,.mode,.it,.seg,.stat,.qcard,.slot,.bpt,.code-panel,.sgrp{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015)),rgba(6,12,30,.30);border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+/* legible text on glass */
+.gl{color:#f4f7ff}
+.gl p,.gl small,.gl label,.gl .sv{text-shadow:0 1px 8px rgba(2,6,20,.55)}
+.gl h2,.gl h3{text-shadow:0 1px 10px rgba(2,6,20,.5)}
+/* selected = clean orange glass, not brown; can't afford = clearly inert */
+.b.on:not(.p){background:linear-gradient(180deg,rgba(255,176,120,.42),rgba(255,112,44,.28));border-color:rgba(255,200,160,.55);color:#fff;box-shadow:inset 0 1px 0 rgba(255,235,215,.45),0 6px 16px -8px rgba(255,110,40,.6)}
+.b:disabled,.b[aria-disabled=true]{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08);color:rgba(244,247,255,.55);box-shadow:none;text-shadow:none;cursor:not-allowed}
+.b:disabled:active{transform:none}
+/* states that animate: gradients can't transition, filter can */
+.b,.mode,.it,.seg>*{transition:filter .18s ease-out,transform .14s var(--ease-out),box-shadow .18s ease-out,border-color .18s ease-out}
+@media (hover:hover) and (pointer:fine){.b:not(:disabled):hover,.mode:hover,.it:hover{filter:brightness(1.14)}}
+.mode:active,.it:active,.seg>*:active,.qcard:active{transform:scale(.98);transition-duration:90ms}
+.b:not(:disabled):active{transform:scale(.96);transition-duration:90ms;filter:brightness(.94)}
+@keyframes g-rise{from{opacity:0;transform:translateY(12px) scale(.97)}}
+@media (prefers-reduced-motion:no-preference){.stage>.gl{animation:g-rise .26s var(--ease-out) backwards}.stage>.gl:nth-child(2){animation-delay:40ms}.stage>.gl:nth-child(3){animation-delay:80ms}#puov .puc{animation-duration:.3s}}
+@media (prefers-reduced-motion:reduce){.stage>.gl,#puov .puc{animation:none}}
+/* power-ups: readable scrim, clear panel, dark-tinted cards */
+#puov{background:radial-gradient(90% 80% at 50% 45%,rgba(4,8,22,.24),rgba(3,6,16,.58))}
+#puov .puw,body.lite #puov .puw{background:var(--g-sheen),rgba(10,18,40,.42)!important}
+#puov .puc,html.mobile-ui #puov .puc,body.lite .puc{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02)),rgba(6,12,30,.30)!important;border-color:rgba(255,255,255,.14)}
+body.lite .gl,body.lite .stage>.gl{background:var(--g-sheen),var(--g-fill)!important}
+body.lite .gl .gl{background:rgba(6,12,30,.28)!important}
+html.mobile-ui #lobby{background:radial-gradient(120% 90% at 50% 0%,rgba(6,10,22,.22),rgba(4,8,20,.5))}
+/* the primary shine (::before) must stay inside its own button: a static .b.p let a 1300px skewed bar escape across the lobby (the "triangle") */
+.b.p{position:relative;overflow:hidden;isolation:isolate}
+html.mobile-ui #lobby #go{position:relative}
