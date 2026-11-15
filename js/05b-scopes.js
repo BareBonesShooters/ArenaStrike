@@ -18,9 +18,9 @@ scout:{n:"4x scout scope",fov:17,pip:1,r:27,c:"#101114"},
 mark:{n:"6x marksman scope",fov:11,pip:1,r:28,c:"#101114"},
 amr:{n:"12x long-range scope",fov:6,pip:1,r:30,c:"#101114"},
 beam:{n:"8x beam scope",fov:9,pip:1,r:28,c:"#f0abfc",tint:"rgba(240,120,255,.1)"}};
-const scopeKind=g=>g.scope&&g.d>=100?"amr":g.scope&&g.glow?"beam":g.scope?(g.base&&g.base.d<50?"scout":"mark"):g.coil?"rail":g.pel?"bead":
+const scopeKind=g=>g.scope&&g.d>=100?"amr":g.scope&&g.glow?"beam":g.scope?(g.d<50?"scout":"mark"):g.coil?"rail":g.pel?"bead":
 g.multi?"ring":g.glow?(g.st?"aether":"plasma"):g.pst?(g.a?"dot":g.d>=60?"rev":g.mg&&g.base&&g.base.d>=40?"rev":"iron"):
-g.a&&g.mg&&!g.st?"dot":g.m>=60||(g.st&&!g.a)?"acog":g.a?"holo":"iron";
+g.a&&g.mg&&!g.st?(hashId(g.id)&1?"dot":"holo"):g.m>=60||(g.st&&!g.a)?"acog":g.a?(hashId(g.id)%3?"holo":"ring"):"iron";
 const scopeOf=g=>{if(!g)return SCOPE_KINDS.iron;if(!g._sc){const k=scopeKind(g);g._sc=Object.assign({k},SCOPE_KINDS[k])}return g._sc};
 
 const Scope=(()=>{
@@ -48,6 +48,10 @@ scout:`<g class="rt">${cross(22,100,3.2)}${cross(3,22,.8)}</g>`,
 mark:`<g class="rt">${cross(30,100,3)}${cross(3,30,.7)}<g class="rtd">${dots(3,8,1.5)}</g></g>`,
 amr:`<g class="rt">${cross(34,100,3.4)}${cross(3,34,.7)}${[8,16,24,32].map((d,i)=>L(100-5-i*1.5,100+d,100+5+i*1.5,100+d,.8)+L(100-5-i*1.5,100-d,100+5+i*1.5,100-d,.8)+L(100+d,100-5-i*1.5,100+d,100+5+i*1.5,.8)+L(100-d,100-5-i*1.5,100-d,100+5+i*1.5,.8)).join("")}</g>`,
 beam:`<g class="ln2" fill="none" stroke-linecap="round">${cross(4,100,.7)}<circle cx="100" cy="100" r="11" stroke-width="1"/><circle cx="100" cy="100" r="30" stroke-width=".6" stroke-dasharray="2 4"/>${L(100,100-30,100,100-34,1.4)}${L(100,100+30,100,100+34,1.4)}${L(100-30,100,100-34,100,1.4)}${L(100+30,100,100+34,100,1.4)}</g><circle class="dt" cx="100" cy="100" r="1.4"/>`};
+SV.scout2=`<g class="ln2" fill="none">${cross(4,40,.9)}<circle cx="100" cy="100" r="12" stroke-width="1.1"/></g><circle class="dt" cx="100" cy="100" r="1.4"/>`;
+SV.mark2=`<g class="ln2" fill="none" stroke-linecap="round"><path d="M82 110L100 92L118 110" stroke-width="2.2"/><path d="M90 122L100 113L110 122" stroke-width="1.2"/>${cross(3,12,.8)}</g><circle class="dt" cx="100" cy="100" r="1.2"/>`;
+SV.amr2=`<g class="ln2" fill="none">${cross(2,30,.8)}<circle cx="100" cy="100" r="18" stroke-width="1.4"/><circle cx="100" cy="100" r="30" stroke-width=".6" stroke-dasharray="1 3"/></g><circle class="dt" cx="100" cy="100" r="1.3"/>`;
+const rkey=(s,g)=>{const v=s.k+"2";return SV[v]&&g&&(hashId(g.id)&1)?v:s.k};
 let el=null,key="",on=false,rgEl=null,rgT=0,zi=0;const _f=new T.Vector3();
 // mouse-wheel zoom steps on the long scopes (multiples of the scope's own magnification)
 const ZL={scout:[1,1.7],mark:[1,1.6,2.4],amr:[1,1.8,3],rail:[1,1.6],beam:[1,1.6]};
@@ -80,7 +84,7 @@ const g=x.createRadialGradient(256,256,140,256,256,256);g.addColorStop(0,"rgba(0
 // range marks: where a shot lands at 50, 100 and 150 m, from the gun's own bullet drop (js/07b-bullets.js) at this zoom
 let mk="";if(g&&typeof Bul!=="undefined"){const upr=2*ru/(s.fov/z*Math.PI/180);for(const d of[50,100,150]){const y=Bul.dropAt(g,d)/d*upr;if(y<1.2||y>ru*.9)continue;
 mk+=L(100-4,100+y,100+4,100+y,.7,"rm")+`<text x="${100+5.5}" y="${100+y+1.6}" font-size="4.4" class="rmt">${d}</text>`}}
-img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${100-ru} ${100-ru} ${ru*2} ${ru*2}" width="512" height="512">${RS(s.c)}${SV[s.k]||""}${mk}</svg>`);
+img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${100-ru} ${100-ru} ${ru*2} ${ru*2}" width="512" height="512">${RS(s.c)}${SV[rkey(s,g)]||""}${mk}</svg>`);
 return t}
 // the lens picture is stored sRGB-encoded like the main view (no banding in dark scenes) and goes through the same post chain (it is drawn with
 // the gun, before the output step and colour grade); resolution and multisampling follow the quality tier

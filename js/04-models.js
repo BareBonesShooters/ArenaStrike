@@ -81,26 +81,48 @@ const FLASH=(()=>{const c=document.createElement("canvas");c.width=c.height=64;c
 
 function disposeGeo(o){o.traverse(m=>{if(m.geometry)m.geometry.dispose()})}
 
+// gun families, decided from existing fields only (scope, coil/glow, pump/pel, pst, length, stock, multi, m). Each family gets its own receiver and add-on parts.
+const hashId=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return h&0x7fffffff};
+function gunFamily(g){
+if(g.scope)return"sniper";
+if(g.coil||g.glow)return"energy";
+if(g.pump||g.pel)return"shotgun";
+if(g.multi||g.m>=70)return"heavy";
+if(g.pst||g.id==="g0"||(g.l<=.34&&!g.st))return"pistol";
+return g.st?"rifle":"smg"}
+
 // ---------- gun model (barrel points toward -z) ----------
 function buildGun(g,sk){
-const grp=new T.Group(),skin=skinMat(sk||SK[0]),f=-g.l/2;
+const grp=new T.Group(),skin=skinMat(sk||SK[0]),f=-g.l/2,fam=gunFamily(g),pistol=fam==="pistol",lowQ=typeof S!=="undefined"&&S.gfx>=3,ext=fam==="rifle"||fam==="sniper"?.14:0;
 const add=(geo,mat,x,y,z,rx,ry,rz)=>{const m=new T.Mesh(geo,mat);m.position.set(x,y,z);if(rx||ry||rz)m.rotation.set(rx||0,ry||0,rz||0);grp.add(m);return m};
 const bx=(w,h,d,x,y,z,mat,rx,ry,rz)=>add(new T.BoxGeometry(w,h,d),mat,x,y,z,rx,ry,rz),cy=(r,l,x,y,z,mat,r2)=>add(new T.CylinderGeometry(r,r2==null?r:r2,l,12),mat,x,y,z,Math.PI/2,0,0);
-const pistol=g.id==="g0"||!!g.pst;
 const rail=(len,y,z)=>{const gm=new T.BoxGeometry(.034,.012,len),uv=gm.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,uv.getX(i)*Math.round(len/.022));add(gm,RAILM,0,y,z)};
-if(pistol){bx(.07,.075,g.l,0,.04,0,skin);bx(.062,.06,g.l*.9,0,-.03,.02,MDK);bx(.03,.02,g.l*.92,0,.085,0,MDK)}
+// receiver by family: pistol has a short slide, SMG a compact body, rifle a long body, the rest keep the common receiver
+if(pistol){bx(.07,.075,g.l*.62,0,.02,-g.l*.13,MDK);bx(.066,.05,g.l*.92,0,.07,0,skin);bx(.03,.02,g.l*.8,0,.1,0,MDK)}
+else if(fam==="smg"){bx(.09,.12,g.l*.72,0,0,-g.l*.12,skin);bx(.036,.016,g.l*.6,0,.075,-g.l*.1,MDK);bx(.05,.14,.06,0,-.13,g.l*.08,MDK)}
 else{bx(.09,.12,g.l,0,0,0,skin);bx(.036,.016,g.l*.84,0,.075,-g.l*.04,MDK);bx(.092,.02,g.l*.5,0,-.02,f+g.l*.25,MMT)}
 cy(.022,g.b,0,.02,f-g.b/2,MMT);cy(.031,.05,0,.02,f-g.b-.015,MDK);
+if(ext)cy(.017,ext,0,.02,f-g.b-ext/2,MMT); // long barrel: rifles and snipers
+if(fam==="sniper")cy(.027,.045,0,.02,f-g.b-ext-.02,MDK); // muzzle brake
+if(fam==="shotgun")cy(.034,g.b*.95,0,.02,f-g.b*.5,MMT); // thick barrel
+if(fam==="rifle"&&!lowQ)bx(.104,.1,g.l*.42,0,-.005,f+.02+g.l*.21,skin); // handguard
 if(!pistol&&g.b>.2&&!g.pump&&!g.coil&&!g.multi)bx(.1,.12,Math.min(g.b*.95,.34),0,.012,f-Math.min(g.b*.95,.34)/2+.02,skin);
 bx(.058,.15,.075,0,pistol?-.1:-.125,g.l*.27,MDK,.32);bx(.012,.02,.09,0,-.075,g.l*.07,MDK);
-const mg=g.mg||.1;let mag=null,prop=null;if(!g.pump&&!g.coil&&!g.multi&&!g.scope||g.id==="g4")mag=bx(.07,mg,.075,0,-.06-mg/2,-.015,MDK,.14);
+const mg=g.mg||.1;let mag=null,prop=null;
+if(fam==="heavy"){mag=bx(.1,.13,.11,0,-.1,-.03,MDK);if(!lowQ){bx(.012,.11,.012,.035,-.13,f+.12,MDK);bx(.012,.11,.012,-.035,-.13,f+.12,MDK);bx(.1,.012,.012,0,-.185,f+.12,MDK)}}
+else if(!g.pump&&!g.coil&&!g.multi&&!g.scope||g.id==="g4")mag=bx(.07,mg,.075,0,-.06-mg/2,-.015,MDK,.14);
 else{prop=bx(.05,.07,.05,0,-.1,-.015,MMT);prop.visible=false}
 
 if(g.st){bx(.07,.105,.22,0,-.012,g.l/2+.11,skin);bx(.072,.115,.025,0,-.012,g.l/2+.23,MDK)}
 if(g.pump){bx(.1,.075,.2,0,-.07,f-.1,MWD);cy(.02,g.b*.95,0,-.04,f-g.b*.45,MMT)}
 let lens=null;
-if(g.scope){lens={y:.115,z:.147,r:.031};cy(.04,.03,0,.115,.125,MDK);cy(.034,.3,0,.115,-.02,MDK);cy(.04,.04,0,.115,-.19,MDK);cy(.03,.012,0,.115,-.212,MBL);bx(.02,.045,.03,0,.088,-.1,MDK);bx(.02,.045,.03,0,.088,.06,MDK);bx(.03,.04,.12,0,-.06,f-.05,MDK)}
+if(g.scope){
+// the scope tube follows its magnification: a slim 4x tube, a standard 6x with turrets, or a big 12x sniper tube with turrets
+const k3=scopeOf(g).k,big=k3==="amr",slim=k3==="scout",tr=big?.046:slim?.028:.034,tl=big?.36:slim?.26:.3,tc=big?-.03:-.02;
+lens={y:.115,z:.147,r:.031};cy(.04,.03,0,.115,.125,MDK);cy(tr,tl,0,.115,tc,MDK);cy(tr+.006,.04,0,.115,tc-tl/2-.02,MDK);cy(.03,.012,0,.115,tc-tl/2-.042,MBL);bx(.02,.045,.03,0,.088,-.1,MDK);bx(.02,.045,.03,0,.088,.06,MDK);bx(.03,.04,.12,0,-.06,f-.05,MDK);
+if(!lowQ&&!slim){add(new T.CylinderGeometry(.013,.013,.024,10),MDK,0,.115+tr+.02,tc);add(new T.CylinderGeometry(.013,.013,.02,10),MDK,tr+.008,.115,tc+.04,0,0,Math.PI/2)}}
 if(g.glow){cy(.034,.05,0,.02,f-g.b+.01,MGL);bx(.01,.1,.16,.052,.01,f-.07,skin);bx(.01,.1,.16,-.052,.01,f-.07,skin);bx(.094,.01,g.l*.55,0,.03,0,MGL)}
+if(g.glow&&!g.coil&&!lowQ){for(let i=0;i<3;i++)cy(.042,.012,0,.02,f-g.b-ext-.03-i*.04,MGL)} // glowing coil rings on the energy barrel
 if(g.coil){for(let i=0;i<3;i++)cy(.056,.03,0,.02,f-.1-i*.15,MBL);bx(.016,.02,g.b+.12,.045,.035,f-g.b/2,MMT);bx(.016,.02,g.b+.12,-.045,.035,f-g.b/2,MMT);bx(.094,.01,g.l*.7,0,.04,0,MBL)}
 if(g.multi){[[.045,.05],[-.045,.05],[0,-.03]].forEach(([x,y])=>cy(.02,g.b,x,y,f-g.b/2-.02,MMT));cy(.075,.06,0,.01,f-.1,MDK);cy(.075,.06,0,.01,f-.26,MDK);bx(.12,.13,.14,0,-.14,.0,MDK);bx(.1,.012,g.l*.7,0,.07,0,MRD)}
 if(!pistol&&!g.scope&&!g.pump&&!g.coil&&!g.multi)rail(Math.min(g.l*.8,.42),.082,-g.l*.06);
@@ -118,7 +140,7 @@ ob(sq,sq,.004,0,y0+.012+h*.5,z-d*.42-.003,dot)};
 if(sk2==="dot")frame(.036,.03,.06,oz,MRD,MMT,.007);
 else if(sk2==="holo")frame(.05,.042,.09,oz,MRD,MMT,.008);
 else if(sk2==="ring")frame(.05,.042,.085,oz,MRD,MMT,.011);
-else if(sk2==="plasma")frame(.05,.042,.085,oz,MGL,MGL,.008);
+else if(sk2==="plasma"){frame(.05,.042,.085,oz,MGL,MGL,.008);if(!lowQ){const tr=new T.Mesh(new T.TorusGeometry(.03,.0035,6,18),MGL);tr.position.set(0,.119,oz-.036);optic.add(tr)}} // energy sight: emissive ring around the pane
 else if(sk2==="aether")frame(.05,.042,.08,.02,MMG,MMT,.008);
 else if(sk2==="acog"){lens={y:.12,z:oz+.103,r:.027};oc(.036,.03,0,.12,oz+.085,MDK);oc(.03,.16,0,.12,oz,MDK);oc(.036,.03,0,.12,oz-.09,MDK);oc(.026,.004,0,.12,oz-.106,MRD);ob(.012,.03,.05,0,.1,oz+.03,MDK);ob(.012,.03,.05,0,.1,oz-.04,MDK)}
 else if(sk2==="rail"){lens={y:.118,z:oz+.123,r:.029};oc(.036,.03,0,.118,oz+.105,MDK);oc(.03,.2,0,.118,oz,MDK);oc(.036,.03,0,.118,oz-.11,MDK);oc(.026,.004,0,.118,oz-.126,MBL);ob(.014,.028,.03,0,.098,oz+.05,MDK);ob(.014,.028,.03,0,.098,oz-.05,MDK);ov(.01,.016,0,.118+.03+.006,oz-.01,MBL);ov(.008,.012,.034,.118,oz-.01,MDK)}
@@ -126,7 +148,7 @@ else if(sk2==="rail"){lens={y:.118,z:oz+.123,r:.029};oc(.036,.03,0,.118,oz+.105,
 if(sk2==="iron"||sk2==="rev"||sk2==="bead"){ob(.012,.035,.012,0,.1,f-g.b*.75,MDK);ob(.04,.03,.012,0,.098,g.l*.36,MDK)}
 grp.add(optic);
 const mf=new T.Sprite(new T.SpriteMaterial({map:FLASH,blending:T.AdditiveBlending,transparent:true,depthWrite:false,fog:false}));
-const mz={x:0,y:.02,z:f-g.b-.07};mf.position.set(mz.x,mz.y,mz.z);mf.scale.setScalar(.34);mf.visible=false;grp.add(mf);
+const mz={x:0,y:.02,z:f-g.b-ext-.07};mf.position.set(mz.x,mz.y,mz.z);mf.scale.setScalar(.34);mf.visible=false;grp.add(mf);
 YardArt.gun(grp,g);
 return{grp,mf,mz,f,optic,lens,mag,prop,grip:{x:0,y:pistol?-.1:-.125,z:g.l*.27},fore:{x:0,y:g.pump?-.07:-.045,z:g.pump?f-.1:f-Math.min(g.b,.3)*.55}}}
 
