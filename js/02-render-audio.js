@@ -5,6 +5,8 @@ const sc=new T.Scene(),cam=new T.PerspectiveCamera(75,innerWidth/innerHeight,.05
 const LOD={pr:1.5,sh:2048,cloud:2,props:1,fx:1,tex:2048,dust:1,mz:1,shR:40};
 // no MSAA: the tiers that used it all draw through the effect chain (02b-post.js), which renders into its own buffers and anti-aliases with SMAA/FXAA, so the multisampled screen buffer was wasted memory
 const rd=new T.WebGLRenderer({antialias:false,stencil:false,powerPreference:SOFT?"default":"high-performance"});
+// shader error checks read the program info log, which stalls the frame until the GPU finishes linking: a hitch every time a new material first draws. Players skip it; the test harness keeps it so check/smoke still catch broken shaders
+rd.debug.checkShaderErrors=!!window.__HARNESS;
 rd.setSize(innerWidth,innerHeight);rd.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
 rd.shadowMap.enabled=true;rd.shadowMap.type=T.PCFShadowMap;/* PCFSoftShadowMap was removed; PCF filters softly by itself now */
 rd.domElement.id="gl";document.body.prepend(rd.domElement);{const v=document.createElement("div");v.id="vgn";v.setAttribute("aria-hidden","true");rd.domElement.after(v)}
