@@ -345,6 +345,29 @@ d.innerHTML='<div id="tl"></div><div id="tz"></div><div id="tj"><i></i><b>SPRINT
 +'<button id="tpk1" class="md pk" aria-label="Restart run">RESET</button><button id="tpk2" class="md pk" aria-label="Change view">VIEW</button><button id="tri" class="md rg" aria-label="Inspect gun">LOOK</button>'
 +'<div id="tep"></div>';
 document.body.appendChild(d);
+// button layout editor: TouchLayout.edit() shows the controls over a dimmed screen; drag a button to move it, pick one and use the size
+// buttons to resize it. Saved per device in S.opt.tcl as {id:[dx,dy,scale]} and applied with the CSS translate/scale properties, which
+// stack with the buttons' own layout and press animations instead of replacing them. The move pad only resizes (it follows the thumb).
+window.TouchLayout=(()=>{const IDS=["tf","tfl","tjp","trl","tcr","tsw","tad","tgr","tj","tps","tsc","tem","tmp"];let bar=null,sel=null,drag=null;
+const L=()=>{if(!S.opt||typeof S.opt!=="object")S.opt={};if(!S.opt.tcl||typeof S.opt.tcl!=="object")S.opt.tcl={};return S.opt.tcl};
+function apply(){const l=(S.opt&&S.opt.tcl)||{};for(const id of IDS){const el=$(id);if(!el)continue;const v=l[id];el.style.translate=v&&(v[0]||v[1])?v[0]+"px "+v[1]+"px":"";el.style.scale=v&&v[2]&&v[2]!==1?String(v[2]):""}}
+function pick(id){sel=id;for(const i of IDS){const el=$(i);if(el)el.classList.toggle("tsel",i===id)}if(bar)bar.querySelector("b").textContent=id?($(id).getAttribute("aria-label")||id)+" selected":"Drag a button, or tap one to resize it"}
+function size(k){if(!sel)return;const l=L(),v=l[sel]||[0,0,1];v[2]=clamp(Math.round((v[2]+k)*100)/100,.6,1.6);l[sel]=v;apply()}
+function down(e){if(!document.body.classList.contains("tcedit"))return;const el=e.target.closest&&e.target.closest(IDS.map(i=>"#"+i).join(","));if(!el)return;e.preventDefault();e.stopPropagation();pick(el.id);
+const v=L()[el.id]||[0,0,1];drag={id:el.id,x:e.clientX,y:e.clientY,v0:v.slice(),pid:e.pointerId}}
+function move(e){if(!drag||e.pointerId!==drag.pid)return;e.preventDefault();e.stopPropagation();if(drag.id==="tj")return;const l=L(),v=drag.v0.slice();v[0]=Math.round(v[0]+e.clientX-drag.x);v[1]=Math.round(v[1]+e.clientY-drag.y);l[drag.id]=v;apply()}
+function up(e){if(drag&&e.pointerId===drag.pid){e.stopPropagation();drag=null;try{sv()}catch(_){}}}
+for(const t of["pointerdown"])addEventListener(t,down,true);addEventListener("pointermove",move,true);addEventListener("pointerup",up,true);addEventListener("pointercancel",up,true);
+function edit(){if(bar)return;document.body.classList.add("tcedit");bar=document.createElement("div");bar.id="tcbar";bar.setAttribute("role","toolbar");bar.setAttribute("aria-label","Edit touch controls");
+bar.innerHTML='<b></b><button data-k="-" aria-label="Smaller">−</button><button data-k="+" aria-label="Bigger">+</button><button data-k="r">Reset</button><button data-k="d" class="pri">Done</button>';
+bar.addEventListener("click",e=>{const k=e.target.dataset&&e.target.dataset.k;if(k==="-")size(-.1);else if(k==="+")size(.1);else if(k==="r"){S.opt.tcl={};apply();try{sv()}catch(_){}}else if(k==="d")done()});
+document.body.appendChild(bar);pick(null)}
+function done(){document.body.classList.remove("tcedit");if(bar){bar.remove();bar=null}pick(null);try{sv()}catch(_){}}
+{const st=document.createElement("style");st.textContent="body.tcedit #tc{display:block;z-index:2147483000;background:rgba(6,10,20,.62)}body.tcedit #tc #tl,body.tcedit #tc #tz,body.tcedit #tc #tep{pointer-events:none}body.tcedit #tc .md{display:none!important}body.tcedit #tj{opacity:1}"
++"body.tcedit #tc button,body.tcedit #tj{cursor:grab;outline:2px dashed rgba(255,255,255,.35);outline-offset:3px}body.tcedit #tc .tsel{outline:2px solid #ff7a29;outline-offset:3px}"
++"#tcbar{position:fixed;z-index:2147483001;left:50%;top:calc(env(safe-area-inset-top,0px) + 10px);translate:-50% 0;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:rgba(14,20,36,.94);border:1px solid rgba(255,255,255,.14);color:#e8eef8;font:600 13px/1.2 Outfit,system-ui,sans-serif;max-width:calc(100vw - 24px)}"
++"#tcbar b{font-weight:600;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw}#tcbar button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:inherit;font:inherit;padding:0 12px}#tcbar button.pri{background:#ff7a29;border-color:#ff7a29;color:#160b02}";document.head.appendChild(st)}
+apply();return{edit,done,apply}})();
 const rot=document.createElement("div");rot.id="rot";rot.innerHTML='<svg viewBox="0 0 64 64"><rect x="20" y="6" width="24" height="46" rx="5"/><path d="M30 46h4"/></svg><b>Turn your phone sideways</b><span>Arena Strike plays best in landscape.</span>';document.body.appendChild(rot);
 const key=(c,dn)=>dispatchEvent(new KeyboardEvent(dn?"keydown":"keyup",{code:c,key:c,bubbles:true})),held={},set=(c,v)=>{if(!!held[c]!==v){held[c]=v;key(c,v)}};
 const buzz=n=>{try{if(S.opt&&S.opt.haptics===false)return;navigator.vibrate&&navigator.vibrate(n)}catch(e){}};

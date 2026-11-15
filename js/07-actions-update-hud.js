@@ -204,6 +204,10 @@ const h=tg.length?rc.intersectObjects(tg,false)[0]:null,on=!!h&&h.distance<rayWo
 if(on&&isTouch())for(const e of E)if(e.hp>0&&e.g.userData.hit.includes(h.object)){aimTgt=e;break}}
 // touch aim assist (phones only, never against other players): while the crosshair is on an enemy it drifts with that enemy a little,
 // so a moving target does not slide off a thumb-steered aim. Optional auto-fire shoots while the crosshair stays on one.
+// how hard the fight is right now, for the music: Monster Rush starts each wave muffled and opens up as monsters pile in; a boss or low health
+// pushes it to full; the break between waves settles back down. Other modes play the music fully open.
+let musT=0;function musLevel(){if(mode!=="waves")return 1;let n=0,boss=false;for(const e of E)if(e.t==="mon"&&e.hp>0){n++;if(e.boss)boss=true}
+if(boss)return 1;if(wn>0&&!n)return .12;return clamp(.3+n/(5+wave*.6)*.6+(P.hp<P.max*.35?.3:0),0,1)}
 let aimTgt=null;const isTouch=()=>document.body.classList.contains("touch");
 function aimAssist(dt,g){const e=aimTgt;if(!e||e.hp<=0||PT.on||!isTouch()||(S.opt&&S.opt.assist===false))return;
 const p=e.g.position,dx=cam.position.x-p.x,dz=cam.position.z-p.z,hd=Math.hypot(dx,dz)||1,want=Math.atan2(dx,dz);let er=want-P.yaw;er=Math.atan2(Math.sin(er),Math.cos(er));
@@ -245,7 +249,7 @@ if(grenAim)updateGrenPrev();else if(gPrevMesh)clearGrenPrev();
 if(A.rl>0){A.rl-=dt;if(A.rl<=0)A.mag=g.m}
 P.rk*=Math.exp(-dt*10);P.sp*=Math.exp(-dt*8);
 Aim.spread(clamp(curSpread(g)/Math.tan(cam.fov*.00872665)*innerHeight*.5,3,64));
-probeT-=dt;if(probeT<=0){probeT=.05;aimProbe()}aimAssist(dt,g);
+probeT-=dt;if(probeT<=0){probeT=.05;aimProbe()}aimAssist(dt,g);musT-=dt;if(musT<=0){musT=.25;try{Mus.inten(musLevel())}catch(e){}}
 if(P.prot>0)P.prot-=dt;if(P.rush>0)P.rush-=dt;if(P.grenCD>0)P.grenCD-=dt;
 // entities
 if(!menuOpen){for(const e of E.slice())e.t==="bot"?botStep(e,dt):monStep(e,dt)}

@@ -12,15 +12,16 @@ const LV=[null,
 {bloom:[.3,.4,1.05],half:false,aa:"fxaa",ao:false,hdr:true},
 {bloom:[.36,.45,1.05],half:false,aa:"smaa",ao:true,hdr:true}];
 const GradeShader={
-uniforms:{tDiffuse:{value:null},uExp:{value:1},uSat:{value:1.16},uCon:{value:1.07},uLift:{value:new T.Vector3(.012,.02,.045)},uGain:{value:new T.Vector3(1.03,1.01,.97)},uVig:{value:.28},uK:{value:.78}},
+uniforms:{tDiffuse:{value:null},uExp:{value:1},uSat:{value:1.16},uCon:{value:1.07},uLift:{value:new T.Vector3(.012,.02,.045)},uGain:{value:new T.Vector3(1.03,1.01,.97)},uVig:{value:.28},uK:{value:.78},uCB:{value:new T.Matrix3()},uCBon:{value:0}},
 vertexShader:"varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
-fragmentShader:`uniform sampler2D tDiffuse;uniform float uExp,uSat,uCon,uVig,uK;uniform vec3 uLift,uGain;varying vec2 vUv;
+fragmentShader:`uniform sampler2D tDiffuse;uniform float uExp,uSat,uCon,uVig,uK,uCBon;uniform vec3 uLift,uGain;uniform mat3 uCB;varying vec2 vUv;
 vec3 shoulder(vec3 x){vec3 o=x-uK;return mix(x,uK+(1.-uK)*(1.-exp(-o/(1.-uK))),step(uK,x));}
 void main(){vec4 t=texture2D(tDiffuse,vUv);vec3 c=shoulder(max(t.rgb*uExp,0.));
 float l=dot(c,vec3(.299,.587,.114)),mx=max(c.r,max(c.g,c.b)),mn=min(c.r,min(c.g,c.b));
 c=mix(vec3(l),c,uSat+(1.-(mx-mn))*.12);
 c=clamp((c-.5)*uCon+.5,0.,1.);
 c=c*uGain+uLift*(1.-c);
+if(uCBon>.5)c=clamp(uCB*c,0.,1.);
 vec2 d=vUv-.5;c*=1.-uVig*smoothstep(.35,.85,length(d*vec2(1.25,1.)));
 gl_FragColor=vec4(clamp(c,0.,1.),t.a);}`};
 let cmp=null,lvl=0,rp,ao,vmp,bloom,grade,aa,vmOn=false,hdrOn=false,gm=null;
@@ -70,12 +71,12 @@ let lastTheme="",satB=1.16;
 return{RIM,
 // low health drains colour (k 0..1)
 lowHp(k){if(grade)grade.uniforms.uSat.value=satB*(1-.6*k)},
-get on(){return !!cmp},
+get on(){return !!cmp},get grade(){return grade},
 // brightness multiplier for light-source effects: above 1 only on HDR tiers (see glowGain)
 get hdr(){return hdrOn},get hot(){return hdrOn?Tune.n("gfx.hot",2.2,1,4):1},
 get passes(){return cmp?cmp.passes:[]},
 // level: 0 off, 1 Medium, 2 High, 3 Ultra High
-set(l){l=l|0;if(SOFT)l=0;if(l===lvl&&(!!cmp)===(l>0))return;lvl=l;if(l>0){try{build(LV[l]);lastTheme=""}catch(e){console.error(e);dispose();lvl=0}}else dispose()},
+set(l){l=l|0;if(SOFT)l=0;if(l===lvl&&(!!cmp)===(l>0))return;lvl=l;if(l>0){try{build(LV[l]);lastTheme=""}catch(e){console.error(e);dispose();lvl=0}}else dispose();try{CBlind.apply()}catch(e){}},
 // a resize or an Auto-quality resolution step only resizes the existing buffers; rebuilding the chain (new shaders, new targets) caused hitches
 size(){if(!cmp)return;try{const pr=rd.getPixelRatio(),w=innerWidth,h=innerHeight;if(cmp._pixelRatio!==pr)cmp._pixelRatio=pr;cmp.setSize(w,h);
 const u=aa&&aa.material&&aa.material.uniforms&&aa.material.uniforms.resolution;if(u)u.value.set(1/(w*pr),1/(h*pr))}catch(e){try{build(LV[lvl]);lastTheme=""}catch(e2){dispose();lvl=0}}},
@@ -90,3 +91,15 @@ sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <commo
 const ck=m.customProgramCacheKey;m.customProgramCacheKey=()=>(ck?ck.call(m):"")+"rim";m.needsUpdate=true}});return g}}})();
 const C_W=new T.Color(1,1,1),C_T=new T.Color();
 addEventListener("resize",()=>Post.size());
+
+// colour-blind presets (S.opt.cb = "" | "prot" | "deut" | "trit"): a daltonize matrix moves the colour differences a player cannot see into
+// ones they can (reds and greens apart for protan/deutan, blues and yellows for tritan). With post-processing it runs in the grade pass;
+// on Low and Potato (no post chain) the same matrix is an SVG colour filter on the canvas.
+const CBlind=(()=>{const M={prot:[1,0,0,.4789,.4769,.0442,.5973,-.6887,1.0914],deut:[1,0,0,.1628,.725,.1122,.4547,-.6454,1.1907],trit:[1,0,0,-.1005,1.1229,-.0225,-.1836,-.6376,1.8212]};
+let svg=null;
+function filt(m){if(!svg){svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("aria-hidden","true");svg.style.cssText="position:absolute;width:0;height:0";svg.innerHTML='<filter id="cbf" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=""/></filter>';document.body.appendChild(svg)}
+svg.querySelector("feColorMatrix").setAttribute("values",[0,1,2].map(i=>m[i*3]+" "+m[i*3+1]+" "+m[i*3+2]+" 0 0").join(" ")+" 0 0 0 1 0")}
+function apply(){const k=S.opt&&S.opt.cb,m=M[k];document.body.classList.remove("cb-prot","cb-deut","cb-trit");if(m)document.body.classList.add("cb-"+k);
+const g=Post.on&&Post.grade;if(g){g.uniforms.uCBon.value=m?1:0;if(m)g.uniforms.uCB.value.set(...m)}
+const useCss=m&&!g;if(useCss)filt(m);rd.domElement.style.filter=useCss?"url(#cbf)":""}
+return{apply,list:[["","Off"],["prot","Protanopia (red-weak)"],["deut","Deuteranopia (green-weak)"],["trit","Tritanopia (blue-weak)"]]}})();

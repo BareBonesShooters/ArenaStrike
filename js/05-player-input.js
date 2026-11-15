@@ -132,11 +132,22 @@ if(P.y<-30)P.y=0}
 // analog movement from the touch joystick or a gamepad stick (-1..1 each way; y is down/back), used instead of W/A/S/D while on
 const AN={x:0,y:0,on:false,pad:false};
 // light vibration on phones that support it (Android; iPhones ignore it), off with the haptics option
+// gyro aiming (phones, off by default; S.opt.gyro = "off" | "on" | "ads" for only while aiming). Turning the phone turns the view, on top
+// of the thumb. The axes follow the screen orientation. iOS asks permission, so Gyro.enable() must run from a tap (the settings control).
+const Gyro=(()=>{let yr=0,pr=0,t=0,bound=false;
+function h(e){const r=e.rotationRate;if(!r)return;const a=(screen.orientation&&screen.orientation.angle!=null?screen.orientation.angle:window.orientation)||0;
+const b=r.beta||0,g=r.gamma||0;if(a===90){yr=b;pr=-g}else if(a===270||a===-90){yr=-b;pr=g}else if(a===180){yr=-g;pr=-b}else{yr=g;pr=b}t=performance.now()}
+function bind(){if(bound)return;bound=true;addEventListener("devicemotion",h)}
+function mode(){return(S.opt&&S.opt.gyro)||"off"}
+if(mode()!=="off")try{bind()}catch(e){}
+return{enable(){try{const D=window.DeviceMotionEvent;if(D&&typeof D.requestPermission==="function")return D.requestPermission().then(s=>{if(s==="granted"){bind();return true}return false}).catch(()=>false);bind();return Promise.resolve(true)}catch(e){return Promise.resolve(false)}},
+frame(dt){const m=mode();if(m==="off"||!bound||performance.now()-t>200||state!=="play"||menuOpen||P.dead>0)return;if(m==="ads"&&!scoped)return;
+const k=Tune.n("gyro.sens",1,.2,3)*(S.opt.gyroK||1)*.01745*dt*(scoped?.6:1);P.yaw+=yr*k;P.pitch=clamp(P.pitch+pr*k,-1.5,1.5)}}})();
 function haptic(n){try{if(document.body.classList.contains("touch")&&!(S.opt&&S.opt.haptics===false)&&navigator.vibrate)navigator.vibrate(n)}catch(e){}}
 // gamepad (standard mapping): left stick moves, right stick looks, RT fires, LT aims, A jump, B crouch/slide, X reload, Y swap, RB grenade, L3 sprint, Start pause
 const Pad=(()=>{const was={},kd=(c,dn)=>dispatchEvent(new KeyboardEvent(dn?"keydown":"keyup",{code:c,key:c,bubbles:true}));
 const MAP={0:"Space",1:"ControlLeft",5:"KeyG",10:"ShiftLeft"};
-function frame(dt){let gp=null;try{if(navigator.getGamepads)for(const g of navigator.getGamepads())if(g&&g.connected){gp=g;break}}catch(e){}
+function frame(dt){Gyro.frame(dt);let gp=null;try{if(navigator.getGamepads)for(const g of navigator.getGamepads())if(g&&g.connected){gp=g;break}}catch(e){}
 if(!gp||state!=="play"||menuOpen){if(AN.pad){AN.pad=false;AN.on=false;AN.x=AN.y=0}for(const i in was)if(was[i]){was[i]=false;if(MAP[i])kd(MAP[i],false);else if(i==="7")dispatchEvent(new MouseEvent("mouseup",{button:0}));else if(i==="6")dispatchEvent(new MouseEvent("mouseup",{button:2}))}return}
 const dz=v=>Math.abs(v)<.15?0:(v-Math.sign(v)*.15)/.85,ax=gp.axes,lx=dz(ax[0]||0),ly=dz(ax[1]||0),rx=dz(ax[2]||0),ry=dz(ax[3]||0);
 if(lx||ly){AN.pad=true;AN.on=true;AN.x=lx;AN.y=ly}else if(AN.pad){AN.pad=false;AN.on=false;AN.x=AN.y=0}
@@ -298,37 +309,49 @@ addEventListener("resize",VM.resize);
 // ---------- input ----------
 const clearKeys=()=>{for(const k in K)K[k]=0;firing=false;rmb=false;scoped=false;knifeCharging=false;knifeCharge=0;grenAim=false;try{clearGrenPrev()}catch(e){}};
 const isGame=()=>state==="play"&&!menuOpen;
-addEventListener("keydown",e=>{
+// key rebinding: S.keys maps an action to the physical key the player chose. Every key event is translated to that action's default key
+// before the game reads it, so all the controls below keep their default names. A default key that was given to another action stops
+// doing its old job (it is translated to nothing) unless the player bound that job somewhere else.
+const Keys=(()=>{const A=[["fwd","Move forward","KeyW"],["back","Move back","KeyS"],["left","Move left","KeyA"],["right","Move right","KeyD"],["jump","Jump","Space"],["crouch","Crouch / slide","ControlLeft"],["sprint","Sprint","ShiftLeft"],["reload","Reload","KeyR"],["gren","Grenade","KeyG"],["gun","Gun","Digit1"],["knife","Knife","Digit2"],["map","Map","KeyM"],["score","Scoreboard","Tab"],["view","Third person","KeyV"]];
+let R={};
+function build(){R={};const k=(S&&S.keys)||{},used=new Set();for(const[id,,d]of A){const c=k[id];if(c&&c!==d){R[c]=d;used.add(c)}}
+for(const[id,,d]of A){const c=k[id];if(c&&c!==d&&!used.has(d)&&R[d]===undefined)R[d]="Unbound"}}
+try{build()}catch(e){}
+const name=c=>!c?"":c.replace(/^Key/,"").replace(/^Digit/,"").replace(/Left$|Right$/,m=>" "+m.toLowerCase()).replace("Control","Ctrl").replace("Space","Space").replace(/^Arrow/,"Arrow ");
+return{A,build,map:c=>R[c]||c,name,get(id){const a=A.find(x=>x[0]===id);return(S.keys&&S.keys[id])||(a&&a[2])},
+set(id,c){if(!S.keys||typeof S.keys!=="object")S.keys={};for(const k in S.keys)if(S.keys[k]===c&&k!==id)delete S.keys[k];const a=A.find(x=>x[0]===id);if(a&&c===a[2])delete S.keys[id];else S.keys[id]=c;build();try{sv()}catch(e){}},
+reset(){S.keys={};build();try{sv()}catch(e){}}}})();
+addEventListener("keydown",e=>{const code=e.isTrusted?Keys.map(e.code):e.code;
 if(e.target&&/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName))return;
 // macOS swallows the keyup of every key pressed while Command is held, so Command clears the keys instead of leaving them stuck
 if(e.key==="Meta"){clearKeys();return}
 if(inspOpen){ // gun inspect panel is open
-if(e.code==="KeyI"||e.code==="Escape"){e.preventDefault();inspClose();return}
+if(code==="KeyI"||code==="Escape"){e.preventDefault();inspClose();return}
 if(e.repeat)return;
-if(e.code==="KeyZ"||e.code==="BracketLeft")inspSwap(-1);else if(e.code==="KeyX"||e.code==="BracketRight")inspSwap(1);else if(e.code==="Space"){e.preventDefault();inspReplay()}
+if(code==="KeyZ"||code==="BracketLeft")inspSwap(-1);else if(code==="KeyX"||code==="BracketRight")inspSwap(1);else if(code==="Space"){e.preventDefault();inspReplay()}
 return}
-K[e.code]=1;if(!isGame()){if(state==="pause"&&!e.repeat&&e.code==="KeyM"){BigMap.toggle();return}if(state==="pause"&&!e.repeat&&e.code==="Escape"&&BigMap.on){BigMap.close();return}if(e.code==="Escape"&&!e.repeat&&state==="play"&&menuOpen&&$("puov")){pauseGame();return}if(e.code==="Escape"&&!e.repeat&&(state==="pause"||state==="play"&&menuOpen))resume();return}
-if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab","AltLeft","AltRight","ControlLeft","ControlRight"].includes(e.code))e.preventDefault();
-if(e.code==="Tab"){scoreOpen=true;return}
+K[code]=1;if(!isGame()){if(state==="pause"&&!e.repeat&&code==="KeyM"){BigMap.toggle();return}if(state==="pause"&&!e.repeat&&code==="Escape"&&BigMap.on){BigMap.close();return}if(code==="Escape"&&!e.repeat&&state==="play"&&menuOpen&&$("puov")){pauseGame();return}if(code==="Escape"&&!e.repeat&&(state==="pause"||state==="play"&&menuOpen))resume();return}
+if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab","AltLeft","AltRight","ControlLeft","ControlRight"].includes(code))e.preventDefault();
+if(code==="Tab"){scoreOpen=true;return}
 if(e.repeat)return;
-if(e.code==="Space"){P.jb=MV.jbuf;P.jpress=true;if(P.gr&&!(P.dead>0||P.fz>0||rL>0))tf("jump")}
-if(e.code==="KeyR")reload();
-if(e.code==="KeyP"){pauseGame();return}
-if(e.code==="KeyM"){BigMap.toggle();return}
-if(e.code==="KeyT"){if(mode==="parkour")restartMatch();return}
-if(e.code==="KeyV"&&mode==="parkour"){pkPref=pkPref===3?1:3;pkView=pkPref;flash(pkView===3?"Third person view":"First person view",800);snd("ui",.6);return}
-if(e.code==="KeyV"&&TP.ok()){TP.toggle();return}
-if(e.code==="KeyB"&&TP.on()){TP.swap();return}
-if(e.code==="KeyI"&&mode==="range"){inspStart();return}
-if(e.code==="KeyG"){grenAim=true}
-if(e.code==="Digit1"&&slot!==0&&mode!=="parkour"){slot=0;knifeCharging=false;knifeCharge=0;VM.swap();snd("ui",.6)}
-if(mode==="range"&&(e.code==="KeyZ"||e.code==="KeyX"||e.code==="BracketLeft"||e.code==="BracketRight"))rangeSwap(e.code==="KeyX"||e.code==="BracketRight"?1:-1);
-if(e.code==="Digit2"&&slot!==1&&mode!=="parkour"){slot=1;tf("knife");VM.swap();snd("ui",.6)}
-if(/^Digit[3-7]$/.test(e.code))emote(+e.code[5]-3);
-if(e.code==="Escape"){pauseGame();return}});
-addEventListener("keyup",e=>{
-K[e.code]=0;if(e.code==="Tab")scoreOpen=false;
-if(e.code==="KeyG"){if(grenAim){grenAim=false;clearGrenPrev();throwGrenade()}}
+if(code==="Space"){P.jb=MV.jbuf;P.jpress=true;if(P.gr&&!(P.dead>0||P.fz>0||rL>0))tf("jump")}
+if(code==="KeyR")reload();
+if(code==="KeyP"){pauseGame();return}
+if(code==="KeyM"){BigMap.toggle();return}
+if(code==="KeyT"){if(mode==="parkour")restartMatch();return}
+if(code==="KeyV"&&mode==="parkour"){pkPref=pkPref===3?1:3;pkView=pkPref;flash(pkView===3?"Third person view":"First person view",800);snd("ui",.6);return}
+if(code==="KeyV"&&TP.ok()){TP.toggle();return}
+if(code==="KeyB"&&TP.on()){TP.swap();return}
+if(code==="KeyI"&&mode==="range"){inspStart();return}
+if(code==="KeyG"){grenAim=true}
+if(code==="Digit1"&&slot!==0&&mode!=="parkour"){slot=0;knifeCharging=false;knifeCharge=0;VM.swap();snd("ui",.6)}
+if(mode==="range"&&(code==="KeyZ"||code==="KeyX"||code==="BracketLeft"||code==="BracketRight"))rangeSwap(code==="KeyX"||code==="BracketRight"?1:-1);
+if(code==="Digit2"&&slot!==1&&mode!=="parkour"){slot=1;tf("knife");VM.swap();snd("ui",.6)}
+if(/^Digit[3-7]$/.test(code))emote(+code[5]-3);
+if(code==="Escape"){pauseGame();return}});
+addEventListener("keyup",e=>{const code=e.isTrusted?Keys.map(e.code):e.code;
+K[code]=0;if(code==="Tab")scoreOpen=false;
+if(code==="KeyG"){if(grenAim){grenAim=false;clearGrenPrev();throwGrenade()}}
 });
 addEventListener("blur",()=>{clearKeys();scoreOpen=false;if(state==="play"&&!menuOpen)pauseGame()});
 addEventListener("contextmenu",e=>{if(state==="play")e.preventDefault()});

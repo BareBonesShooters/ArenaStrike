@@ -718,20 +718,21 @@ function pBoard(){
 const rows=Object.entries(S.board).sort((a,b)=>b[1].w-a[1].w||b[1].k-a[1].k);
 return"<table><tr><th>#</th><th>Player</th><th>Wins</th><th>Kills</th></tr>"+rows.map(([n,v],i)=>`<tr class="${n===S.name?"me":""}"><td>${i+1}</td><td>${esc(n)}</td><td>${v.w|0}</td><td>${v.k|0}</td></tr>`).join("")+"</table>"}
 try{document.body.classList.toggle("comfort",!!S.comfort)}catch(e){}
-function settingsHTML(){return`<div class="sec"><h3>Settings</h3>
-<div class="row"><span>Mouse sensitivity</span><span class="sm" data-sv="sens">${S.sens.toFixed(2)}</span></div><input type="range" min=".3" max="2.5" step=".05" value="${S.sens}" data-i="sens" aria-label="Mouse sensitivity">
-<div class="row"><span>Scoped sensitivity</span><span class="sm" data-sv="ssens">${S.ssens.toFixed(2)}</span></div><input type="range" min=".4" max="1.6" step=".05" value="${S.ssens}" data-i="ssens" aria-label="Scoped sensitivity">
-<div class="row"><span>Field of view</span><span class="sm" data-sv="fov">${Math.round(S.fov||75)}°</span></div><input type="range" min="60" max="100" step="1" value="${S.fov||75}" data-i="fov" aria-label="Field of view">
-<div class="row"><span>Frame rate limit</span></div><select data-i="fps" aria-label="Frame rate limit"><option value="0"${+(S.opt&&S.opt.fps)?"":" selected"}>No limit</option><option value="60"${(S.opt&&+S.opt.fps===60)?" selected":""}>60 fps</option><option value="30"${(S.opt&&+S.opt.fps===30)?" selected":""}>30 fps (cooler, longer battery)</option></select>
-<div class="row"><span>Battery saver</span></div><select data-i="bsave" aria-label="Battery saver"><option value="auto"${(!S.opt||!S.opt.bsave||S.opt.bsave==="auto")?" selected":""}>Auto (30 fps when the battery is low)</option><option value="on"${(S.opt&&S.opt.bsave==="on")?" selected":""}>Always on (30 fps)</option><option value="off"${(S.opt&&S.opt.bsave==="off")?" selected":""}>Off</option></select>
-<div class="row"><span>Comfort mode</span></div><select data-i="comfort" aria-label="Comfort mode"><option value="0"${S.comfort?"":" selected"}>Off</option><option value="1"${S.comfort?" selected":""}>On (no camera shake, head bob, FOV kick or screen flashes)</option></select>
-<div class="row"><span>Head bob</span><span class="sm" data-sv="bob">${Math.round((S.bob==null?1:S.bob)*100)}%</span></div><input type="range" min="0" max="1.5" step=".05" value="${S.bob==null?1:S.bob}" data-i="bob" aria-label="Head bob strength">
-<div class="row"><span>Volume</span></div><input type="range" min="0" max="1" step=".05" value="${S.vol}" data-i="vol" aria-label="Volume"><div class="row"><span>Music</span></div><input type="range" min="0" max="1" step=".05" value="${S.mvol}" data-i="mvol" aria-label="Music volume"><div class="row" style="opacity:.8;font-size:12px"><span>Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</span></div>
-${gfxSel()}
-<div class="row"><span>Aim down sights</span></div><select data-i="scope" aria-label="Aim down sights mode"><option value="toggle"${(S.opt&&S.opt.scopeToggle!==false)?" selected":""}>Toggle (click on / off)</option><option value="hold"${(S.opt&&S.opt.scopeToggle===false)?" selected":""}>Hold (must hold right-click)</option></select>
-<div class="row"><span>Touch aim assist</span></div><select data-i="assist" aria-label="Touch aim assist"><option value="on"${(S.opt&&S.opt.assist===false)?"":" selected"}>On (aim follows a target a little)</option><option value="off"${(S.opt&&S.opt.assist===false)?" selected":""}>Off</option></select>
-<div class="row"><span>Touch auto-fire</span></div><select data-i="autofire" aria-label="Touch auto-fire"><option value="off"${(S.opt&&S.opt.autoFire)?"":" selected"}>Off</option><option value="on"${(S.opt&&S.opt.autoFire)?" selected":""}>On (shoots while the crosshair is on an enemy)</option></select>
-</div>`}
+function keyLabels(){document.querySelectorAll('[data-a="rebind"]').forEach(x=>{const n=Keys.name(Keys.get(x.dataset.v));x.textContent=n;x.classList.remove("on");x.setAttribute("aria-label",x.closest(".srow").querySelector(".sl span").textContent+": "+n+". Change key")})}
+// settings: one row per control (label and value on the left, the control on the right), grouped by what the setting is about
+const sRow=(l,ctl,v)=>`<label class="srow"><span class="sl"><span>${l}</span>${v?`<em class="sv" data-sv="${v[0]}">${v[1]}</em>`:""}</span>${ctl}</label>`;
+const sGrp=(h,rows)=>`<section class="sgrp"><h3>${h}</h3>${rows.join("")}</section>`;
+function settingsHTML(head){const o=S.opt||{},sel=(i,lab,opts,cur)=>`<select data-i="${i}" aria-label="${lab}">${opts.map(([v,t])=>`<option value="${v}"${String(cur)===String(v)?" selected":""}>${t}</option>`).join("")}</select>`,rng=(i,lab,mn,mx,st,v)=>`<input type="range" min="${mn}" max="${mx}" step="${st}" value="${v}" data-i="${i}" aria-label="${lab}">`,bob=S.bob==null?1:S.bob;
+return`<div class="sec sset">${head?"<h3>Settings</h3>":""}<div class="sgrid">
+${sGrp("Aim",[sRow("Mouse sensitivity",rng("sens","Mouse sensitivity",.3,2.5,.05,S.sens),["sens",S.sens.toFixed(2)]),sRow("Scoped sensitivity",rng("ssens","Scoped sensitivity",.4,1.6,.05,S.ssens),["ssens",S.ssens.toFixed(2)]),sRow("Field of view",rng("fov","Field of view",60,100,1,S.fov||75),["fov",Math.round(S.fov||75)+"°"]),sRow("Aim down sights",sel("scope","Aim down sights mode",[["toggle","Toggle (click on / off)"],["hold","Hold (must hold right-click)"]],o.scopeToggle!==false?"toggle":"hold"))])}
+${sGrp("Sound",[sRow("Volume",rng("vol","Volume",0,1,.05,S.vol),["vol",Math.round(S.vol*100)+"%"]),sRow("Music",rng("mvol","Music volume",0,1,.05,S.mvol),["mvol",Math.round(S.mvol*100)+"%"])])}
+${sGrp("Performance",[gfxSel(),sRow("Frame rate limit",sel("fps","Frame rate limit",[["0","No limit"],["60","60 fps"],["30","30 fps (cooler, longer battery)"]],+o.fps===60?"60":+o.fps===30?"30":"0")),sRow("Battery saver",sel("bsave","Battery saver",[["auto","Auto (30 fps when the battery is low)"],["on","Always on (30 fps)"],["off","Off"]],o.bsave==="on"||o.bsave==="off"?o.bsave:"auto"))])}
+${sGrp("Comfort",[sRow("Comfort mode",sel("comfort","Comfort mode",[["0","Off"],["1","On (no camera shake, head bob, FOV kick or screen flashes)"]],S.comfort?"1":"0")),sRow("Head bob",rng("bob","Head bob strength",0,1.5,.05,bob),["bob",Math.round(bob*100)+"%"])])}
+${sGrp("Touch",[sRow("Aim assist",sel("assist","Touch aim assist",[["on","On (aim follows a target a little)"],["off","Off"]],o.assist===false?"off":"on")),sRow("Auto-fire",sel("autofire","Touch auto-fire",[["off","Off"],["on","On (shoots while the crosshair is on an enemy)"]],o.autoFire?"on":"off")),sRow("Gyro aiming",sel("gyro","Gyro aiming",[["off","Off"],["on","On (turn the phone to aim)"],["ads","Only while aiming down sights"]],o.gyro||"off")),
+`<div class="srow"><span class="sl"><span>Button layout</span></span><button class="b" data-a="tclay">Edit layout</button></div>`].filter((x,i)=>i<2||document.body.classList.contains("touch")))}
+${sGrp("Accessibility",[sRow("Colour-blind mode",sel("cb","Colour-blind mode",CBlind.list,o.cb||""))])}
+${document.body.classList.contains("touch")?"":sGrp("Keys",[...Keys.A.map(([id,l])=>`<div class="srow"><span class="sl"><span>${l}</span></span><button class="b kb" data-a="rebind" data-v="${id}" aria-label="${l}: ${Keys.name(Keys.get(id))}. Change key">${Keys.name(Keys.get(id))}</button></div>`),`<div class="srow"><span class="sl"><span>Defaults</span></span><button class="b" data-a="keyreset">Reset keys</button></div>`])}
+</div><p class="scred">Icons: game-icons.net (CC BY 3.0, Lorc &amp; Delapouite) &middot; Audio: Howler.js (MIT)</p></div>`}
 function pSettings(){
 return`<div class="sec"><h3>This device</h3><div class="row"><div class="l"><b>${esc(S.name)}</b><small>Display name for multiplayer. Everything below saves on this device.</small></div><button class="b" data-a="page" data-v="load">${ico("n-load",16)}Loadout</button></div>
 <div class="row"><div class="l"><b>Developer access</b><small>${DevAccess.unlocked?"Unlocked on this device.":"Locked. Enter a code under Redeem codes."}</small></div>${DevAccess.unlocked?`<button class="b" data-a="devlock">Lock access</button>`:`<button class="b" data-a="devaccess">${ico("n-lock",16)}Input code</button>`}</div></div>
@@ -744,7 +745,7 @@ return`<div class="sec"><h3>Watch how it works</h3>${Cine.clips([["move","Move a
 <div class="sec"><h3>Controls</h3><div class="keys">${K2.map(k=>`<div><span>${k[0]}</span><kbd>${k[1]}</kbd></div>`).join("")}</div></div>
 <div class="sec"><h3>Aiming</h3><p class="sm" style="line-height:1.55">Click the game to lock your mouse. The crosshair always stays in the centre and the view moves under it. If your browser blocks mouse lock, the mouse still turns the view, Q and E turn too, and the cursor appears when you reach a window edge so you know to bring it back. Right-click aims down sights. In Settings you can choose toggle (click on / off) or hold (keep right-click held to stay aimed). The crosshair turns red when it is over an enemy.</p></div>
 <div class="sec"><h3>Movement</h3><p class="sm" style="line-height:1.55">Run into a ledge while jumping and you climb up smoothly. Hold Space for a higher jump, tap it for a short hop, and press Space again in the air for a double jump. Stairs and low steps need no jump.</p></div>
-${settingsHTML()}
+${settingsHTML(1)}
 <div class="row"><div class="l"><b>New here?</b><small>A short guided match against an easy bot.</small></div><button class="b p" data-a="tut">Start tutorial</button></div>`}
 
 // servers
@@ -951,6 +952,11 @@ bpskip(){const t=bpTier();if(t>=BP_TIERS)return;const c=bpSkipCost();if(S.coins<
 skipc(){S.skipCase=!S.skipCase;sv();renderPage(true)},
 autoc(){S.autoCase=!S.autoCase;sv();renderPage(true)},
 page(e){if(e.dataset.v!=="shop")WON=null;openPage(e.dataset.v)},
+tclay(){try{TouchLayout.edit()}catch(_){}},
+keyreset(){Keys.reset();toast("Keys reset to defaults");keyLabels()},
+// rebinding: the button waits for the next key (Escape cancels); mouse buttons and the system keys stay as they are
+rebind(e){const id=e.dataset.v,b=e;b.textContent="Press a key…";b.classList.add("on");const f=ev=>{ev.preventDefault();ev.stopImmediatePropagation();removeEventListener("keydown",f,true);
+if(ev.code!=="Escape"&&ev.code!=="MetaLeft"&&ev.code!=="MetaRight"){Keys.set(id,ev.code);snd("ui",.5)}keyLabels()};addEventListener("keydown",f,true)},
 back(){goLobby()},
 mode(e){sel=e.dataset.v;lobbyUI()},
 df(e){S.opt.df=e.dataset.v;sv();lobbyUI()},
@@ -1043,10 +1049,13 @@ fov(t){S.fov=clamp(Math.round(+t.value||75),60,100);sv();syncSliders()},
 vol(t){setVol(clamp(+t.value,0,1));sv();syncSliders()},
 mvol(t){S.mvol=clamp(+t.value,0,1);Mus.go();sv();syncSliders()},
 gfx(t){Q.pick(t.value);syncSliders();toast(t.value==="auto"?"Graphics set to Auto ("+QL[S.gfx].n+" for "+(HW.name||"this device")+")":"Graphics set to "+QL[S.gfx].n+". Scenery detail updates next match")},
+gyro(t){if(!S.opt||typeof S.opt!=="object")S.opt={};const v=t.value;if(v==="off"){S.opt.gyro="off";sv();toast("Gyro aiming off");return}
+Gyro.enable().then(ok=>{if(ok){S.opt.gyro=v;sv();toast(v==="ads"?"Gyro aiming while aiming down sights":"Gyro aiming on")}else{S.opt.gyro="off";t.value="off";sv();toast("Motion sensors are not available or were not allowed")}})},
+cb(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.cb=t.value;sv();CBlind.apply();toast(t.value?"Colour-blind mode: "+CBlind.list.find(x=>x[0]===t.value)[1]:"Colour-blind mode off")},
 assist(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.assist=t.value!=="off";sv();toast(S.opt.assist?"Touch aim assist on":"Touch aim assist off")},
 autofire(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.autoFire=t.value==="on";sv();toast(S.opt.autoFire?"Auto-fire on (touch)":"Auto-fire off")},
 scope(t){if(!S.opt||typeof S.opt!=="object")S.opt={};S.opt.scopeToggle=t.value!=="hold";sv();toast(S.opt.scopeToggle?"ADS: toggle (click to aim)":"ADS: hold right-click");syncSliders()}};
-const gfxSel=()=>{const v=S.auto?"auto":String(S.gfx);return`<div class="row"><span>Graphics</span></div><select data-i="gfx" aria-label="Graphics quality">${[["auto",S.auto?"Auto ("+QL[S.gfx].n+")":"Auto"],...QL.map((q,i)=>[String(i),q.n])].map(o=>`<option value="${o[0]}"${o[0]===v?" selected":""}>${o[1]}</option>`).join("")}</select>`};
+const gfxSel=()=>{const v=S.auto?"auto":String(S.gfx);return sRow("Graphics",`<select data-i="gfx" aria-label="Graphics quality">${[["auto",S.auto?"Auto ("+QL[S.gfx].n+")":"Auto"],...QL.map((q,i)=>[String(i),q.n])].map(o=>`<option value="${o[0]}"${o[0]===v?" selected":""}>${o[1]}</option>`).join("")}</select>`)};
 // the orange fill on a slider is a CSS variable the script keeps in step with its value
 function paintRange(i){i.style.setProperty("--p",((i.value-i.min)/(i.max-i.min)*100).toFixed(1)+"%")}
 function paintRanges(){document.querySelectorAll("input[type=range]").forEach(paintRange)}

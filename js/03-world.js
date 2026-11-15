@@ -485,7 +485,7 @@ float wp=windT*1.6+position.x*.21+position.z*.17;transformed.xz+=sw*${amp.toFixe
 if(fxOn)fogFx(smat,"s"+(solid.w?"w"+amp0:""));
 const sm=solid.mesh(smat);sm.castShadow=true;sm.receiveShadow=true;grp.add(sm);
 if(glow.p.length){const gmesh=glow.mesh(WORLD.glowM=new T.MeshBasicMaterial({vertexColors:true}));grp.add(gmesh)}
-sc.add(grp);WORLD.group=grp;WORLD.theme=key;WORLD.seed=seed;
+sc.add(grp);WORLD.group=grp;WORLD.theme=key;WORLD.seed=seed;try{Echo.set(opt.level?"lv_"+opt.level:key)}catch(e){}
 if(!ruin)bakeGround(gt,th,!LOD.sh);else if(!LOD.sh)sun.intensity*=.35
 MISTU.cloudK.value=0;if(!ruin&&!opt.level&&!opt.parkour&&!opt.empty&&S.gfx<=2&&!(th.night>.3))try{Atmos.build(grp,th)}catch(e){}
 // spawn points (farthest-point sampling over free ground)

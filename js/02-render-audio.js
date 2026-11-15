@@ -164,7 +164,18 @@ bake(j[0],j[1],j[2],j[3]).then(()=>setTimeout(pump,j[0][0]==="m"?120:20))}
 function bplay(keys,v,rate){ // play one of the baked variants; false = not ready, caller falls back to the live synth
 if(!SB.on)return false;let c=[];for(const k of keys){const x=SB.h[k];if(x&&x.ok)c.push(x)}if(!c.length)return false;
 if(SB.act>40)return true;const x=c[(Math.random()*c.length)|0],id=x.h.play();x.h.volume(Math.max(0,Math.min(1,v)),id);if(PANV)try{x.h.stereo(PANV,id)}catch(e){}x.h.rate(Math.max(.5,Math.min(2.5,rate||1)),id);
-SB.act++;x.h.once("end",()=>{SB.act--},id);return true}
+SB.act++;x.h.once("end",()=>{SB.act--},id);LASTB.h=x.h;LASTB.id=id;return true}
+// per-map echo: loud sounds (gunfire, explosions) also feed one shared delay line tuned to the map: a long slap in canyons and on the open
+// spire, a short dense room inside the forge and temple, almost nothing in the soft swamp. One delay and two gains in all, so it is cheap.
+const LASTB={h:null,id:0};
+const Echo=(()=>{let inp=null,dl,fb,wet,lp;const P={meadow:[.16,.16,.1],sunset:[.18,.18,.11],frost:[.22,.26,.14],neon:[.12,.24,.13],desert:[.34,.3,.17],autumn:[.17,.18,.1],toxic:[.2,.24,.13],ruin:[.27,.32,.17],
+lv_hollow:[.09,.36,.17],lv_dunes:[.34,.3,.17],lv_corrupt:[.24,.34,.16],lv_spire:[.31,.3,.18],lv_frost:[.22,.26,.14],lv_swamp:[.13,.12,.06],lv_forge:[.07,.42,.2],lv_temple:[.11,.44,.22]};
+function make(){if(inp||!window.Howler||!Howler.ctx||!Howler.masterGain)return inp;const c=Howler.ctx;inp=c.createGain();dl=c.createDelay(1);fb=c.createGain();lp=c.createBiquadFilter();wet=c.createGain();
+lp.type="lowpass";lp.frequency.value=2600;inp.connect(dl);dl.connect(lp);lp.connect(fb);fb.connect(dl);lp.connect(wet);wet.connect(Howler.masterGain);set(Echo.key||"meadow");return inp}
+function set(k){Echo.key=k;if(!inp)return;const p=P[k]||P.meadow,t=Howler.ctx.currentTime,K=Tune.n("snd.echo",1,0,2);dl.delayTime.setTargetAtTime(p[0],t,.05);fb.gain.setTargetAtTime(p[1],t,.05);wet.gain.setTargetAtTime(p[2]*K,t,.05)}
+// connect the sound that just started (and its pool slot from then on) to the delay line
+function send(){try{const s=LASTB.h&&LASTB.h._soundById(LASTB.id),n=s&&s._node;if(!n||n._echo||!make())return;n.connect(inp);n._echo=1}catch(e){}}
+return{set,send,key:null}})();
 // a swelling note for music and pads (the live helpers above have no attack)
 function note(f,t,d,v,type,att,det){const a=actx();if(!a)return;const o=a.createOscillator(),g=a.createGain(),t0=a.currentTime+DL+t;o.type=type||"sine";o.frequency.value=f;if(det)o.detune.value=det;
 g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+(att||.02));g.gain.exponentialRampToValueAtTime(.0005,t0+d);o.connect(g);g.connect(OUT());o.start(t0);o.stop(t0+d+.02)}
@@ -256,13 +267,13 @@ function gunBake(g,front){if(!SB.on||!g)return;const id=g.id||g.n,o=gunVoice(g),
 for(let i=0;i<2;i++)bq("f"+i+":"+id,FD[o.f]||.7,()=>fireLayers(o,h,i),{wet:.22},front);
 bq("r:"+id,T+.5,()=>gunLive(g,"rl",1,T),{wet:.12},front);bq("d:"+id,.3,()=>gunLive(g,"dry",1),{wet:.05},front)}
 function gunSnd(g,k,v,T){try{if(!g)return;v=v==null?1:v;const id=g.id||g.n;
-if(k==="fire"){if(bplay(["f0:"+id,"f1:"+id],v,.97+Math.random()*.06))return}
+if(k==="fire"){if(bplay(["f0:"+id,"f1:"+id],v,.97+Math.random()*.06)){Echo.send();return}}
 else if(k==="rl"){const Tb=gT(g);if(bplay(["r:"+id],v,Math.max(.75,Math.min(1.4,Tb/Math.max(.5,T||Tb)))))return}
 else if(bplay(["d:"+id],v,1))return;
 gunBake(g,true);gunLive(g,k,v,T)}catch(e){}}
 function knBake(k,front){if(!SB.on||!k)return;for(const m of["swing","throw","hit","stick"])for(let i=0;i<(m==="swing"||m==="hit"?2:1);i++)bq("n:"+k.n+":"+m+i,.7,()=>knLive(k,m,1),{wet:.07},front)}
 function knSnd(k,m,v){try{if(!k)return;v=v==null?1:v;if(bplay(["n:"+k.n+":"+m+"0","n:"+k.n+":"+m+"1"],v,.96+Math.random()*.08))return;knBake(k,true);knLive(k,m,v)}catch(e){}}
-function snd(k,vol,rate){try{const v=vol==null?1:vol,r=rate||1;if(bplay(["s:"+k],v,r))return;sndLive(k,vol,rate)}catch(e){}}
+function snd(k,vol,rate){try{const v=vol==null?1:vol,r=rate||1;if(bplay(["s:"+k],v,r)){if(k==="boom")Echo.send();return}sndLive(k,vol,rate)}catch(e){}}
 // ----- music: two looping tracks written in code (calm lobby pad, driving battle beat), faded in and out by view -----
 function musLobby(){const bt=60/84,bar=bt*4,ch=[[110,165,220,261.63,329.63],[87.31,174.61,261.63,349.23,440],[130.81,196,261.63,329.63,392],[98,196,246.94,293.66,392]],ar=[[0,2,3,4,3,2,3,1],[0,2,4,3,2,3,4,2]];
 ch.forEach((c,ci)=>{const t0=ci*2*bar;c.forEach((f,i)=>{note(f,t0,2*bar-.15,.022,"triangle",.9,i%2?6:-6);note(f*2,t0,2*bar-.2,.008,"sine",1.2)});note(c[0]/2,t0,2*bar-.1,.07,"sine",.06);
@@ -392,7 +403,7 @@ const STDM={lobby:[60/84*32,musLobby,.15],battle:[60/126*16,musBattle,.1],boss:[
 setInterval(()=>{try{Mus.guard()}catch(e){}},700);
 const MB={lobby:.55,battle:.4,boss:.42,corrupt:.5},RT={lobby:.045,battle:.07,boss:.075,corrupt:.06}; // base volume and the loudness each kind is levelled to
 const Mus={want:"lobby",prev:null,pl:null,
-set(n){this.prev=null;this.want=n;this.stamp=performance.now();this.go()},
+set(n){this.prev=null;this.want=n;this.stamp=performance.now();if(n==="lobby")this.inten(1);this.go()},
 view(v){const g=v===""||v==="ps"||v==="end";if(!g)this.set("lobby");else if(!["battle","boss","corrupt"].includes(this.want))this.set("battle")},
 // watchdog: only the current track may ever sound. Anything else that is still playing after a switch is stopped.
 // watchdog: exactly one music track may ever sound. Anything else is stopped, and the right track is retried until the audio engine is unlocked.
@@ -413,7 +424,11 @@ if(this.pl){try{this.pl.h.volume(this.vol(key),this.pl.id)}catch(e){}return}
 const x=SB.h["m:"+key];if(!x||!x.ok){this.ensure(key);return}
 if(!(window.Howler&&Howler.ctx&&Howler.ctx.state==="running"))return; // never queue a play while the browser has audio locked: queued plays are what stack up
 this.killOthers(null);try{x.h.stop()}catch(e){}
-const id=x.h.play();x.h.volume(0,id);x.h.fade(0,this.vol(key),1200,id);this.pl={n:key,h:x.h,id}}};
+const id=x.h.play();x.h.volume(0,id);x.h.fade(0,this.vol(key),1200,id);this.pl={n:key,h:x.h,id};musRoute(x.h,id)},
+// music that builds: game code reports how intense the fight is (0 calm .. 1 full); the music runs through its own lowpass, which opens up as it rises
+inten(k){const f=musF();if(!f)return;const hz=Tune.n("snd.musLo",700,200,4000)*Math.pow(20000/Tune.n("snd.musLo",700,200,4000),clamp(k,0,1));f.frequency.setTargetAtTime(Math.min(20000,hz),Howler.ctx.currentTime,k>(this.ik||0)?.6:1.8);this.ik=k}};
+let MUSF=null;function musF(){try{if(!MUSF&&window.Howler&&Howler.ctx&&Howler.masterGain){MUSF=Howler.ctx.createBiquadFilter();MUSF.type="lowpass";MUSF.frequency.value=20000;MUSF.Q.value=.5;MUSF.connect(Howler.masterGain)}}catch(e){}return MUSF}
+function musRoute(h,id){try{const s=h._soundById(id),n=s&&s._node,f=musF();if(!n||!f)return;n.disconnect();n.connect(f)}catch(e){}}
 // ----- game-side helpers -----
 let hbT=0,ksN=0,ksT=0,hvT=0,hvL=null;
 function lowHp(){const n=performance.now();if(n>hbT){hbT=n+420+P.hp*20;snd("beat",.9)}}
