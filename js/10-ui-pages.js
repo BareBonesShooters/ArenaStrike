@@ -8,13 +8,15 @@ const rcol=it=>RC[it.r]||RC[0],owns=it=>!!S.own[it.id];
 const ico=(n,s)=>`<svg class="ic${n.slice(0,2)==="n-"?" ln":""}"${s?` style="width:${s}px;height:${s}px"`:""} aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const seg=(a,items,cur)=>items.map(([v,l])=>`<button class="b${String(cur)===String(v)?" on":""}" data-a="${a}" data-v="${v}">${l}</button>`).join("");
 
+// entrance gate: .enter exists only while a view opens, so renderPage() rebuilds (tab/filter clicks) never replay the stagger
+function enterEl(el){if(!el)return;clearTimeout(el._en);el.classList.remove("enter");void el.offsetWidth;el.classList.add("enter");el._en=setTimeout(()=>el.classList.remove("enter"),520)}
 function show(v){
 if(v!=="pg")LoadoutPreview.stop();
 try{if(v==="lobby"&&!bkReady)backdrop()}catch(e){}
 if(v==="")bkReady=false;
 try{if(view==="pg"&&v!=="pg"&&typeof Thumb!=="undefined")Thumb.flush()}catch(e){}
 try{if(v!==view)snd("whoosh",.35);Mus.view(v)}catch(e){}
-for(const id of["lobby","pg","ps","end"]){const el=$(id);if(el)el.classList.toggle("hid",id!==v)}
+for(const id of["lobby","pg","ps","end"]){const el=$(id);if(!el)continue;const was=el.classList.contains("hid");el.classList.toggle("hid",id!==v);if(was&&id===v)enterEl(el)}
 if(HUDV.includes(v)){const h=$("hud");if(h)h.classList.add("hid")}
 // canvas must not steal lobby/UI clicks
 try{if(rd&&rd.domElement)rd.domElement.style.pointerEvents=(v===""||v==="hud")?"auto":"none"}catch(e){}
@@ -32,7 +34,7 @@ const pg=$("pg"),lb=$("lobby"),ps=$("ps"),en=$("end"),hd=$("hud");
 if(pg)pg.classList.add("hid");
 if(ps)ps.classList.add("hid");
 if(en)en.classList.add("hid");
-if(lb)lb.classList.remove("hid");
+if(lb){const was=lb.classList.contains("hid");lb.classList.remove("hid");if(was)enterEl(lb)}
 if(hd)hd.classList.add("hid");
 view="lobby";
 try{Mus.view("lobby")}catch(e){}
@@ -157,7 +159,7 @@ function openPage(v){if(v==="bp")BPV.ch=-1;
 if(!PG[v])return;
 if(PAGE==="load"&&v!=="load"&&Mus.prev){Mus.prev=null;Mus.go()}
 PAGE=v;Thumb.flush();$("pgt").textContent=PG[v].t;$("pgb").classList.remove("still");$("pgb").scrollTop=0;
-renderPage(false);show("pg");try{if(!pgHist&&state==="lobby"){history.pushState({pg:v},"");pgHist=true}}catch(e){}
+renderPage(false);show("pg");enterEl($("pg"));try{if(!pgHist&&state==="lobby"){history.pushState({pg:v},"");pgHist=true}}catch(e){}
 const b=document.querySelector("#pg .sh-h .b");if(b&&kbNav)b.focus({preventScroll:true});
 }
 function renderPage(still){
@@ -253,6 +255,7 @@ $("pgb").querySelectorAll(".cs2 .b,.fnc .b,.shtabs .b,.shcats .b,.shbar .b").for
 const cw=box.clientWidth/zm;
 box.querySelectorAll(".reel").forEach(reel=>{const stop=WI*104+48-cw/2+(rnd()-.5)*60;
 reel.animate([{transform:"translateX(0)"},{transform:`translateX(${-stop}px)`}],{duration:dur,easing:"cubic-bezier(.12,.72,.08,1)",fill:"forwards"})});
+setTimeout(()=>box.querySelectorAll(".reel").forEach(rl=>{const c=rl.children[WI];if(c)c.classList.add("win")}),dur);
 snd("tick",.6);
 if(rare)setTimeout(()=>rareFx(best),dur-200);
 setTimeout(finish,dur+(rare?2000:250))}

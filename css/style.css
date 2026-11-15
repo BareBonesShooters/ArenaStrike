@@ -5,7 +5,7 @@ color-scheme:dark;
 --fill:rgba(12,18,34,.8);--fill-hi:rgba(255,255,255,.1);--rim:rgba(255,255,255,.18);--hair:rgba(255,255,255,.09);
 --shadow:0 18px 50px rgba(2,6,23,.45);
 --r1:12px;--r2:18px;--r3:26px;
---spring:cubic-bezier(.2,.9,.25,1.12);--ease:cubic-bezier(.32,.72,0,1);
+--spring:cubic-bezier(.2,.9,.25,1.12);--ease-out:cubic-bezier(.23,1,.32,1);--ease:cubic-bezier(.32,.72,0,1);
 --z-hud:5;--z-ov:20;--z-toast:40;
 font-family:Outfit,"SF Pro Display","Segoe UI",Roboto,"Helvetica Neue","Noto Sans","DejaVu Sans",system-ui,sans-serif}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -50,8 +50,8 @@ input[type=range]{width:100%;accent-color:var(--ac);height:28px}
 #pg{z-index:30}
 #lobby{z-index:20}
 .ov{background:radial-gradient(120% 90% at 50% 0%,rgba(6,10,22,.12),rgba(4,8,18,.5))}
-@keyframes rise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:no-preference){.ov:not(.hid)>.gl,.ov:not(.hid)>main>*,.stg>*{animation:rise .4s var(--ease) backwards;animation-delay:calc(var(--i,0)*32ms)}}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+/* page entrance lives in the Motion pass block (glass.css): gated on .enter so rebuilds do not replay it */
 
 /* lobby */
 #lobby{align-items:stretch;justify-content:center}
@@ -118,7 +118,7 @@ transition:transform .2s var(--ease),border-color .2s var(--ease),background .2s
 .th img{width:100%;height:100%;object-fit:contain}
 .th{position:relative}
 .th::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(130px 96px at var(--mx,28%) var(--my,8%),rgba(255,255,255,.2),transparent 70%);opacity:.5;transition:opacity .25s}@media (hover:hover) and (pointer:fine){.it:hover .th::after{opacity:1}}
-.it .th img{transition:transform .4s cubic-bezier(.22,1,.36,1);transform:perspective(420px) rotateX(var(--ty,0deg)) rotateY(var(--tx,0deg)) scale(var(--s,1));will-change:transform}@media (hover:hover) and (pointer:fine){.it:hover{--s:1.07}}
+.it .th img{transition:transform .4s var(--ease-out);transform:perspective(420px) rotateX(var(--ty,0deg)) rotateY(var(--tx,0deg)) scale(var(--s,1))}@media (hover:hover) and (pointer:fine){.it:hover .th img{will-change:transform}}@media (hover:hover) and (pointer:fine){.it:hover{--s:1.07}}
 @media (prefers-reduced-motion:no-preference){
 .it.hi .th::before{content:"";position:absolute;top:-10%;bottom:-10%;left:0;width:34%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.34),transparent);transform:translateX(-160%) skewX(-18deg);animation:sweep 4.8s cubic-bezier(.22,1,.36,1) infinite;animation-delay:calc(var(--i,0)*.4s);pointer-events:none;z-index:1}
 @keyframes sweep{0%,55%{transform:translateX(-160%) skewX(-18deg)}100%{transform:translateX(420%) skewX(-18deg)}}}
@@ -240,7 +240,7 @@ body.touch #radar{pointer-events:auto}
 #ammo small{display:block;font-size:.8rem;color:var(--ink2);font-weight:700;margin-bottom:4px;letter-spacing:.04em}
 #am{font-size:2.6rem;font-weight:800}#amx{font-size:1.1rem;color:var(--ink2);margin-left:6px;font-weight:700}
 #msg{left:0;right:0;bottom:22%;text-align:center;font-size:1.6rem;font-weight:800;letter-spacing:.02em}
-#msg.pop{animation:pop .5s var(--spring)}@keyframes pop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
+#msg.pop{animation:pop .24s var(--ease-out)}@keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
 #respawn{left:0;right:0;top:38%;text-align:center;font-size:1.5rem;font-weight:800}
 #regen{left:50%;bottom:17%;transform:translateX(-50%);padding:6px 14px;border-radius:99px;background:rgba(8,12,24,.55);border:1px solid var(--hair);font-size:.88rem;font-weight:700;color:var(--ink2)}
 #regen.on{color:#86efac;border-color:rgba(74,222,128,.5);box-shadow:0 0 18px rgba(74,222,128,.25)}
@@ -601,7 +601,7 @@ body.touch .sec{margin-bottom:10px}}
 @keyframes cbout{to{opacity:0;transform:translate(-50%,-70px)}}
 @keyframes cbp{50%{transform:scale(1.12)}}@keyframes cbt{to{transform:scaleX(0)}}
 @media (prefers-reduced-motion:reduce){.cc>*,.cine,.cban{animation-duration:.01s!important;animation-delay:0s!important}.cth::before,.cban .cbi{animation:none}}
-@media (prefers-reduced-motion:no-preference){#kfeed>*{animation:kfin .4s var(--spring) both}@keyframes kfin{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}#end:not(.hid) .endt{animation:cpop .8s var(--spring) both}#end:not(.hid) .stats>*,#end:not(.hid) #est>*{animation:rise .5s var(--spring) both}#end:not(.hid) #est>*:nth-child(2){animation-delay:.08s}#end:not(.hid) #est>*:nth-child(3){animation-delay:.16s}#end:not(.hid) #est>*:nth-child(4){animation-delay:.24s}#end:not(.hid) #est>*:nth-child(n+5){animation-delay:.32s}}
+@media (prefers-reduced-motion:no-preference){#end:not(.hid) .endt{animation:cpop .8s var(--spring) both}#end:not(.hid) .stats>*,#end:not(.hid) #est>*{animation:rise .5s var(--spring) both}#end:not(.hid) #est>*:nth-child(2){animation-delay:.08s}#end:not(.hid) #est>*:nth-child(3){animation-delay:.16s}#end:not(.hid) #est>*:nth-child(4){animation-delay:.24s}#end:not(.hid) #est>*:nth-child(n+5){animation-delay:.32s}}
 /* motion for everything else: hover sheen on every thumbnail, lift on cards, softly breathing rarity glow on the rarest items */
 .th::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 38%,rgba(255,255,255,.2) 50%,transparent 62%);transform:translateX(-130%);transition:transform .8s var(--ease)}@media (hover:hover) and (pointer:fine){.it:hover .th::after,.th:hover::after{transform:translateX(130%)}}
 @media (prefers-reduced-motion:no-preference){
@@ -613,7 +613,6 @@ body.touch .sec{margin-bottom:10px}}
 .b:active{transform:scale(.97)}
 .mode{transition:background .2s var(--ease),border-color .2s var(--ease),transform .2s var(--spring)}@media (hover:hover) and (pointer:fine){.mode:hover{transform:translateX(3px)}}
 .rail .b{transition:background .2s var(--ease),color .2s var(--ease),transform .2s var(--spring)}@media (hover:hover) and (pointer:fine){.rail .b:hover{transform:translateX(3px)}}
-.toast{animation:rise .45s var(--spring) both}
 }
 .wsh-ov{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:rgba(3,6,16,.62);animation:wfade .18s ease-out}
 .wsh{position:relative;width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:18px;border-radius:var(--r3);border:1px solid var(--rim);background:linear-gradient(160deg,rgba(18,26,48,.96),rgba(8,12,26,.97));box-shadow:0 0 0 1px color-mix(in srgb,var(--rc) 40%,transparent),0 24px 70px rgba(0,0,0,.55);animation:wpop .26s cubic-bezier(.2,1.2,.3,1)}
@@ -783,7 +782,7 @@ body.dthshake #gl{animation:dShake .55s cubic-bezier(.36,.07,.19,.97) both}
 .bump{display:inline-block}
 @media (prefers-reduced-motion:no-preference){
 .bump{animation:bump .32s var(--spring)}
-@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.28);filter:brightness(1.35)}100%{transform:scale(1)}}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}
 #hpw .hpbar{position:relative}
 #hpw .hpbar #hpt{position:absolute;left:0;top:0;bottom:0;width:100%;background:linear-gradient(90deg,#fde68a,#fb923c);border-radius:7px}
 #hpw .hpbar #hp{position:relative;z-index:1}

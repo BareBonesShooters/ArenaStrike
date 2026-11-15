@@ -674,11 +674,13 @@ for(const e of E){const g=e.g;if(!g)continue;e.cd=Math.max(e.cd||0,1.2);e.wind=0
 if(g.userData)g.userData.kick=0;setMuzzle(g,false)}
 while(projs.length){const o=projs.pop();try{sc.remove(o.m)}catch(e){}}
 firing=false;knifeCharging=false;knifeCharge=0;grenAim=false;clearGrenPrev()}
+// pick feedback only: the chosen card lifts, the rest dim, the overlay fades. Game state was already resumed by the caller.
+function puClose(ov,b){if(b)b.classList.add("sel");if(matchMedia("(prefers-reduced-motion:reduce)").matches||document.body.classList.contains("lite")){ov.remove();return}ov.classList.add("out");setTimeout(()=>ov.remove(),180)}
 function offerPU(){if(state!=="play"||mode!=="waves")return;menuOpen=true;Aim.release();document.body.classList.remove("playing");grenAim=false;clearGrenPrev();freezeCombat();
 const pool=[...PUD].sort(()=>rnd()-.5).slice(0,3),ov=document.createElement("div");ov.id="puov";
-ov.innerHTML=`<div class="puw"><div class="eyebrow">Level ${xpLevel} · Power-up</div><h2>Choose a power-up</h2><div class="pucs">${pool.map(q=>`<button class="puc" data-p="${q.id}"><span class="pue">${gly(q.e)}</span><b>${q.n}</b><small>${q.d}</small>${PU.got[q.id]?`<em>owned x${PU.got[q.id]}</em>`:""}</button>`).join("")}</div></div>`;
+ov.innerHTML=`<div class="puw"><div class="eyebrow lvup">Level ${xpLevel} · Power-up</div><h2>Choose a power-up</h2><div class="pucs">${pool.map(q=>`<button class="puc" data-p="${q.id}"><span class="pue">${gly(q.e)}</span><b>${q.n}</b><small>${q.d}</small>${PU.got[q.id]?`<em>owned x${PU.got[q.id]}</em>`:""}</button>`).join("")}</div></div>`;
 document.body.appendChild(ov);
-ov.addEventListener("click",ev=>{const b=ev.target.closest(".puc");if(!b)return;const q=PUD.find(x=>x.id===b.dataset.p);q.f();PU.got[q.id]=(PU.got[q.id]||0)+1;ov.remove();menuOpen=false;document.body.classList.add("playing");snd("pick");flash(q.n,1200);Aim.request()})}
+ov.addEventListener("click",ev=>{const b=ev.target.closest(".puc");if(!b)return;const q=PUD.find(x=>x.id===b.dataset.p);q.f();PU.got[q.id]=(PU.got[q.id]||0)+1;puClose(ov,b);menuOpen=false;document.body.classList.add("playing");snd("pick");flash(q.n,1200);Aim.request()})}
 function offerCorruptedPU(left,label){
 if(mode==="waves"&&state==="pause"){const w=wave;setTimeout(()=>{if(wave===w)offerCorruptedPU(left,label)},400);return}
 if(state!=="play"||mode!=="waves")return;menuOpen=true;Aim.release();document.body.classList.remove("playing");grenAim=false;clearGrenPrev();freezeCombat();
@@ -688,7 +690,7 @@ const ov=document.createElement("div");ov.id="puov";
 ov.innerHTML=`<div class="puw"><div class="eyebrow">${label||"Corrupted"} reward · ${left} left</div><h2>Choose from all power-ups</h2><div class="pucs">${pool.map(q=>`<button class="puc" data-p="${q.id}"><span class="pue">${gly(q.e)}</span><b>${q.n}</b><small>${q.d}</small></button>`).join("")}</div></div>`;
 document.body.appendChild(ov);
 ov.addEventListener("click",ev=>{const b=ev.target.closest(".puc");if(!b)return;const q=PUD.find(x=>x.id===b.dataset.p);if(!q||taken.has(q.id))return;q.f();PU.got[q.id]=(PU.got[q.id]||0)+1;taken.add(q.id);snd("pick");flash(q.n,900);left--;
-if(left<=0){ov.remove();menuOpen=false;document.body.classList.add("playing");corrupted=false;wn=1.2;Aim.request()}else show()})};
+if(left<=0){puClose(ov,b);menuOpen=false;document.body.classList.add("playing");corrupted=false;wn=1.2;Aim.request()}else show()})};
 show()}
 function flashScreen(c){if(S.comfort)return;const d=document.createElement("div");d.style.cssText="position:fixed;inset:0;z-index:30;pointer-events:none;background:"+c+";opacity:.35;transition:opacity .35s";document.body.appendChild(d);requestAnimationFrame(()=>d.style.opacity=0);setTimeout(()=>d.remove(),450)}
 function celebrate(e){const id=S.own[S.fin]?S.fin:"f0";playFinisher(I(id)||FN[0],e.g.position)}

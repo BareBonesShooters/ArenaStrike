@@ -330,13 +330,13 @@ if(code==="KeyI"||code==="Escape"){e.preventDefault();inspClose();return}
 if(e.repeat)return;
 if(code==="KeyZ"||code==="BracketLeft")inspSwap(-1);else if(code==="KeyX"||code==="BracketRight")inspSwap(1);else if(code==="Space"){e.preventDefault();inspReplay()}
 return}
-K[code]=1;if(!isGame()){if(state==="pause"&&!e.repeat&&code==="KeyM"){BigMap.toggle();return}if(state==="pause"&&!e.repeat&&code==="Escape"&&BigMap.on&&BigMap.top){BigMap.close();return}if(code==="Escape"&&!e.repeat&&state==="play"&&menuOpen&&$("puov")){pauseGame();return}if(code==="Escape"&&!e.repeat&&(state==="pause"||state==="play"&&menuOpen))resume();return}
+K[code]=1;if(!isGame()){if(state==="pause"&&!e.repeat&&code==="KeyM"){BigMap.toggle();return}if(state==="pause"&&!e.repeat&&code==="Escape"&&BigMap.on&&BigMap.top){BigMap.close();return}if(code==="Escape"&&!e.repeat&&state==="play"&&menuOpen&&$("puov")){pauseGame(true);return}if(code==="Escape"&&!e.repeat&&(state==="pause"||state==="play"&&menuOpen))resume();return}
 if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Tab","AltLeft","AltRight","ControlLeft","ControlRight"].includes(code))e.preventDefault();
 if(code==="Tab"){scoreOpen=true;return}
 if(e.repeat)return;
 if(code==="Space"){P.jb=MV.jbuf;P.jpress=true;if(P.gr&&!(P.dead>0||P.fz>0||rL>0))tf("jump")}
 if(code==="KeyR")reload();
-if(code==="KeyP"){pauseGame();return}
+if(code==="KeyP"){pauseGame(true);return}
 if(code==="KeyM"){BigMap.toggle();return}
 if(code==="KeyT"){if(mode==="parkour")restartMatch();return}
 if(code==="KeyV"&&mode==="parkour"){pkPref=pkPref===3?1:3;pkView=pkPref;flash(pkView===3?"Third person view":"First person view",800);snd("ui",.6);return}
@@ -348,7 +348,7 @@ if(code==="Digit1"&&slot!==0&&mode!=="parkour"){slot=0;knifeCharging=false;knife
 if(mode==="range"&&(code==="KeyZ"||code==="KeyX"||code==="BracketLeft"||code==="BracketRight"))rangeSwap(code==="KeyX"||code==="BracketRight"?1:-1);
 if(code==="Digit2"&&slot!==1&&mode!=="parkour"){slot=1;tf("knife");VM.swap();snd("ui",.6)}
 if(/^Digit[3-7]$/.test(code))emote(+code[5]-3);
-if(code==="Escape"){pauseGame();return}});
+if(code==="Escape"){pauseGame(true);return}});
 addEventListener("keyup",e=>{const code=e.isTrusted?Keys.map(e.code):e.code;
 K[code]=0;if(code==="Tab")scoreOpen=false;
 if(code==="KeyG"){if(grenAim){grenAim=false;clearGrenPrev();throwGrenade()}}
@@ -370,15 +370,15 @@ function leaveMatch(){const b=$("pleave");if(!b.classList.contains("arm")){b.cla
 function pauseMeta(){let i=["Arena"];try{i=BigMap.info()}catch(e){}
 $("pmeta").innerHTML=i.map(t=>`<span class="pill">${esc(t)}</span>`).join("");$("prestart").classList.toggle("hid",mode!=="parkour")}
 // the power-up picker can be paused too: the pause menu opens over it and Resume goes back to the picker
-function pauseGame(){
-if(state!=="play"||menuOpen&&!$("puov"))return;if(CustomBattle.active){const panel=$("custom-battle-ui");if(panel)panel.hidden=true}clearKeys();Aim.release();syncSliders();try{pauseQuests()}catch(e){}
+function pauseGame(kb){
+if(state!=="play"||menuOpen&&!document.querySelector("#puov:not(.out)"))return;if(CustomBattle.active){const panel=$("custom-battle-ui");if(panel)panel.hidden=true}clearKeys();Aim.release();syncSliders();try{pauseQuests()}catch(e){}
 state="pause";menuOpen=false;disarmLeave();pauseMeta();
-document.body.classList.remove("playing");show("ps");
+document.body.classList.remove("playing");show("ps");$("ps").classList.toggle("kb",!!kb);
 const q=$("pq");q.classList.add("fresh");setTimeout(()=>q.classList.remove("fresh"),900)}
 function resume(){
 if(CustomBattle.active)return CustomBattle.resume();
 if(state!=="pause"&&state!=="play")return;
-if(BigMap.top)BigMap.close();state="play";if($("puov")){menuOpen=true;show("");return}menuOpen=false;show("");document.body.classList.add("playing");Aim.reset();Aim.request();
+if(BigMap.top)BigMap.close();state="play";if(document.querySelector("#puov:not(.out)")){menuOpen=true;show("");return}menuOpen=false;show("");document.body.classList.add("playing");Aim.reset();Aim.request();
 // 3s freeze after unpause — player and AI locked
 P.fz=Math.max(P.fz,3);lastCount=0;P.vx=P.vz=0;clearKeys();flash("3",500);snd("tick")}
 function quit(){
