@@ -234,7 +234,6 @@ function hurtE(e,d,head,pt){
 // Invalid damage must never corrupt HP and leave an untargetable, living enemy.
 if(!Number.isFinite(d)||d<0)return;
 if(e.custom)return CustomBattle.playerDamage(e,d,head,pt);
-if(pt)HX.num(e,pt,d,head);
 if(e.hp<=0||e.em>0||e.phz)return;
 // boss is invulnerable while any of its minion wave is still alive
 if(e.boss){const minions=E.filter(x=>x!==e&&x.t==="mon"&&x.minion&&x.hp>0);if(minions.length){flash("Clear the minions first!",700);snd("ui",.4);return}}
@@ -244,6 +243,7 @@ if(PU.on&&e.t==="mon"){const critRoll=rnd()<PU.crit;if(critRoll){d*=2;wasCrit=tr
 else if(PU.crit>0&&rnd()<PU.crit){d*=2;wasCrit=true}
 if(e.t==="mon")d=LV.toMon(e,d,head);
 if(!Number.isFinite(d))return;
+if(pt)HX.num(e,pt,d,head);
 e.hp-=d;if(e.t==="mon")monBar(e);if(e.t==="bot")botBar(e);snd(head?"head":"hit");hitMark(head);hurtFlash(e.g,true);e.hf=.09;e.alert=1;
 {const big=d>=(e.hpMax||100)*.28;hitReact(e.g,P.x,P.z,big?1.6:1,head);if(big&&e.t==="mon"&&e.hp>0)e.stg=Math.max(e.stg||0,.35)}
 if(wasCrit)critFx(pt||{x:e.g.position.x,y:e.g.position.y+1.2,z:e.g.position.z});
@@ -564,7 +564,7 @@ document.body.classList.add("shk");setTimeout(()=>document.body.classList.remove
 function spawnBoss(corr,ghost){
 try{snd("roar",1);setTimeout(()=>snd("slam",.8),700)}catch(e){}
 const lb=LV.on()&&!ghost?LV.bossDef():null;
-let o=awaySpot(P.x,P.z,20);if(blocked(o.x,o.z,0,corr?1.45:1.2))o=freeSpot(o.x,o.z);const g=mkMon(2),sc_=bossScale(),lv=1+xpLevel*.035,hp=Math.round((4200+wave*620)*(1+sc_.tier*.03)*sc_.bf*lv*(corr?2.2:1)*coopHp()*bdf().hp*(lb?(lb.hp||1)*LV.ramp():1));
+let o=awaySpot(P.x,P.z,20);if(blocked(o.x,o.z,0,corr?1.45:1.2))o=freeSpot(o.x,o.z);const g=mkMon(2),sc_=bossScale(),lv=1+xpLevel*.035,hp=Math.round((4200+wave*620)*(1+sc_.tier*.03)*(grind?1:Math.sqrt(sc_.bf))*lv*(corr?(grind?1.3:2.2):1)*coopHp()*bdf().hp*(grind?Tune.n("boss.grindHp",.3,.05,1):1)*(lb?(lb.hp||1)*LV.ramp():1));
 if(lb)LV.skin(g,2,{boss:true});g.scale.multiplyScalar(lb&&lb.scale?lb.scale:corr?2.7:2.2);
 if(corr&&!lb){const tc=new T.Color(0x1a0008);(g.userData.mats||[]).forEach(m=>{m.color.lerp(tc,.68);m.userData.em=0x4a0010;m.emissive.setHex(0x4a0010)})}
 const lt=new T.PointLight(lb&&lb.col?lb.col:ghost?0x40e0ff:corr?0xa020ff:0xff2030,2.5*PLK(30,1.5),PLR(30,1.5),PLD);lt.position.y=3;g.add(lt);

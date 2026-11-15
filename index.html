@@ -161,5 +161,8 @@
 <script type="text/x-deferred" data-src="js/10-ui-pages.js"></script>
 <script type="text/x-deferred" data-src="js/11-main-loop.js"></script>
 <script type="module" src="js/00b-boot.js"></script>
+<!-- boot watchdog: if a game file fails to load (an incomplete upload, a flaky connection), the module never runs and the title would sit there
+     forever; after 15 s without the engine, say so and offer a reload instead -->
+<script>setTimeout(function(){if(window.THREE||document.getElementById("nogl"))return;var d=document.createElement("div");d.id="nogl";d.setAttribute("role","alert");d.style.cssText="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(6,10,20,.92);color:#e8eef8;font:16px/1.5 system-ui,sans-serif;text-align:center";d.innerHTML="<div style='max-width:420px'><h2 style='margin:0 0 12px;font-size:22px'>The game didn't finish loading</h2><p style='margin:0 0 16px'>Some game files could not be downloaded. Check your connection and try again.</p><button onclick='location.reload()' style='min-height:44px;padding:0 22px;border-radius:12px;border:0;background:#ff7a29;color:#160b02;font:600 16px system-ui'>Reload</button></div>";document.body.appendChild(d)},15000)</script>
 </body></html>
 

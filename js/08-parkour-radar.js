@@ -387,7 +387,7 @@ return{frame}})();
 
 // ---------- map (M): the whole arena from above, north up, with every player, bot and monster on it ----------
 // Plays on top of the live game (it never pauses it); in the pause screen it has a close button. Parkour shows the course platforms shaded by height.
-const BigMap=(()=>{
+const BigMap=(()=>{let top=false;
 let on=false,cv=null,g=null,ov=null,baked=null,bk=null,bkN=-1,bnd=null,raf=0,last=0,lastW=0,dpr=1;
 const MC=["#4ade80","#fbbf24","#fb7185"],BAKE=720;
 const modeName=()=>{if(PT.on&&PM_MODES[PT.mode])return PM_MODES[PT.mode].n;const m=MD.find(x=>x[0]===mode);return m?m[1]:"Arena"};
@@ -446,7 +446,7 @@ if(s)s.textContent=c?"Height "+Math.max(0,Math.round(P.y))+" m · Falls "+PK.st.
 function loop(t){
 if(!on)return;
 if(state!=="play"&&state!=="pause"){close();return}
-ov.classList.toggle("pm",state==="pause");
+ov.classList.toggle("pm",state==="pause");ov.classList.toggle("top",top&&state==="pause");
 if(t-last>=33){last=t;try{draw()}catch(e){}}
 raf=requestAnimationFrame(loop)}
 function open(){
@@ -455,6 +455,6 @@ if(!cv){cv=$("bigmap");ov=$("mapov");if(!cv)return;g=cv.getContext("2d")}
 on=true;lastW=0;$("mapt").textContent=modeName()+" · "+mapName();
 const c=WORLD.course;
 $("mapl").innerHTML=c?'<span><i style="background:#fff"></i>You</span><span><i style="background:#55ddff"></i>Checkpoint</span><span><i style="background:#ffd24a"></i>Gem / goal</span><span><i style="background:#fff;opacity:.55"></i>Ghost</span>':'<span><i style="background:#fff"></i>You</span><span><i style="background:#ef4444"></i>Enemy</span>'+(PT.on?'<span><i style="background:#60a5fa"></i>Team</span>':"")+'<span><i style="background:#4ade80"></i>Monsters</span>';
-ov.classList.remove("hid");ov.classList.toggle("pm",state==="pause");cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);try{snd("ui",.5)}catch(e){}}
+top=state==="pause";ov.classList.remove("hid");ov.classList.toggle("pm",state==="pause");ov.classList.toggle("top",top);cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);try{snd("ui",.5)}catch(e){}}
 function close(){if(!on)return;on=false;cancelAnimationFrame(raf);if(ov)ov.classList.add("hid")}
-return{open,close,toggle(){on?close():open()},get on(){return on},info:()=>[modeName(),mapName()]}})();
+return{open,close,toggle(){on?close():open()},get on(){return on},get top(){return on&&top},info:()=>[modeName(),mapName()]}})();
