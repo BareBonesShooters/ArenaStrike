@@ -27,8 +27,10 @@ jobs:
       - name: Copy game files
         run: |
           mkdir -p _site
-          cp index.html site.webmanifest arena-logo.svg preview-image.png _site/
-          cp -r css js icons _site/
+          # sw.js is the service worker; vendor/ holds three.js, which the import map in index.html loads
+          cp index.html site.webmanifest arena-logo.svg preview-image.png sw.js _site/
+          cp -r css js icons vendor _site/
+          test -f _site/vendor/three-0.187.0/three.module.js
           # Cache-bust: stamp every local css/js URL with this commit's short SHA
           # so browsers and the Pages CDN never serve stale copies after a deploy.
           V="${GITHUB_SHA::7}"
