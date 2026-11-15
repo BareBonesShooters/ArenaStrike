@@ -62,7 +62,8 @@ html.mobile-ui .puc{padding:22px 16px}}
 html.mobile-ui #ps{grid-template-columns:minmax(0,440px) minmax(0,500px)}}
 
 /* fallbacks */
-body.lite .gl,body.lite .puc,body.lite .stage>.gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.95)!important}
+body.lite .gl,body.lite .stage>.gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02) 50%),rgba(20,28,50,.74)!important}
+body.lite .puc{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.04))!important}
 @media (prefers-reduced-transparency:reduce){.gl,.puc,.stage>.gl,#ps>.gl{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.96)!important}}
 
 /* settings: groups as glass wells in a responsive grid; each row is label + value on the left, control on the right */
@@ -83,7 +84,7 @@ body.lite .gl,body.lite .puc,body.lite .stage>.gl{-webkit-backdrop-filter:none!i
 /* pause cards: style.css styles them as #ps .pc, so match that specificity */
 #ps .pc{background:var(--g-sheen),var(--g-fill-x)!important;border:1px solid var(--g-rim)!important;border-top-color:var(--g-rim-top)!important;box-shadow:var(--g-hi),var(--g-lift)!important}
 @supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#ps .pc{-webkit-backdrop-filter:var(--g-blur-x)!important;backdrop-filter:var(--g-blur-x)!important}}
-body.lite #ps .pc{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.95)!important}
+body.lite #ps .pc{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 50%),rgba(20,28,50,.72)!important}
 
 /* phones: power-up cards become compact rows (icon left, text right) so all choices fit on one screen */
 @media (max-width:600px){
@@ -92,3 +93,23 @@ html.mobile-ui #puov .puc,html #puov .puc{min-height:0;display:grid;grid-templat
 html #puov .puc>*:first-child{grid-row:1 / span 3;width:56px;height:56px}
 html #puov .puc>*:not(:first-child){grid-column:2}
 html #puov h2{font-size:1.6rem;margin-bottom:12px}}
+
+/* power-ups, matched to the glass system everywhere (phones included): see-through cards, glass icon tile, tinted rim on hover/focus */
+#puov .puw{position:relative;padding:22px 20px 20px;border-radius:26px;background:var(--g-sheen),rgba(14,20,38,.34);border:1px solid var(--g-rim);border-top-color:var(--g-rim-top);box-shadow:var(--g-hi),var(--g-lift)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#puov .puw{-webkit-backdrop-filter:var(--g-blur-x);backdrop-filter:var(--g-blur-x)}}
+#puov .puc{background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.035));-webkit-backdrop-filter:none;backdrop-filter:none}
+html.mobile-ui #puov .puc{background:linear-gradient(180deg,rgba(255,255,255,.11),rgba(255,255,255,.035))}
+#puov .puc .pue{background:radial-gradient(circle at 50% 0%,rgba(255,170,110,.4),rgba(255,120,50,.12) 60%,rgba(255,255,255,.04));border:1px solid rgba(255,200,160,.32);border-top-color:rgba(255,230,210,.55);box-shadow:inset 0 1px 0 rgba(255,240,225,.35),0 8px 18px -10px rgba(255,110,40,.6)}
+@media (hover:hover) and (pointer:fine){#puov .puc:hover{background:linear-gradient(180deg,rgba(255,255,255,.17),rgba(255,255,255,.06));border-color:rgba(255,200,160,.45)}}
+#puov .puc:focus-visible{border-color:rgba(255,214,170,.85)}
+body.lite #puov .puw{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.03) 55%,rgba(255,255,255,.06)),rgba(22,30,52,.5)!important}
+body.lite #puov{background:radial-gradient(90% 80% at 50% 45%,rgba(6,10,22,.18),rgba(4,6,16,.5))}
+@media (prefers-reduced-transparency:reduce){#puov .puw{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:rgba(16,22,40,.96)!important}}
+#puov .puw .eyebrow{display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--g-rim);border-top-color:var(--g-rim-top);box-shadow:var(--g-hi)}
+/* clear glass, not navy: light scrim so the world shows, white-tinted panel */
+#puov{background:radial-gradient(90% 80% at 50% 45%,rgba(6,10,22,.08),rgba(4,6,16,.42))}
+#puov .puw{background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 55%,rgba(255,255,255,.08));border-color:rgba(255,255,255,.26);border-top-color:rgba(255,255,255,.5)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){#puov .puw{-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%)}}
+#puov .puc,html.mobile-ui #puov .puc{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.04));border-color:rgba(255,255,255,.2)}
+#puov h2,#puov .puc b{text-shadow:0 1px 10px rgba(0,0,0,.45)}#puov .puc small{text-shadow:0 1px 6px rgba(0,0,0,.5)}
+html.mobile-ui .cb-panel{background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03) 50%),rgba(20,28,50,.74)!important;border:1px solid rgba(255,255,255,.2);border-top-color:rgba(255,255,255,.38)}
