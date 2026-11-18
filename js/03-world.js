@@ -232,7 +232,7 @@ const prev=mat.onBeforeCompile;
 mat.onBeforeCompile=sh=>{
 if(prev)prev(sh);
 sh.uniforms.sunD=Sky.u.sunDir;sh.uniforms.sunC=Sky.u.sunCol;sh.uniforms.fogT=Sky.u.time;Object.assign(sh.uniforms,MISTU);
-sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;").replace("#include <project_vertex>","#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;");
+sh.vertexShader=sh.vertexShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;").replace("#include <project_vertex>","#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.)).xyz;\n#ifdef USE_INSTANCING\nvWP=(modelMatrix*instanceMatrix*vec4(transformed,1.)).xyz;\n#endif");
 sh.fragmentShader=sh.fragmentShader.replace("#include <common>","#include <common>\nvarying vec3 vWP;uniform vec3 sunD,sunC,mistT,mistP,camP;uniform float fogT,mistH,lampK,cloudK;").replace("#include <fog_fragment>",FOGF)};
 mat.customProgramCacheKey=()=>"fx"+tag}
 
@@ -265,7 +265,10 @@ const fxOn=LOD.cloud>0;if(fxOn)fogFx(gmat,LOD.tex>=1024&&!ruin&&key!=="neon"?"gd
 RDP=[];GROADS.forEach((r,ri)=>{const f=v=>v*2*H-H;for(let i=0;i<=60;i++){const t=i/60,u=1-t,X=f(u*u*r[0]+2*u*t*r[2]+t*t*r[4]),Z=f(u*u*r[1]+2*u*t*r[3]+t*t*r[5]),dx=2*u*(r[2]-r[0])+2*t*(r[4]-r[2]),dz=2*u*(r[3]-r[1])+2*t*(r[5]-r[3]),dl=Math.hypot(dx,dz)||1;
 if(Math.hypot(X,Z)>12&&Math.abs(X)<H-3&&Math.abs(Z)<H-3)RDP.push({x:X,z:Z,tx:dx/dl,tz:dz/dl,ri})}});
 const gm=new T.Mesh(new T.PlaneGeometry(opt.custom?240:H*2,opt.custom?240:H*2),gmat);gm.rotation.x=-PI/2;gm.receiveShadow=true;grp.add(gm);
-const far=new T.Mesh(new T.CircleGeometry(420,32),new T.MeshLambertMaterial({color:new T.Color(th.gr.base).multiplyScalar(.8),polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));/* the land outside the walls sits only 5 cm under the arena floor; the offset keeps it behind the floor in depth, or the two fight and draw stripes from a distance */far.rotation.x=-PI/2;far.position.y=-.05;grp.add(far);
+// Meadow (Medium and up): real rolling hills and peaks outside the walls (03b-terrain.js) in place of the flat land disk and the icosahedron mountains
+const HILLS=key==="meadow"&&!opt.custom&&!opt.parkour&&!opt.level&&typeof Terrain!=="undefined"&&typeof S!=="undefined"&&S.gfx<=2; // Medium and up: Low and Potato keep the lighter disk and mountains
+const GRASS=HILLS&&!(th.snow>.8)&&!(th.night>.3);
+if(HILLS){const LAND=Terrain.hills(grp,th,seed>>>0,fxOn);Terrain.forest(grp,th,seed>>>0,LAND,fxOn)}else{const far=new T.Mesh(new T.CircleGeometry(420,32),new T.MeshLambertMaterial({color:new T.Color(th.gr.base).multiplyScalar(.8),polygonOffset:true,polygonOffsetFactor:4,polygonOffsetUnits:8}));/* the land outside the walls sits only 5 cm under the arena floor; the offset keeps it behind the floor in depth, or the two fight and draw stripes from a distance */far.rotation.x=-PI/2;far.position.y=-.05;grp.add(far);}
 // perimeter (skipped entirely for parkour so platforms aren't blocked by arena walls)
 if(!opt.parkour&&!opt.custom){
 const wh=ruin?7:3.6,wc=th.wall;
@@ -274,7 +277,7 @@ for(let i=-4;i<=4;i++){[[i*10,-H-.2],[i*10,H+.2],[-H-.2,i*10],[H+.2,i*10]].forEa
 if(key==="neon"){for(const [x,z,w,d] of[[0,-H+.1,2*H,.15],[0,H-.1,2*H,.15],[-H+.1,0,.15,2*H],[H-.1,0,.15,2*H]])P("box",x,1.2,z,w,.12,d,0x00f0ff,0,1,glow)}
 }
 // distant mountains
-if(!ruin&&!opt.custom&&!th.noMount)for(let i=0,nm=Math.max(10,Math.round(26*LOD.props));i<nm;i++){const a=i/nm*PI*2+crng()*.2,d=100+crng()*40,r=cr(14,28),h=cr(18,44),x=Math.cos(a)*d,z=Math.sin(a)*d,mc=cpick(th.mount);
+if(!ruin&&!opt.custom&&!th.noMount&&!HILLS)for(let i=0,nm=Math.max(10,Math.round(26*LOD.props));i<nm;i++){const a=i/nm*PI*2+crng()*.2,d=100+crng()*40,r=cr(14,28),h=cr(18,44),x=Math.cos(a)*d,z=Math.sin(a)*d,mc=cpick(th.mount);
 P("ico",x,h/2-6,z,r*2.3,h*1.2,r*1.9,mc,crng()*3,.75);if(th.snow&&crng()<th.snow)P("ico",x,h-h*.14-2,z,r*.75,h*.3,r*.75,0xe3e9d8,0,.95)}
 // interior shell for the ruin
 if(ruin){WORLD.ceil=7;P("box",0,7.25,0,2*H+6,.5,2*H+6,0x3b5347,0,.9);
@@ -342,11 +345,20 @@ if(th.crystal){const hh=rr(3.5,7);P("cone",x,hh/2,z,1.5,hh,1.5,leaf,rng()*3,.55)
 // tapered trunk with root flares
 P("cyl",x,.7*t,z,.62,1.4*t,.62,th.trunk,0,.55);P("cyl",x,2.05*t,z,.44,1.4*t,.44,th.trunk,0,.6);
 const dk=lerpC(th.trunk,0x000000,.15);for(let i=0;i<3;i++){const a=i*2.09+rng();limb(x+Math.cos(a)*.22,.06,z+Math.sin(a)*.22,a,1.25,.6,.2,dk)}
-if(LOD.cloud>1)SWAY=.6;if(pine){for(let i=0;i<6;i++){const r=(2.5-i*.36)*t,lc=i&1?lerpC(leaf,0x000000,.1):leaf;P("cone",x,(1.9+i*.72)*t,z,r*1.6,1.35*t,r*1.6,lc,i*.7,.62);if(th.snow)P("cone",x,(2.1+i*.72)*t,z,r*1.1,.7*t,r*1.1,0xf4f8ff,i*.7,.95)}P("cone",x,6.2*t,z,.5*t,.9*t,.5*t,leaf,0,.7)}
+if(LOD.cloud>1)SWAY=.6;if(pine){for(let i=0;i<6;i++){const r=(2.5-i*.36)*t,lc=HILLS?lerpC(lerpC(leaf,0x000000,.22-i*.04),0xf0ffd0,i*.035):i&1?lerpC(leaf,0x000000,.1):leaf;P("cone",x,(1.9+i*.72)*t,z,r*1.6,1.35*t,r*1.6,lc,i*.7,.62);if(th.snow)P("cone",x,(2.1+i*.72)*t,z,r*1.1,.7*t,r*1.1,0xf4f8ff,i*.7,.95)}P("cone",x,6.2*t,z,.5*t,.9*t,.5*t,leaf,0,.7)}
 else{for(let i=0;i<3;i++){const a=i*2.09+rng()*.8;limb(x,2.2*t,z,a,.75,1.5*t,.17,th.trunk)}
-const lt=lerpC(leaf,0xffffff,.1),dl=lerpC(leaf,0x000000,.12);P("ico",x,3.9*t,z,3*t,2.5*t,3*t,leaf,rng()*3,.55);P("ico",x+.2*t,4.9*t,z-.1*t,1.9*t,1.6*t,1.9*t,lt,rng()*3,.62);
+if(HILLS){ // Meadow on Medium and up: a fuller, sunlit crown (shaded core, ring, sunny top, a few low drooping clusters).
+// It takes exactly the same rng() values as the plain crown below, so every graphics setting builds the same arena; extra randomness comes from crng.
+const r1=rng()*3,r2=rng()*3,ring=[];for(let i=0;i<5;i++)ring.push([i*1.257+rng()*.5,3.2+rng()*.7,1.6+rng()*.5,1.4+rng()*.4,1.6+rng()*.5,rng()*3]);
+const lf=leaf,core=lerpC(lf,0x000000,.28),mid=lerpC(lf,0x000000,.1),sun=lerpC(lf,0xf0ffd0,.2),top=lerpC(lf,0xf6ffe0,.32);
+P("ico",x,3.75*t,z,2.9*t,2.3*t,2.9*t,core,r1,.5);
+ring.forEach(([a,y,sx,sy,sz,ro],i)=>{const r=1.35*t;P("ico",x+Math.cos(a)*r,y*t,z+Math.sin(a)*r,sx*t,sy*t,sz*t,i&1?core:mid,ro,.6)});
+for(let i=0;i<4;i++){const a=i*1.571+crng()*.9,r=(.75+crng()*.3)*t;P("ico",x+Math.cos(a)*r,(4.55+crng()*.4)*t,z+Math.sin(a)*r,(1.5+crng()*.4)*t,(1.25+crng()*.3)*t,(1.5+crng()*.4)*t,sun,crng()*3,.68)}
+P("ico",x+.2*t,5.25*t,z-.1*t,1.7*t,1.35*t,1.7*t,top,r2,.75);
+for(let i=0;i<2;i++){const a=crng()*6.28,r=1.9*t;P("ico",x+Math.cos(a)*r,2.85*t,z+Math.sin(a)*r,.95*t,.8*t,.95*t,core,crng()*3,.55)}}
+else{const lt=lerpC(leaf,0xffffff,.1),dl=lerpC(leaf,0x000000,.12);P("ico",x,3.9*t,z,3*t,2.5*t,3*t,leaf,rng()*3,.55);P("ico",x+.2*t,4.9*t,z-.1*t,1.9*t,1.6*t,1.9*t,lt,rng()*3,.62);
 for(let i=0;i<5;i++){const a=i*1.257+rng()*.5,r=1.35*t;P("ico",x+Math.cos(a)*r,(3.2+rng()*.7)*t,z+Math.sin(a)*r,(1.6+rng()*.5)*t,(1.4+rng()*.4)*t,(1.6+rng()*.5)*t,i&1?dl:lt,rng()*3,.6)}}
-SWAY=0;return true};
+}SWAY=0;return true};
 const crateAt=(x,z,s,stack)=>{const h=s*stack,col=pick([0x8b6b3d,0x9a7a48,0x7a5c34]);reg(x,z,s,s,h);
 // Keep crossing straps at different depths, and inset their ends from the lids.
 for(let i=0;i<stack;i++){P("box",x,s*(i+.5),z,s,s,s,col,0,.62);P("box",x,s*(i+.5),z,s+.06,s*.14,s+.06,0x4e3a20,0,.9);P("box",x,s*(i+.5),z,s*.14,s-.02,s+.08,0x4e3a20,0,.9)}return true};
@@ -484,10 +496,10 @@ P("box",0,5.35,0,1.35,.3,1.35,th.trim,0,1);P("cone",0,6.1,0,.85,1.2,.85,th.trim,
 place(opt.sparse?2:(RDP.length?4:11),house,10);place(pc(opt.sparse?10:22),(x,z)=>tree(x,z),8);
 place(pc(RDP.length?1:5),car,8);place(pc(RDP.length?2:8),lamp,6);place(pc(7),(x,z,r)=>crate(x,z,rr(1.1,1.5),1+(rng()<.4?1:0)),6);place(pc(5),barrel,6);place(pc(3),barrelGroup,7);place(pc(4),barrier,6);place(pc(3),sandbags,6);place(pc(2),tires,6);place(pc(8),rock,6);place(pc(RDP.length?1:4),bench,6);
 place(pc(4),(x,z,r)=>fence(x,z,r&1,rr(5,9)),8);place(pc(5),(x,z,r)=>wall(x,z,r&1,rr(3,5),rr(1.2,2.2)),8);
-// flowers and tufts
+// flowers and tufts (the cone tufts give way to real grass where the instanced grass is on)
 const fl=th.flower;for(let i=0,nf=Math.max(1,Math.round(260*LOD.props));i<nf;i++){const x=(crng()-.5)*(H*2-6),z=(crng()-.5)*(H*2-6);if(!free(x,z,.5))continue;const f=crng()<.25,sz=f?.28:.34;
 if(key==="neon"){if(f)P("ico",x,.18,z,.22,.3,.22,cpick(fl),0,1,glow)}else if(th.snow>.8){if(crng()<.5)P("ico",x,.1,z,cr(.4,.9),.25,cr(.4,.9),0xffffff,crng()*3,.9)}
-else{P("cone",x,sz/2,z,.22,sz,.22,f?cpick(fl):lerpC(cpick(th.leaf),0xffffff,.1),0,.6);if(f)P("ico",x,sz+.04,z,.18,.18,.18,cpick(fl),0,1)}}
+else if(f||!GRASS){P("cone",x,sz/2,z,.22,sz,.22,f?cpick(fl):lerpC(cpick(th.leaf),0xffffff,.1),0,.6);if(f)P("ico",x,sz+.04,z,.18,.18,.18,cpick(fl),0,1)}}
 }else{
 // ruined hall
 place(7,(x,z,r)=>wall(x,z,r&1,rr(4,11),rr(3,6.5)),10);
@@ -512,6 +524,7 @@ mkMotes(grp,Math.max(8,Math.round(320*LOD.dust)),0xd8e4ff,.1,.5,6.5)}
 if(!WORLD.dust&&!opt.parkour){const M=th.motes||{meadow:[0xfff0a8,.13,.75,10,.06,.15],sunset:[0xffa24a,.15,.85,12,.45],frost:[0xffffff,.14,.9,12,-1.1,.55],neon:[0x4ffff0,.12,.85,12,.55],desert:[0xffe6b0,.12,.8,5,.05,2.4],autumn:[0xffa84a,.15,.8,12,-.25,.8],toxic:[0x9aff5a,.13,.85,12,.5]}[key];
 if(M){mkMotes(grp,Math.max(10,Math.round(220*LOD.dust)),M[0],M[1],M[2],M[3]);WORLD.dv={vy:M[4],top:M[3],wx:M[5]||0}}}
 if(opt.parkour)WORLD.course=PK.build({blk,reg,P,glow,rng,th,key,lerpC,grp,diff:opt.parkour,map:opt.pkmap});
+if(GRASS)Terrain.grass(grp,th,seed>>>0,(x,z)=>free(x,z,.3),fxOn);
 // finish geometry
 const smat=new T.MeshLambertMaterial({vertexColors:true});
 const amp0=(Tune.n("gfx.wind",.14,0,.4)*(th.snow?.6:1)).toFixed(3);

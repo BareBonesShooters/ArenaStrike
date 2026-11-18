@@ -1,21 +1,21 @@
 {
  "note": "Made by npm run perf -- --approve. Frame times are from the machine that recorded them.",
- "made": "2026-11-15",
+ "made": "2026-11-18",
  "data": {
   "ultra meadow eye": {
-   "calls": 66,
-   "tris": 140716,
-   "ms": 0.18
+   "calls": 68,
+   "tris": 234142,
+   "ms": 0.2
   },
   "ultra meadow overview": {
-   "calls": 66,
-   "tris": 140716,
-   "ms": 0.66
+   "calls": 68,
+   "tris": 234142,
+   "ms": 4.67
   },
   "ultra ruin eye": {
    "calls": 135,
    "tris": 49738,
-   "ms": 0.27
+   "ms": 0.33
   },
   "ultra ruin overview": {
    "calls": 133,
@@ -30,42 +30,42 @@
   "ultra lv:hollow overview": {
    "calls": 55,
    "tris": 112502,
-   "ms": 0.14
+   "ms": 0.57
   },
   "ultra lv:forge eye": {
    "calls": 49,
    "tris": 104034,
-   "ms": 0.12
+   "ms": 0.11
   },
   "ultra lv:forge overview": {
    "calls": 49,
    "tris": 104034,
-   "ms": 0.12
+   "ms": 0.11
   },
   "high meadow eye": {
-   "calls": 44,
-   "tris": 85487,
-   "ms": 0.11
+   "calls": 47,
+   "tris": 155531,
+   "ms": 0.42
   },
   "high meadow overview": {
-   "calls": 44,
-   "tris": 85487,
-   "ms": 0.11
+   "calls": 47,
+   "tris": 155531,
+   "ms": 0.13
   },
   "high ruin eye": {
    "calls": 72,
    "tris": 26398,
-   "ms": 0.13
+   "ms": 0.15
   },
   "high ruin overview": {
    "calls": 71,
    "tris": 26396,
-   "ms": 4.85
+   "ms": 2.94
   },
   "high lv:hollow eye": {
    "calls": 41,
    "tris": 67416,
-   "ms": 0.08
+   "ms": 0.09
   },
   "high lv:hollow overview": {
    "calls": 41,
@@ -83,14 +83,14 @@
    "ms": 0.07
   },
   "medium meadow eye": {
-   "calls": 31,
-   "tris": 79227,
-   "ms": 0.09
+   "calls": 34,
+   "tris": 124327,
+   "ms": 0.11
   },
   "medium meadow overview": {
-   "calls": 31,
-   "tris": 79227,
-   "ms": 0.07
+   "calls": 34,
+   "tris": 124327,
+   "ms": 0.08
   },
   "medium ruin eye": {
    "calls": 47,
@@ -105,7 +105,7 @@
   "medium lv:hollow eye": {
    "calls": 30,
    "tris": 61719,
-   "ms": 0.06
+   "ms": 0.05
   },
   "medium lv:hollow overview": {
    "calls": 27,
@@ -130,12 +130,12 @@
   "low meadow overview": {
    "calls": 17,
    "tris": 39014,
-   "ms": 0.04
+   "ms": 0.03
   },
   "low ruin eye": {
    "calls": 54,
    "tris": 13956,
-   "ms": 0.08
+   "ms": 0.09
   },
   "low ruin overview": {
    "calls": 49,
@@ -145,12 +145,12 @@
   "low lv:hollow eye": {
    "calls": 25,
    "tris": 18502,
-   "ms": 0.05
+   "ms": 0.04
   },
   "low lv:hollow overview": {
    "calls": 23,
    "tris": 18498,
-   "ms": 0.03
+   "ms": 0.04
   },
   "low lv:forge eye": {
    "calls": 10,

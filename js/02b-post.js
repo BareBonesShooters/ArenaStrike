@@ -45,7 +45,7 @@ ao.updateGtaoMaterial({radius:Tune.n("gfx.aoR",1.1,.2,4),distanceExponent:1.5,th
 ao.updatePdMaterial({lumaPhi:10,depthPhi:2,normalPhi:3,radius:6,radiusExponent:1,rings:2,samples:12});ao.blendIntensity=Tune.n("gfx.aoK",.85,0,1);
 // its normal and depth pass hides only points and lines; halo sprites, glow quads and other see-through effects would draw there as solid squares
 // and cast dark rectangles of occlusion, so they are hidden too
-ao._overrideVisibility=function(){const c=this._visibilityCache;this.scene.traverse(o=>{if(o.visible&&(o.isPoints||o.isLine||o.isLine2||o.isSprite||(o.material&&o.material.transparent&&!o.material.depthWrite))){o.visible=false;c.push(o)}})};cmp.addPass(ao)}
+ao._overrideVisibility=function(){const c=this._visibilityCache;this.scene.traverse(o=>{if(o.visible&&(o.userData.noAO||o.isPoints||o.isLine||o.isLine2||o.isSprite||(o.material&&o.material.transparent&&!o.material.depthWrite))){o.visible=false;c.push(o)}})};cmp.addPass(ao)}
 vmp=new VMPass();cmp.addPass(vmp);
 // bloom needs the HDR buffer: lit ground already reaches 1.0, so only light sources above that (glow parts, sun, muzzle flash, sparks) should glow
 // the threshold sits just above 1.0 so light sources visibly glow, while sunlit walls (graded down to at most about 1.0) stay clean
