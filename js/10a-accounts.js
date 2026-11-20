@@ -1,7 +1,26 @@
 /* Supabase owns identity/roles; local device preferences never move between devices. */
 window.ArenaAccount=(()=>{
  const cfg=window.ARENA_CLOUD_CONFIG||{},configured=!!(cfg.url&&cfg.publishableKey&&window.supabase);
- const client=configured?supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+ // School and office filters often block *.supabase.co while the game itself loads. Every account call goes through
+ // reach(): it tries the main server, and if the network refuses it (or serves a block page instead of the API),
+ // it retries on each fallback host from the config (a proxy of the same server on another domain) and keeps the one that works.
+ const bases=[cfg.url,...(cfg.fallbackUrls||[])].filter(Boolean).map(u=>String(u).replace(/\/+$/,''));
+ let live=0;
+ const BLOCKED="Can't reach the account server from this network (it may be blocked, e.g. on school Wi-Fi). You can still play as a guest; progress saves on this device.";
+ async function reach(input,init){
+  const href=typeof input==='string'?input:input instanceof URL?input.href:input.url,main=bases[0];
+  if(!main||!href.startsWith(main))return fetch(input,init);
+  const path=href.slice(main.length);let last;
+  for(let k=0;k<bases.length;k++){const i=(live+k)%bases.length;
+   try{const r=await fetch(bases[i]+path,typeof input==='string'||input instanceof URL?init:new Request(bases[i]+path,input));
+    // the API only ever answers in JSON; an HTML page means a filter or captive portal answered instead
+    if(/text\/html/i.test(r.headers.get('content-type')||''))throw TypeError('block page');
+    live=i;return r}
+   catch(e){if(e?.name==='AbortError')throw e;last=e}}
+  if(!navigator.onLine)throw last;
+  throw TypeError(BLOCKED);
+ }
+ const client=configured?supabase.createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true},global:{fetch:reach}}):null;
  const deviceKeys=['sens','ssens','vol','mvol','gfx','auto','ac','scope'];
  let user=null,profile=null,role='player',revision=0,ready=false,dirty=false,busy=false,timer=0,epoch=0,conflict=null,lastSaved='',match=null,matchRun=0,recovery=false,guestSelected=false;
  let message=configured?'Connecting to account services…':'Playing on this device';
